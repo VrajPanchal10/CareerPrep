@@ -19,6 +19,9 @@ const Navbar = () => {
                 <NavLink to="/ats" className={({ isActive }) => `nav-link ${isActive ? 'nav-link--active' : ''}`}>
                     ATS Match & Heatmap
                 </NavLink>
+                <NavLink to="/code" className={({ isActive }) => `nav-link ${isActive ? 'nav-link--active' : ''}`}>
+                    Coding Workspace
+                </NavLink>
             </nav>
             <div className="navbar-user">
                 {user && (

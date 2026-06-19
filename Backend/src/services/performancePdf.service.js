@@ -3,6 +3,7 @@ const interviewSessionModel = require("../models/interviewSession.model");
 const atsReportModel = require("../models/atsReport.model");
 const userModel = require("../models/user.model");
 const puppeteer = require("puppeteer");
+const codingSubmissionModel = require("../models/codingSubmission.model");
 
 /**
  * @description Generates a polished 3-page Performance Report PDF buffer.
@@ -11,6 +12,76 @@ async function generatePerformancePdf({ reportId, userId }) {
     // 1. Fetch data models
     const user = await userModel.findById(userId);
     const report = await interviewReportModel.findById(reportId);
+    
+    // Fetch coding submissions to compile Coding Performance Summary page
+    const codingSubmissions = await codingSubmissionModel.find({ userId }).populate("questionId");
+    
+    let codingReadinessScore = 0;
+    let topLanguagesStr = "N/A";
+    let strongTopicsStr = "None logged";
+    let weakTopicsStr = "None logged";
+    let hasCodingStats = false;
+
+    if (codingSubmissions && codingSubmissions.length > 0) {
+        hasCodingStats = true;
+        
+        // 1. Calculate Coding Readiness Score (average of maximum scores on unique questions)
+        const questionBestScores = {};
+        const langCounts = {};
+        
+        codingSubmissions.forEach(sub => {
+            if (!sub.questionId) return;
+            const qId = sub.questionId._id.toString();
+            const topic = sub.questionId.topic;
+            
+            if (!questionBestScores[qId]) {
+                questionBestScores[qId] = { score: sub.overallScore, topic };
+            } else if (sub.overallScore > questionBestScores[qId].score) {
+                questionBestScores[qId].score = sub.overallScore;
+            }
+            
+            const lang = sub.language;
+            langCounts[lang] = (langCounts[lang] || 0) + 1;
+        });
+
+        const uniqueAttempts = Object.values(questionBestScores);
+        let sumUniqueBest = 0;
+        uniqueAttempts.forEach(attempt => sumUniqueBest += attempt.score);
+        codingReadinessScore = uniqueAttempts.length > 0
+            ? Math.round(sumUniqueBest / uniqueAttempts.length)
+            : 0;
+
+        // 2. Top Languages (sorted by count)
+        const sortedLangs = Object.entries(langCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([lang]) => lang.charAt(0).toUpperCase() + lang.slice(1));
+        topLanguagesStr = sortedLangs.slice(0, 3).join(", ") || "None";
+
+        // 3. Strong & Weak Topics (based on unique question average)
+        const topicBestAggregate = {};
+        uniqueAttempts.forEach(attempt => {
+            const topic = attempt.topic;
+            if (!topicBestAggregate[topic]) {
+                topicBestAggregate[topic] = { sum: 0, count: 0 };
+            }
+            topicBestAggregate[topic].sum += attempt.score;
+            topicBestAggregate[topic].count += 1;
+        });
+
+        const strongTopics = [];
+        const weakTopics = [];
+        Object.entries(topicBestAggregate).forEach(([topic, data]) => {
+            const avg = Math.round(data.sum / data.count);
+            if (avg >= 75) {
+                strongTopics.push(`${topic} (${avg}%)`);
+            } else {
+                weakTopics.push(`${topic} (${avg}%)`);
+            }
+        });
+
+        strongTopicsStr = strongTopics.join(", ") || "None";
+        weakTopicsStr = weakTopics.join(", ") || "None";
+    }
     
     if (!report) {
         throw new Error("Interview Report not found.");
@@ -470,6 +541,53 @@ async function generatePerformancePdf({ reportId, userId }) {
             ${roadmapSteps}
           </div>
         </div>
+
+        ${hasCodingStats ? `
+        <div class="page">
+          <div class="header">
+            <div class="logo">AI Career<span>Prep</span></div>
+            <div class="report-title">Interview Performance Report</div>
+          </div>
+          
+          <div class="section-title">Coding Performance Summary</div>
+          <p class="summary-text" style="margin-bottom: 30px;">
+            Below is the comprehensive evaluation of the candidate's coding interview preparation. Scores are compiled from code challenges completed using the Monaco editor workspace across various technical topics.
+          </p>
+
+          <div class="score-cards-container" style="margin-bottom: 40px;">
+            <div class="score-card" style="background: #fafafa; border: 1px solid #e0e0e0;">
+              <h3>Coding Readiness Score</h3>
+              <div class="score" style="color: #27ae60;">${codingReadinessScore}<span>%</span></div>
+              <div class="status" style="color: #27ae60;">
+                ${codingReadinessScore >= 80 ? "EXCELLENT READY STATUS" : codingReadinessScore >= 60 ? "MODERATE PRACTICE STATUS" : "UNPREPARED STATUS"}
+              </div>
+            </div>
+            <div class="score-card" style="background: #fafafa; border: 1px solid #e0e0e0;">
+              <h3>Top Programming Languages</h3>
+              <div style="font-size: 20px; font-weight: 700; color: #111111; margin-top: 15px; text-transform: uppercase;">
+                ${topLanguagesStr}
+              </div>
+              <div class="status">Prepped Languages</div>
+            </div>
+          </div>
+
+          <div class="section-title">Coding Topic Competency Analysis</div>
+          <div class="heatmap-summary">
+            <div class="heatmap-column">
+              <h4 style="color: #27ae60; font-size: 13px; text-transform: uppercase;">✓ Strong Topics (Score &ge; 75%)</h4>
+              <p style="font-size: 13px; color: #555555; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #27ae60;">
+                ${strongTopicsStr}
+              </p>
+            </div>
+            <div class="heatmap-column">
+              <h4 style="color: #d35400; font-size: 13px; text-transform: uppercase;">⚠ Needs Review (Score &lt; 75%)</h4>
+              <p style="font-size: 13px; color: #555555; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #d35400;">
+                ${weakTopicsStr}
+              </p>
+            </div>
+          </div>
+        </div>
+        ` : ''}
 
         </body>
         </html>

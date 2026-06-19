@@ -126,6 +126,47 @@ const Home = () => {
                 </div>
             </div>
 
+            {/* Voice Interview Banner Entry Point */}
+            <section className="voice-interview-promo" style={{
+                margin: "2rem auto",
+                maxWidth: "1000px",
+                background: "linear-gradient(135deg, rgba(138, 43, 226, 0.15), rgba(210, 13, 59, 0.15))",
+                border: "1px solid rgba(210, 13, 59, 0.25)",
+                borderRadius: "12px",
+                padding: "2rem",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "1.5rem",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.15)"
+            }}>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.2rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        🗣️ Voice-to-Voice AI Interview Simulator
+                    </h3>
+                    <p style={{ margin: 0, fontSize: "0.88rem", color: "rgba(255, 255, 255, 0.7)", lineHeight: "1.5" }}>
+                        Practice speaking your answers aloud in a realistic verbal interview simulator. Capture transcriptions automatically, track your response times, answer custom follow-up questions, and receive detailed clarity and communication feedback!
+                    </p>
+                </div>
+                <button 
+                    onClick={() => navigate("/voice-interview")} 
+                    style={{
+                        background: "#d20d3b",
+                        border: "none",
+                        color: "#fff",
+                        padding: "0.75rem 1.5rem",
+                        borderRadius: "6px",
+                        fontWeight: "700",
+                        fontSize: "0.9rem",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "background 0.2s"
+                    }}
+                >
+                    🎙️ Enter Voice Coach
+                </button>
+            </section>
+
             {/* Recent Reports List */}
             {reports.length > 0 && (
                 <section className='recent-reports'>
@@ -153,4 +194,4 @@ const Home = () => {
     )
 }
 
-export default Home
+export default Home

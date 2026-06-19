@@ -345,4 +345,205 @@ async function evaluateUserAnswer({ question, intention, modelAnswer, userAnswer
     }
 }
 
-module.exports = { generateInterviewReport, generateResumePdf, generateAtsReport, evaluateUserAnswer }
+const codingQuestionSchema = z.object({
+    title: z.string().describe("A concise and clear title for the coding question (e.g. 'Two Sum', 'Reverse Linked List')"),
+    description: z.string().describe("Detailed markdown description of the coding challenge, including problem statement and explanation"),
+    difficulty: z.enum(["Easy", "Medium", "Hard"]).describe("The difficulty level of the coding question"),
+    topic: z.string().describe("The main category or topic of the question (e.g. 'Arrays', 'Dynamic Programming')"),
+    sampleInput: z.string().describe("Sample inputs for the code test cases (e.g., 'nums = [2,7,11,15], target = 9')"),
+    sampleOutput: z.string().describe("Expected output matching the sample inputs (e.g., '[0,1]')"),
+    constraints: z.array(z.string()).describe("A list of constraints on the inputs (e.g., '1 <= nums.length <= 10^4')"),
+    hints: z.array(z.string()).describe("A list of progressive hints to guide the user towards the solution")
+})
+
+const codeEvaluationSchema = z.object({
+    overallScore: z.number().min(0).max(100).describe("Weighted aggregate score between 0 and 100 based on correctness, readability, complexities, logic, structure, and edge cases"),
+    correctnessScore: z.number().min(0).max(100).describe("Score out of 100 for theoretical correctness and logic alignment"),
+    readabilityScore: z.number().min(0).max(100).describe("Score out of 100 for code structure, variable naming, formatting, and cleanliness"),
+    complexityScore: z.number().min(0).max(100).describe("Score out of 100 for optimal time and space complexity efficiency"),
+    strengths: z.array(z.string()).describe("List of 2-3 key strengths or positive attributes of the submitted code"),
+    weaknesses: z.array(z.string()).describe("List of 2-3 gaps, inefficiencies, or errors identified in the code"),
+    suggestions: z.array(z.string()).describe("Actionable tips or alternatives to improve the code's correctness, structure, or complexity")
+})
+
+async function generateAiCodingQuestion({ topic, difficulty }) {
+    const prompt = `You are an expert technical interviewer. Generate a programming question targeting:
+                        Topic: ${topic}
+                        Difficulty: ${difficulty}
+                        
+                        Create a complete coding question object according to the schema. 
+                        Make sure the constraints, description, sample inputs/outputs, and hints are clear, accurate, and structured.
+                        Ensure the problem is standard and challenging for the given level.
+                    `
+
+    const response = await callGeminiWithRetryAndFallback({
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: codingQuestionSchema.toJSONSchema(),
+        }
+    })
+
+    try {
+        return JSON.parse(response.text)
+    } catch (err) {
+        throw new Error("Failed to parse Gemini response as valid JSON Coding Question schema")
+    }
+}
+
+async function evaluateCodeSubmission({ question, language, code }) {
+    const prompt = `You are a strict, senior technical interviewer and compiler-level code reviewer. 
+                        Evaluate the following programming submission.
+                        
+                        Question:
+                        Title: ${question.title}
+                        Description: ${question.description}
+                        Sample Input: ${question.sampleInput}
+                        Sample Output: ${question.sampleOutput}
+                        Constraints: ${question.constraints ? question.constraints.join(', ') : 'None'}
+                        
+                        Submission Details:
+                        Language: ${language}
+                        Submitted Code:
+                        \`\`\`${language}
+                        ${code}
+                        \`\`\`
+                        
+                        Perform a deep semantic evaluation of the code:
+                        1. Correctness: Does it solve the problem logically? Detect syntax errors, infinite loops, or logical flaws.
+                        2. Logic Quality: Is it structured properly with correct variables, conditionals, and functions?
+                        3. Readability: Is it clean, well-formatted, and easy to read?
+                        4. Time & Space Complexity: Analyze big-O complexities and if they can be optimized.
+                        5. Edge Case Handling: Does it handle nulls, empty inputs, single element lists, out of bounds, etc.?
+                        
+                        Provide constructive feedback matching the required schema. Ensure the score values reflect the code quality (e.g. penalize heavily for infinite loops, syntax errors, incorrect complexity, or missing edge cases).
+                    `
+
+    const response = await callGeminiWithRetryAndFallback({
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: codeEvaluationSchema.toJSONSchema(),
+        }
+    })
+
+    try {
+        return JSON.parse(response.text)
+    } catch (err) {
+        throw new Error("Failed to parse Gemini response as valid JSON Code Evaluation schema")
+    }
+}
+
+const voiceAnswerEvaluationSchema = z.object({
+    overallScore: z.number().min(0).max(100).describe("Weighted aggregate score between 0 and 100 assessing the verbal answer quality"),
+    communicationScore: z.number().min(0).max(100).describe("Score out of 100 measuring communication efficiency, coherence, and flow"),
+    clarityScore: z.number().min(0).max(100).describe("Score out of 100 for grammar, sentence structure, and vocabulary clarity"),
+    technicalScore: z.number().min(0).max(100).describe("Score out of 100 for technical accuracy, domain terms, and frameworks mentioned"),
+    explanationScore: z.number().min(0).max(100).describe("Score out of 100 evaluating depth, structure (e.g. STAR method), and examples used"),
+    strengths: z.array(z.string()).describe("List of 2-3 key strengths of the verbal answer"),
+    weaknesses: z.array(z.string()).describe("List of 2-3 gaps or areas to improve in content or expression"),
+    suggestions: z.array(z.string()).describe("Actionable tips for refining the answer and verbal delivery")
+});
+
+const voiceFollowUpQuestionSchema = z.object({
+    hasFollowUp: z.boolean().describe("Whether to ask a contextual follow-up question (true) or not (false)"),
+    questionText: z.string().describe("The contextual follow-up question text (required if hasFollowUp is true)"),
+    intention: z.string().describe("The interviewer intention behind asking this follow-up (required if hasFollowUp is true)"),
+    answer: z.string().describe("Brief ideal reference answer guide for this follow-up question (required if hasFollowUp is true)")
+});
+
+async function evaluateVoiceAnswer({ question, intention, modelAnswer, userAnswer, topic }) {
+    const prompt = `You are a professional mock interviewer evaluating a candidate's verbal response to an interview question.
+                        Question: ${question}
+                        Interviewer's Intention: ${intention}
+                        Reference Model Answer: ${modelAnswer}
+                        Topic Category: ${topic}
+                        
+                        Candidate's Verbal Answer Transcript:
+                        "${userAnswer}"
+                        
+                        Provide a detailed, critical and fair evaluation based on the verbal response transcript matching the schema.
+                        Assign scores based on content and structure:
+                        - communicationScore: evaluates flow, narrative structure (e.g. STAR method), and explanation logic.
+                        - clarityScore: evaluates sentence coherence, grammatical structure, and vocabulary.
+                        - technicalScore: evaluates use of domain terminology, concept accuracy, and reference matching.
+                        - explanationScore: evaluates depth, examples, and detailed points covered.
+                        - overallScore: weighted aggregate.
+                        Ensure comments and suggestions are practical, constructive, and tailored for verbal interview scenarios.
+                    `;
+
+    const response = await callGeminiWithRetryAndFallback({
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: voiceAnswerEvaluationSchema.toJSONSchema(),
+        }
+    });
+
+    try {
+        return JSON.parse(response.text);
+    } catch (err) {
+        throw new Error("Failed to parse Gemini response as valid JSON Voice Evaluation schema");
+    }
+}
+
+async function generateAiFollowUpQuestion({ question, userAnswer }) {
+    const prompt = `You are a professional mock interviewer conducting a voice interview. 
+                        The candidate was asked a question:
+                        Question: "${question.questionText || question.question}"
+                        Reference Answer: "${question.answer}"
+                        
+                        The candidate's response transcript:
+                        "${userAnswer}"
+                        
+                        Decide if it is appropriate to ask a brief, contextual follow-up question to probe deeper, clarify a point, or challenge their reasoning.
+                        If yes, set hasFollowUp to true and provide the questionText (the follow-up question), intention, and guide answer.
+                        If no (e.g., if their answer is fully complete, or too poor to build on, or if no value is added), set hasFollowUp to false.
+                        Keep the follow-up question brief, clear, and natural.
+                    `;
+
+    const response = await callGeminiWithRetryAndFallback({
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: voiceFollowUpQuestionSchema.toJSONSchema(),
+        }
+    });
+
+    try {
+        return JSON.parse(response.text);
+    } catch (err) {
+        throw new Error("Failed to parse Gemini response as valid voice follow-up question schema");
+    }
+}
+
+async function generateVoiceSessionSummaryRecommendation({ evaluations }) {
+    const prompt = `You are an expert career coach reviewing a candidate's mock interview performance.
+                        Here is the structured feedback of the user's answers in this practice session:
+                        ${JSON.stringify(evaluations, null, 2)}
+                        
+                        Based on their strengths, weaknesses, and suggestions, write a single, highly actionable, premium strategic recommendation (max 3 sentences) to help the candidate's future verbal interview preparations.
+                        Avoid generic tips; be specific, constructive, and impactful.
+                    `;
+
+    const response = await callGeminiWithRetryAndFallback({
+        contents: prompt,
+        config: {
+            // Simply call default text generation for a paragraph recommendation
+        }
+    });
+
+    return response.text ? response.text.trim() : "Focus on structuring your responses using the STAR method (Situation, Task, Action, Result) and clearly state your technical choices with domain-specific terms.";
+}
+
+module.exports = {
+    generateInterviewReport,
+    generateResumePdf,
+    generateAtsReport,
+    evaluateUserAnswer,
+    generateAiCodingQuestion,
+    evaluateCodeSubmission,
+    evaluateVoiceAnswer,
+    generateAiFollowUpQuestion,
+    generateVoiceSessionSummaryRecommendation
+}

@@ -1,0 +1,788 @@
+/* Voice Interview Simulator Stylesheet */
+
+$accent-red: #d20d3b;
+$accent-purple: #8a2be2;
+$bg-dark: #0b0b0d;
+$card-bg: rgba(255, 255, 255, 0.03);
+$border-color: rgba(255, 255, 255, 0.08);
+$text-light: #ffffff;
+$text-muted: rgba(255, 255, 255, 0.6);
+
+.voice-dashboard-container, .voice-room-container {
+    min-height: 100vh;
+    background-color: $bg-dark;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    padding-bottom: 4rem;
+    box-sizing: border-box;
+}
+
+.voice-header {
+    background: rgba(11, 11, 13, 0.8);
+    border-bottom: 1px solid $border-color;
+    padding: 1.2rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(10px);
+
+    .header-left {
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff, rgba(255,255,255,0.75));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            margin: 0.2rem 0 0 0;
+            font-size: 0.85rem;
+            color: $text-muted;
+        }
+    }
+
+    .header-right {
+        .back-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.5rem 1.2rem;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+        }
+    }
+}
+
+/* Dashboard Layout */
+.voice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.2fr;
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 2rem auto 0;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+
+    @media (max-width: 1024px) {
+        grid-template-columns: 100%;
+    }
+}
+
+.voice-card {
+    background: rgba(20, 20, 25, 0.6);
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+
+    &--span-2 {
+        grid-column: span 2;
+        @media (max-width: 1024px) {
+            grid-column: span 1;
+        }
+    }
+
+    &--span-3 {
+        grid-column: span 3;
+        @media (max-width: 1024px) {
+            grid-column: span 1;
+        }
+    }
+
+    h2 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin: 0 0 1.2rem 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid $border-color;
+        padding-bottom: 0.5rem;
+    }
+}
+
+/* Setup Config Card */
+.setup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: $text-muted;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select {
+            background: #1c1c24;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.6rem;
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+
+            &:focus {
+                border-color: $accent-red;
+            }
+        }
+    }
+
+    .form-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        padding: 0.5rem 0;
+
+        input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: $accent-red;
+        }
+
+        span {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.85);
+        }
+    }
+
+    .start-session-btn {
+        background: linear-gradient(135deg, $accent-purple, $accent-red);
+        border: none;
+        color: #fff;
+        padding: 0.8rem;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+
+        &:hover {
+            opacity: 0.9;
+        }
+
+        &:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+    }
+}
+
+/* Dashboard Score Gauges */
+.gauges-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    height: 100%;
+
+    @media (max-width: 600px) {
+        grid-template-columns: 100%;
+    }
+}
+
+.gauge-item {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid $border-color;
+    border-radius: 10px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+    &.readiness {
+        grid-column: span 2;
+        @media (max-width: 600px) {
+            grid-column: span 1;
+        }
+    }
+
+    h3 {
+        margin: 0 0 1rem 0;
+        font-size: 0.85rem;
+        color: $text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .radial-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+
+        svg {
+            transform: rotate(-90deg);
+        }
+
+        circle {
+            fill: none;
+            stroke-width: 10;
+        }
+
+        .track {
+            stroke: rgba(255,255,255,0.05);
+        }
+
+        .fill {
+            stroke: $accent-red;
+            stroke-linecap: round;
+            stroke-dasharray: 345;
+            transition: stroke-dashoffset 0.8s ease;
+        }
+
+        .value-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+    }
+
+    .badge-sub {
+        margin-top: 0.8rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: rgba(255,255,255,0.05);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+}
+
+/* Trends Progress points */
+.trend-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+
+    .trend-row {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid $border-color;
+        border-radius: 8px;
+        padding: 1rem;
+
+        .row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+
+            h4 {
+                margin: 0;
+                font-size: 0.9rem;
+                font-weight: 700;
+            }
+
+            span {
+                font-size: 0.75rem;
+                color: $text-muted;
+            }
+        }
+
+        .metrics-flex {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+
+            .metric-point {
+                display: flex;
+                flex-direction: column;
+                
+                .lbl {
+                    font-size: 0.72rem;
+                    color: $text-muted;
+                    text-transform: uppercase;
+                }
+
+                .val {
+                    font-size: 1.05rem;
+                    font-weight: 700;
+                    color: $accent-red;
+
+                    &.comm { color: #f1c40f; }
+                    &.tech { color: #2ecc71; }
+                }
+            }
+        }
+    }
+}
+
+/* Simulator Room Layout */
+.room-layout {
+    max-width: 900px;
+    margin: 2.5rem auto 0;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+}
+
+.simulator-card {
+    background: rgba(20, 20, 25, 0.7);
+    border: 1px solid $border-color;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.session-progress-bar {
+    .bar-text {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.82rem;
+        color: $text-muted;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+    }
+
+    .track {
+        height: 6px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 3px;
+        overflow: hidden;
+
+        .fill {
+            height: 100%;
+            background: linear-gradient(90deg, $accent-purple, $accent-red);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+    }
+}
+
+.speech-synth-card {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid $border-color;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    position: relative;
+
+    .ai-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, $accent-purple, $accent-red);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin: 0 auto 1rem;
+        box-shadow: 0 0 15px rgba(210,13,59,0.3);
+        
+        &.speaking {
+            animation: pulseWave 1.5s infinite ease-in-out;
+        }
+    }
+
+    .question-speech-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.5;
+        margin: 0 0 1.2rem 0;
+        color: #fff;
+    }
+
+    .speech-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+
+        .speed-slider {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: $text-muted;
+
+            input {
+                width: 100px;
+                accent-color: $accent-red;
+            }
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #fff;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+
+            &:hover {
+                background: rgba(255,255,255,0.08);
+            }
+        }
+    }
+}
+
+.recorder-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+
+    .mic-button-container {
+        position: relative;
+        width: 80px;
+        height: 80px;
+    }
+
+    .mic-btn {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(210, 13, 59, 0.1);
+        border: 2px solid $accent-red;
+        color: $accent-red;
+        font-size: 2rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        z-index: 2;
+        position: relative;
+
+        &:hover {
+            background: rgba(210,13,59,0.2);
+            transform: scale(1.02);
+        }
+
+        &.recording {
+            background: $accent-red;
+            color: #fff;
+            box-shadow: 0 0 25px rgba(210, 13, 59, 0.6);
+        }
+    }
+
+    .pulse-ring {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 2px solid $accent-red;
+        animation: recordingPulse 1.5s infinite linear;
+        opacity: 0;
+        z-index: 1;
+    }
+
+    .timer-display {
+        font-family: monospace;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #27ae60;
+            animation: spin 1s infinite alternate;
+        }
+    }
+}
+
+.transcript-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid $border-color;
+    border-radius: 10px;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+
+    h4 {
+        margin: 0;
+        font-size: 0.85rem;
+        color: $text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    textarea {
+        background: rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 6px;
+        color: #fff;
+        padding: 0.75rem;
+        font-size: 0.92rem;
+        min-height: 120px;
+        outline: none;
+        font-family: inherit;
+        resize: vertical;
+        line-height: 1.5;
+
+        &:focus {
+            border-color: $accent-red;
+        }
+    }
+}
+
+.action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    .row-left {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .btn {
+        border: none;
+        color: #fff;
+        padding: 0.6rem 1.2rem;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.2s;
+
+        &--secondary {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: $text-muted;
+            &:hover {
+                background: rgba(255,255,255,0.08);
+                color: #fff;
+            }
+        }
+
+        &--primary {
+            background: $accent-red;
+            &:hover {
+                background: darken($accent-red, 5%);
+            }
+            &:disabled {
+                background: #555;
+                cursor: not-allowed;
+            }
+        }
+    }
+}
+
+/* Session Summary View */
+.summary-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.summary-scores-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 1rem;
+
+    @media (max-width: 600px) {
+        grid-template-columns: 100%;
+    }
+
+    .score-box {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid $border-color;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+
+        &.overall {
+            background: rgba(210,13,59,0.04);
+            border-color: rgba(210,13,59,0.2);
+            .score { color: $accent-red; }
+        }
+        &.comm .score { color: #f1c40f; }
+        &.tech .score { color: #2ecc71; }
+
+        h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.8rem;
+            color: $text-muted;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .score {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+
+            span {
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: $text-muted;
+            }
+        }
+    }
+}
+
+.coach-card {
+    background: linear-gradient(135deg, rgba(138,43,226,0.1), rgba(210,13,59,0.1));
+    border: 1px solid rgba(210,13,59,0.2);
+    border-radius: 10px;
+    padding: 1.5rem;
+
+    h3 {
+        margin: 0 0 0.6rem 0;
+        font-size: 0.95rem;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    p {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: rgba(255,255,255,0.85);
+        font-style: italic;
+    }
+}
+
+.summary-bullets-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+
+    @media (max-width: 600px) {
+        grid-template-columns: 100%;
+    }
+
+    .bullet-card {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid $border-color;
+        border-radius: 10px;
+        padding: 1.25rem;
+
+        h3 {
+            margin: 0 0 0.8rem 0;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        &.strong h3 { color: #2ecc71; }
+        &.weak h3 { color: #e67e22; }
+
+        ul {
+            margin: 0;
+            padding-left: 1.2rem;
+            font-size: 0.88rem;
+            color: rgba(255,255,255,0.78);
+
+            li {
+                margin-bottom: 0.5rem;
+                line-height: 1.5;
+                &:last-child { margin-bottom: 0; }
+            }
+        }
+    }
+}
+
+.summary-stats-box {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid $border-color;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+
+    h3 {
+        margin: 0 0 1rem 0;
+        font-size: 0.85rem;
+        color: $text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stats-flex {
+        display: flex;
+        justify-content: space-between;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+
+            .lbl {
+                font-size: 0.72rem;
+                color: $text-muted;
+                text-transform: uppercase;
+            }
+
+            .val {
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: #fff;
+            }
+        }
+    }
+}
+
+/* Animations */
+@keyframes recordingPulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes pulseWave {
+    0% { box-shadow: 0 0 15px rgba(210,13,59,0.3); }
+    50% { box-shadow: 0 0 25px rgba(210,13,59,0.7); }
+    100% { box-shadow: 0 0 15px rgba(210,13,59,0.3); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

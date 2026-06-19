@@ -38,12 +38,16 @@ app.use(cors({
 const authRouter = require("./routes/auth.routes")
 const interviewRouter = require("./routes/interview.routes")
 const atsRouter = require("./routes/ats.routes")
+const codeRouter = require("./routes/code.routes")
+const voiceRouter = require("./routes/voiceSession.routes")
 
 
 /* using all the routes here */
 app.use("/api/auth", authRouter)
 app.use("/api/interview", interviewRouter)
 app.use("/api/ats", atsRouter)
+app.use("/api/code", codeRouter)
+app.use("/api/voice-session", voiceRouter)
 
 
 /* Global Error Handler Middleware */

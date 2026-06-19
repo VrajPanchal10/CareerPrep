@@ -306,11 +306,20 @@ const Interview = () => {
                 <div className="practice-mode-banner">
                     <div className="banner-info">
                         <h3>Mock Interview Practice Mode</h3>
-                        <p>Evaluate your response quality, verbal expression, and topic strengths. Start a live session to receive scores and heatmap diagnostics.</p>
+                        <p>Evaluate your response quality, verbal expression, and topic strengths. Start a live text session or a voice-to-voice simulation.</p>
                     </div>
-                    <button className="start-practice-btn" onClick={handleStartSession}>
-                        🎙 Start Mock Interview Session
-                    </button>
+                    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+                        <button className="start-practice-btn" onClick={handleStartSession}>
+                            ✍️ Start Text-Based Practice
+                        </button>
+                        <button 
+                            className="start-practice-btn" 
+                            style={{ background: "linear-gradient(135deg, #8a2be2, #d20d3b)" }}
+                            onClick={() => navigate(`/voice-interview?reportId=${report._id}`)}
+                        >
+                            🎙️ Start Voice Simulation
+                        </button>
+                    </div>
                 </div>
 
                 <div className='interview-layout'>

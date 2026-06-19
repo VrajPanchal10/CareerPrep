@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate } from 'react-router'
+import Navbar from '../../ats/components/Navbar'
 
 const Home = () => {
 
@@ -27,7 +28,10 @@ const Home = () => {
     }
 
     return (
-        <div className='home-page'>
+        <div style={{ minHeight: "100vh" }}>
+            <Navbar />
+            <div className='home-page'>
+
 
             {/* Page Header */}
             <header className='page-header'>
@@ -145,7 +149,8 @@ const Home = () => {
                 <a href='#'>Help Center</a>
             </footer>
         </div>
+    </div>
     )
 }
 
-export default Home
+export default Home

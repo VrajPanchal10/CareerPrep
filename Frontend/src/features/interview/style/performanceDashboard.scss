@@ -1,0 +1,256 @@
+.radar-chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.radar-chart-svg {
+    max-width: 100%;
+    
+    polygon {
+        transition: all 0.3s ease;
+    }
+
+    text {
+        font-family: inherit;
+        letter-spacing: 0.2px;
+    }
+}
+
+.progress-chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 1rem 0;
+}
+
+.progress-line-svg {
+    max-width: 100%;
+    
+    polyline {
+        filter: drop-shadow(0 2px 8px rgba(210, 13, 59, 0.3));
+    }
+}
+
+.session-selection-box {
+    margin-top: auto;
+    width: 100%;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: left;
+
+    label {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    select {
+        background: rgba(10, 10, 10, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        color: #ffffff;
+        padding: 0.5rem;
+        font-size: 0.88rem;
+        outline: none;
+        cursor: pointer;
+        width: 100%;
+        transition: border-color 0.2s ease;
+
+        &:focus {
+            border-color: #d20d3b;
+        }
+
+        option {
+            background: #1c1c1c;
+            color: #ffffff;
+        }
+    }
+}
+
+.heatmap-legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    .legend-item {
+        font-size: 0.78rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+
+        &::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        &.strong::before { background: #2ecc71; }
+        &.moderate::before { background: #f1c40f; }
+        &.weak::before { background: #e67e22; }
+        &.critical::before { background: #e74c3c; }
+    }
+}
+
+.breakdown-table-card {
+    .breakdown-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+
+        th, td {
+            padding: 0.9rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.88rem;
+        }
+
+        th {
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            color: rgba(255, 255, 255, 0.8);
+
+            &.bold {
+                font-weight: 600;
+                color: #ffffff;
+            }
+
+            .pill {
+                display: inline-block;
+                padding: 0.18rem 0.5rem;
+                border-radius: 4px;
+                font-size: 0.72rem;
+                font-weight: 700;
+
+                &.status--matched {
+                    background: rgba(46, 204, 113, 0.1);
+                    color: #2ecc71;
+                    border: 1px solid rgba(46, 204, 113, 0.2);
+                }
+
+                &.status--extra {
+                    background: rgba(241, 196, 15, 0.1);
+                    color: #f1c40f;
+                    border: 1px solid rgba(241, 196, 15, 0.2);
+                }
+
+                &.status--missing {
+                    background: rgba(231, 76, 60, 0.1);
+                    color: #e74c3c;
+                    border: 1px solid rgba(231, 76, 60, 0.2);
+                }
+            }
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+    }
+}
+
+.study-roadmap-card {
+    margin-bottom: 2rem;
+
+    .study-plan-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .study-topics-list {
+        h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.8rem;
+        }
+
+        .skills-badge-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+
+            .topic-suggest-badge {
+                font-size: 0.8rem;
+                font-weight: 700;
+                background: rgba(210, 13, 59, 0.08);
+                border: 1px solid rgba(210, 13, 59, 0.25);
+                color: #d20d3b;
+                padding: 0.35rem 0.8rem;
+                border-radius: 4px;
+            }
+        }
+    }
+
+    .improvement-roadmap-steps {
+        h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1.2rem;
+        }
+
+        .roadmap-topic-step {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+
+            h4 {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #ffffff;
+                margin-bottom: 0.8rem;
+            }
+
+            ul {
+                list-style: none;
+                padding-left: 0;
+
+                li {
+                    font-size: 0.88rem;
+                    color: rgba(255, 255, 255, 0.7);
+                    margin-bottom: 0.5rem;
+                    position: relative;
+                    padding-left: 1.25rem;
+
+                    &::before {
+                        content: "➔";
+                        position: absolute;
+                        left: 0;
+                        color: #d20d3b;
+                        font-size: 0.8rem;
+                        top: 1px;
+                    }
+
+                    &:last-child {
+                        margin-bottom: 0;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,24 +1,50 @@
 const express = require("express")
 const cookieParser = require("cookie-parser")
 const cors = require("cors")
+const helmet = require("helmet")
 
 const app = express()
 
+// 1. Hide Express fingerprinting (Phase 2)
+app.disable("x-powered-by")
+
+// 2. Set secure HTTP headers (Phase 2)
+app.use(helmet())
+
 app.use(express.json())
 app.use(cookieParser())
+
+// 4. Harden CORS configuration (Phase 3)
+const allowedOrigins = [
+    "http://localhost:5173",
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true); // Allow non-browser requests
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("CORS validation failed: Origin not allowed."));
+        }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"]
 }))
 
 /* require all the routes here */
 const authRouter = require("./routes/auth.routes")
 const interviewRouter = require("./routes/interview.routes")
+const atsRouter = require("./routes/ats.routes")
 
 
 /* using all the routes here */
 app.use("/api/auth", authRouter)
 app.use("/api/interview", interviewRouter)
+app.use("/api/ats", atsRouter)
+
 
 /* Global Error Handler Middleware */
 app.use((err, req, res, next) => {

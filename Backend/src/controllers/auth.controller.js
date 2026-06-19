@@ -2,6 +2,7 @@ const userModel = require("../models/user.model")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
+const { logSecurityEvent } = require("../middlewares/auth.middleware")
 
 /**
  * @name registerUserController
@@ -15,6 +16,12 @@ async function registerUserController(req, res) {
     if (!username || !email || !password) {
         return res.status(400).json({
             message: "Please provide username, email and password"
+        })
+    }
+
+    if (typeof username !== "string" || typeof email !== "string" || typeof password !== "string") {
+        return res.status(400).json({
+            message: "Invalid input formats. All fields must be strings."
         })
     }
 
@@ -42,7 +49,12 @@ async function registerUserController(req, res) {
         { expiresIn: "1d" }
     )
 
-    res.cookie("token", token)
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+    })
 
 
     res.status(201).json({
@@ -66,9 +78,22 @@ async function loginUserController(req, res) {
 
     const { email, password } = req.body
 
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
+        return res.status(400).json({
+            message: "Invalid email or password format"
+        })
+    }
+
     const user = await userModel.findOne({ email })
 
+    const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress
+
     if (!user) {
+        logSecurityEvent({
+            eventType: "FAILED_LOGIN",
+            ip: clientIp,
+            details: `Failed login attempt for email: ${email}`
+        });
         return res.status(400).json({
             message: "Invalid email or password"
         })
@@ -77,6 +102,11 @@ async function loginUserController(req, res) {
     const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
+        logSecurityEvent({
+            eventType: "FAILED_LOGIN",
+            ip: clientIp,
+            details: `Failed login attempt (incorrect password) for email: ${email}`
+        });
         return res.status(400).json({
             message: "Invalid email or password"
         })
@@ -88,7 +118,12 @@ async function loginUserController(req, res) {
         { expiresIn: "1d" }
     )
 
-    res.cookie("token", token)
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+    })
     res.status(200).json({
         message: "User loggedIn successfully.",
         user: {

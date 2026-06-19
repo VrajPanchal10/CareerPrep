@@ -1,6 +1,7 @@
-const pdfParse = require("pdf-parse")
 const { generateInterviewReport, generateResumePdf } = require("../services/ai.service")
+const { generatePerformancePdf } = require("../services/performancePdf.service")
 const interviewReportModel = require("../models/interviewReport.model")
+const upload = require("../middlewares/file.middleware")
 
 
 
@@ -13,19 +14,17 @@ async function generateInterViewReportController(req, res, next) {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: "Resume PDF file is required."
+                message: "Resume file is required."
             });
         }
 
         let resumeContentText = "";
         try {
-            const parsedPdf = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText();
-            resumeContentText = parsedPdf.text;
-        } catch (pdfErr) {
-            console.error("PDF Parsing Error:", pdfErr);
+            resumeContentText = await upload.parseDocumentText(req.file);
+        } catch (parseErr) {
             return res.status(400).json({
                 success: false,
-                message: "Failed to parse the uploaded resume PDF file. Please ensure it is a valid PDF document."
+                message: parseErr.message || "Unable to process document."
             });
         }
 
@@ -168,4 +167,33 @@ async function generateResumePdfController(req, res, next) {
     }
 }
 
-module.exports = { generateInterViewReportController, getInterviewReportByIdController, getAllInterviewReportsController, generateResumePdfController }
+/**
+ * @description Controller to download a candidate's complete Performance Report PDF.
+ */
+async function exportPerformancePdfController(req, res, next) {
+    try {
+        const { reportId } = req.params;
+        const pdfBuffer = await generatePerformancePdf({
+            reportId,
+            userId: req.user.id
+        });
+
+        res.set({
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename=performance_report_${reportId}.pdf`
+        });
+
+        return res.send(pdfBuffer);
+    } catch (error) {
+        console.error("Error in exportPerformancePdfController:", error);
+        next(error);
+    }
+}
+
+module.exports = { 
+    generateInterViewReportController, 
+    getInterviewReportByIdController, 
+    getAllInterviewReportsController, 
+    generateResumePdfController,
+    exportPerformancePdfController
+}

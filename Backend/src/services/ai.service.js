@@ -16,12 +16,14 @@ const interviewReportSchema = z.object({
     technicalQuestions: z.array(z.object({
         question: z.string().describe("The technical question can be asked in the interview"),
         intention: z.string().describe("The intention of interviewer behind asking this question"),
-        answer: z.string().describe("How to answer this question, what points to cover, what approach to take etc.")
+        answer: z.string().describe("How to answer this question, what points to cover, what approach to take etc."),
+        topic: z.string().describe("The specific topic this question relates to, e.g. React, JavaScript, Node.js, MongoDB, SQL, OOP, System Design, DSA, HTML, CSS, DBMS, Computer Networks, Behavioral, Communication, Problem Solving")
     })).describe("Technical questions that can be asked in the interview along with their intention and how to answer them"),
     behavioralQuestions: z.array(z.object({
         question: z.string().describe("The technical question can be asked in the interview"),
         intention: z.string().describe("The intention of interviewer behind asking this question"),
-        answer: z.string().describe("How to answer this question, what points to cover, what approach to take etc.")
+        answer: z.string().describe("How to answer this question, what points to cover, what approach to take etc."),
+        topic: z.string().describe("The specific topic this question relates to, e.g. React, JavaScript, Node.js, MongoDB, SQL, OOP, System Design, DSA, HTML, CSS, DBMS, Computer Networks, Behavioral, Communication, Problem Solving")
     })).describe("Behavioral questions that can be asked in the interview along with their intention and how to answer them"),
     skillGaps: z.array(z.object({
         skill: z.string().describe("The skill which the candidate is lacking"),
@@ -236,4 +238,111 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
     return pdfBuffer
 }
 
-module.exports = { generateInterviewReport, generateResumePdf }
+const atsReportSchema = z.object({
+    atsScore: z.number().describe("Overall ATS Match Score (0 to 100) indicating how well the resume matches the job description"),
+    breakdown: z.object({
+        technicalSkillsMatch: z.number().describe("Score between 0 and 100 for technical skills alignment"),
+        experienceMatch: z.number().describe("Score between 0 and 100 for experience level alignment"),
+        educationMatch: z.number().describe("Score between 0 and 100 for education requirements alignment"),
+        projectsMatch: z.number().describe("Score between 0 and 100 for project relevance"),
+        keywordMatch: z.number().describe("Score between 0 and 100 for keyword density and occurrence")
+    }).describe("Breakdown of the matching criteria"),
+    matchedKeywords: z.array(z.string()).describe("List of keywords from the job description that were found in the resume"),
+    missingKeywords: z.array(z.string()).describe("List of critical keywords from the job description that were missing in the resume"),
+    extraKeywords: z.array(z.string()).describe("List of keywords present in the resume that are irrelevant or extra for this job description"),
+    heatmap: z.array(z.object({
+        keyword: z.string().describe("The keyword analyzed"),
+        status: z.enum(["matched", "missing", "extra"]).describe("Analysis status"),
+        score: z.number().describe("Relevance score between 0 and 100 for this keyword")
+    })).describe("Detailed heatmap data mapping keywords from both JD and resume"),
+    comparisons: z.object({
+        skillComparisons: z.array(z.object({
+            skill: z.string().describe("Name of the skill"),
+            resumeStatus: z.string().describe("State in candidate resume (e.g. Intermediate, Proficient, Not mentioned)"),
+            jdRequirement: z.string().describe("Requirement mentioned in JD (e.g. Required, Preferred, Not specified)"),
+            gap: z.string().describe("Description of the gap between resume and JD")
+        })),
+        projectComparisons: z.array(z.object({
+            project: z.string().describe("Relevant project topic or candidate project"),
+            relevance: z.string().describe("How relevant it is to the job description"),
+            improvement: z.string().describe("How to describe or build a project to better fit the JD requirements")
+        })),
+        experienceComparisons: z.array(z.object({
+            role: z.string().describe("Role or position held"),
+            relevance: z.string().describe("Relevance rating/comment"),
+            improvement: z.string().describe("How to highlight accomplishments in this role to align with JD")
+        }))
+    }).describe("Resume vs Job Description side-by-side comparison arrays"),
+    recommendations: z.object({
+        missingSkills: z.array(z.string()).describe("Top missing skills to learn or list"),
+        resumeImprovements: z.array(z.string()).describe("Actionable resume improvements"),
+        atsOptimizationSuggestions: z.array(z.string()).describe("ATS specific formatting or keyword optimization tips"),
+        estimatedScoreImprovement: z.number().describe("Estimated percentage score increase after implementing suggestions"),
+        potentialScore: z.number().describe("Potential ATS score (current score + estimated improvement)")
+    }).describe("AI Recommendation Engine output"),
+    strengths: z.array(z.string()).describe("Top 3-5 strengths identified in the resume relative to the JD"),
+    weaknesses: z.array(z.string()).describe("Top 3-5 weaknesses or gaps identified in the resume relative to the JD")
+})
+
+async function generateAtsReport({ resume, jobDescription }) {
+    const prompt = `Perform a complete ATS keyword and match analysis comparing the candidate's resume with the job description.
+                        Resume: ${resume}
+                        Job Description: ${jobDescription}
+                        
+                        Evaluate keyword occurrences, construct an overall ATS match score, compute matching breakdown scores, identify matched, missing, and extra keywords, formulate a detailed heatmap array, create side-by-side comparison tables, and list strategic recommendations to optimize the resume.
+                        Make the response highly professional, constructive, and realistic.
+`
+
+    const response = await callGeminiWithRetryAndFallback({
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: atsReportSchema.toJSONSchema(),
+        }
+    })
+
+    try {
+        return JSON.parse(response.text)
+    } catch (err) {
+        throw new Error("Failed to parse Gemini response as valid JSON ATS Report schema")
+    }
+}
+
+const answerEvaluationSchema = z.object({
+    accuracy: z.number().describe("Score between 0 and 100 indicating accuracy of factual points mentioned in answer"),
+    depth: z.number().describe("Score between 0 and 100 representing technical depth and detailed conceptual coverage"),
+    clarity: z.number().describe("Score between 0 and 100 for grammatical flow, language structure, and explanation clarity"),
+    explanationQuality: z.number().describe("Score between 0 and 100 evaluating how well the question was answered with relevant points and concepts"),
+    overall: z.number().describe("Overall weighted score between 0 and 100"),
+    feedback: z.object({
+        strengths: z.array(z.string()).describe("List of strengths in the user's answer"),
+        weaknesses: z.array(z.string()).describe("List of gaps or details missing from the user's answer")
+    }).describe("AI feedback summarizing pros and cons of the answer")
+})
+
+async function evaluateUserAnswer({ question, intention, modelAnswer, userAnswer }) {
+    const prompt = `You are a technical interviewer evaluating a candidate's response to an interview question.
+                        Question: ${question}
+                        Interviewer's Intention: ${intention}
+                        Reference Model Answer: ${modelAnswer}
+                        Candidate's Answer: ${userAnswer}
+
+                        Provide a detailed, critical and fair evaluation matching the required schema. Focus on assessing explanation quality and technical accuracy instead of confidence. Keep the feedback practical and constructive.
+`
+
+    const response = await callGeminiWithRetryAndFallback({
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: answerEvaluationSchema.toJSONSchema(),
+        }
+    })
+
+    try {
+        return JSON.parse(response.text)
+    } catch (err) {
+        throw new Error("Failed to parse Gemini response as valid JSON Answer Evaluation schema")
+    }
+}
+
+module.exports = { generateInterviewReport, generateResumePdf, generateAtsReport, evaluateUserAnswer }

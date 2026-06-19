@@ -57,3 +57,61 @@ export const generateResumePdf = async ({ interviewReportId }) => {
 
     return response.data
 }
+
+
+/* --- MOCK INTERVIEW SESSIONS API --- */
+
+/**
+ * @description Start a new mock session for a specific interview plan report template.
+ */
+export const startInterviewSession = async ({ interviewReportId }) => {
+    const response = await api.post("/api/interview/session", { interviewReportId })
+    return response.data
+}
+
+/**
+ * @description Complete the current active interview session.
+ */
+export const completeInterviewSession = async ({ sessionId }) => {
+    const response = await api.post(`/api/interview/session/${sessionId}/complete`)
+    return response.data
+}
+
+/**
+ * @description Fetch a specific interview session details.
+ */
+export const getInterviewSessionById = async ({ sessionId }) => {
+    const response = await api.get(`/api/interview/session/${sessionId}`)
+    return response.data
+}
+
+/**
+ * @description Evaluate an answer for a specific question.
+ */
+export const evaluateInterviewAnswer = async ({ sessionId, questionType, questionIndex, userAnswer }) => {
+    const response = await api.post("/api/interview/evaluate-answer", {
+        sessionId,
+        questionType,
+        questionIndex,
+        userAnswer
+    })
+    return response.data
+}
+
+/**
+ * @description Fetch progress snapshots for a given interview report template.
+ */
+export const getInterviewProgress = async ({ reportId }) => {
+    const response = await api.get(`/api/interview/progress/${reportId}`)
+    return response.data
+}
+
+/**
+ * @description Export and download the PDF performance card report.
+ */
+export const downloadPerformancePdf = async ({ reportId }) => {
+    const response = await api.get(`/api/interview/report/pdf/${reportId}`, {
+        responseType: "blob"
+    })
+    return response.data
+}

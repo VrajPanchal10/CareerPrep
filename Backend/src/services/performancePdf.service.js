@@ -4,6 +4,7 @@ const atsReportModel = require("../models/atsReport.model");
 const userModel = require("../models/user.model");
 const puppeteer = require("puppeteer");
 const codingSubmissionModel = require("../models/codingSubmission.model");
+const repositoryInterviewResultModel = require("../models/repositoryInterviewResult.model");
 
 /**
  * @description Generates a polished 3-page Performance Report PDF buffer.
@@ -96,6 +97,11 @@ async function generatePerformancePdf({ reportId, userId }) {
 
     // Latest ATS scan for the user
     const atsReport = await atsReportModel.findOne({
+        user: userId
+    }).sort({ createdAt: -1 });
+
+    // Latest GitHub repository defense result for the user
+    const repoResult = await repositoryInterviewResultModel.findOne({
         user: userId
     }).sort({ createdAt: -1 });
 
@@ -446,8 +452,8 @@ async function generatePerformancePdf({ reportId, userId }) {
 
         <div class="page">
           <div class="header">
-            <div class="logo">AI Career<span>Prep</span></div>
-            <div class="report-title">Interview Performance Report</div>
+            <div class="logo">Career<span>Prep</span></div>
+            <div class="report-title">CareerPrep Performance Report</div>
           </div>
           
           <div class="candidate-info">
@@ -490,8 +496,8 @@ async function generatePerformancePdf({ reportId, userId }) {
 
         <div class="page">
           <div class="header">
-            <div class="logo">AI Career<span>Prep</span></div>
-            <div class="report-title">Interview Performance Report</div>
+            <div class="logo">Career<span>Prep</span></div>
+            <div class="report-title">CareerPrep Performance Report</div>
           </div>
           
           <div class="section-title">Topic Performance Breakdown</div>
@@ -518,8 +524,8 @@ async function generatePerformancePdf({ reportId, userId }) {
 
         <div class="page">
           <div class="header">
-            <div class="logo">AI Career<span>Prep</span></div>
-            <div class="report-title">Interview Performance Report</div>
+            <div class="logo">Career<span>Prep</span></div>
+            <div class="report-title">CareerPrep Performance Report</div>
           </div>
           
           <div class="section-title">AI Performance Review</div>
@@ -545,8 +551,8 @@ async function generatePerformancePdf({ reportId, userId }) {
         ${hasCodingStats ? `
         <div class="page">
           <div class="header">
-            <div class="logo">AI Career<span>Prep</span></div>
-            <div class="report-title">Interview Performance Report</div>
+            <div class="logo">Career<span>Prep</span></div>
+            <div class="report-title">CareerPrep Performance Report</div>
           </div>
           
           <div class="section-title">Coding Performance Summary</div>
@@ -584,6 +590,102 @@ async function generatePerformancePdf({ reportId, userId }) {
               <p style="font-size: 13px; color: #555555; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #d35400;">
                 ${weakTopicsStr}
               </p>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
+        ${repoResult ? `
+        <div class="page">
+          <div class="header">
+            <div class="logo">Career<span>Prep</span></div>
+            <div class="report-title">CareerPrep Project Mastery Report</div>
+          </div>
+          
+          <div class="section-title">GitHub Project Defense Performance</div>
+          <p class="summary-text" style="margin-bottom: 30px;">
+            Below is the architectural defense evaluation for your repository: <strong>${repoResult.repoName}</strong> (<a href="${repoResult.repoUrl}" target="_blank">${repoResult.repoUrl}</a>).
+          </p>
+
+          <div class="score-cards-container" style="margin-bottom: 40px; gap: 20px;">
+            <div class="score-card" style="background: #fafafa; border: 1px solid #e0e0e0; flex: 1; border-radius: 8px; padding: 25px; text-align: center;">
+              <h3>Project Mastery Score</h3>
+              <div class="score" style="color: #27ae60; font-size: 48px; font-weight: 800; line-height: 1;">${repoResult.scores.overallMasteryScore}<span>%</span></div>
+              <div class="status" style="color: #27ae60; margin-top: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
+                ${repoResult.scores.overallMasteryScore >= 80 ? "EXCELLENT MASTERY" : repoResult.scores.overallMasteryScore >= 60 ? "MODERATE MASTERY" : "BASIC UNDERSTANDING"}
+              </div>
+            </div>
+            <div class="score-card" style="background: #fafafa; border: 1px solid #e0e0e0; flex: 1; border-radius: 8px; padding: 25px; text-align: center;">
+              <h3>Repository Name</h3>
+              <div style="font-size: 18px; font-weight: 700; color: #111111; margin-top: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${repoResult.repoName}
+              </div>
+              <div class="status" style="margin-top: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Analyzed Project</div>
+            </div>
+          </div>
+
+          <div class="section-title">Project Defense Scores</div>
+          <div class="topic-list">
+            <div class="topic-item" style="margin-bottom: 15px;">
+              <div class="topic-name" style="font-size: 13px; font-weight: 700; color: #444444; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                <span>Architecture Score</span>
+                <span>${repoResult.scores.architectureScore}%</span>
+              </div>
+              <div class="progress-bar-track" style="height: 8px; background: #eeeeee; border-radius: 4px; overflow: hidden;">
+                <div class="progress-bar-fill" style="height: 100%; background: #d20d3b; border-radius: 4px; width: ${repoResult.scores.architectureScore}%;"></div>
+              </div>
+            </div>
+            <div class="topic-item" style="margin-bottom: 15px;">
+              <div class="topic-name" style="font-size: 13px; font-weight: 700; color: #444444; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                <span>Security Score</span>
+                <span>${repoResult.scores.securityScore}%</span>
+              </div>
+              <div class="progress-bar-track" style="height: 8px; background: #eeeeee; border-radius: 4px; overflow: hidden;">
+                <div class="progress-bar-fill" style="height: 100%; background: #d20d3b; border-radius: 4px; width: ${repoResult.scores.securityScore}%;"></div>
+              </div>
+            </div>
+            <div class="topic-item" style="margin-bottom: 15px;">
+              <div class="topic-name" style="font-size: 13px; font-weight: 700; color: #444444; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                <span>Database Score</span>
+                <span>${repoResult.scores.databaseScore}%</span>
+              </div>
+              <div class="progress-bar-track" style="height: 8px; background: #eeeeee; border-radius: 4px; overflow: hidden;">
+                <div class="progress-bar-fill" style="height: 100%; background: #d20d3b; border-radius: 4px; width: ${repoResult.scores.databaseScore}%;"></div>
+              </div>
+            </div>
+            <div class="topic-item" style="margin-bottom: 15px;">
+              <div class="topic-name" style="font-size: 13px; font-weight: 700; color: #444444; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                <span>API Design Score</span>
+                <span>${repoResult.scores.apiDesignScore}%</span>
+              </div>
+              <div class="progress-bar-track" style="height: 8px; background: #eeeeee; border-radius: 4px; overflow: hidden;">
+                <div class="progress-bar-fill" style="height: 100%; background: #d20d3b; border-radius: 4px; width: ${repoResult.scores.apiDesignScore}%;"></div>
+              </div>
+            </div>
+            <div class="topic-item" style="margin-bottom: 15px;">
+              <div class="topic-name" style="font-size: 13px; font-weight: 700; color: #444444; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                <span>Deployment Score</span>
+                <span>${repoResult.scores.deploymentScore}%</span>
+              </div>
+              <div class="progress-bar-track" style="height: 8px; background: #eeeeee; border-radius: 4px; overflow: hidden;">
+                <div class="progress-bar-fill" style="height: 100%; background: #d20d3b; border-radius: 4px; width: ${repoResult.scores.deploymentScore}%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title">Mastery Feedback</div>
+          <div class="heatmap-summary" style="display: flex; justify-content: space-between; gap: 30px;">
+            <div class="heatmap-column" style="flex: 1;">
+              <h4 style="color: #27ae60; font-size: 13px; text-transform: uppercase;">✓ Strengths</h4>
+              <ul class="heatmap-list strong" style="list-style: none; padding: 0; margin: 0;">
+                ${repoResult.feedback.strengths.slice(0, 3).map(s => `<li style="font-size: 13px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; color: #27ae60; font-weight: 600;">✓ ${s}</li>`).join('')}
+              </ul>
+            </div>
+            <div class="heatmap-column" style="flex: 1;">
+              <h4 style="color: #d35400; font-size: 13px; text-transform: uppercase;">⚠ Recommendations</h4>
+              <ul class="heatmap-list needs-improvement" style="list-style: none; padding: 0; margin: 0;">
+                ${repoResult.feedback.recommendations.slice(0, 3).map(r => `<li style="font-size: 13px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; color: #d35400; font-weight: 600;">⚠ ${r}</li>`).join('')}
+              </ul>
             </div>
           </div>
         </div>

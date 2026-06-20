@@ -40,6 +40,7 @@ const interviewRouter = require("./routes/interview.routes")
 const atsRouter = require("./routes/ats.routes")
 const codeRouter = require("./routes/code.routes")
 const voiceRouter = require("./routes/voiceSession.routes")
+const repositoryRouter = require("./routes/repositoryInterview.routes")
 
 
 /* using all the routes here */
@@ -48,6 +49,8 @@ app.use("/api/interview", interviewRouter)
 app.use("/api/ats", atsRouter)
 app.use("/api/code", codeRouter)
 app.use("/api/voice-session", voiceRouter)
+app.use("/api/github-defense", repositoryRouter)
+
 
 
 /* Global Error Handler Middleware */

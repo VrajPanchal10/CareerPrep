@@ -180,7 +180,7 @@ async function exportPerformancePdfController(req, res, next) {
 
         res.set({
             "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename=performance_report_${reportId}.pdf`
+            "Content-Disposition": `attachment; filename=CareerPrep_Performance_Report_${reportId}.pdf`
         });
 
         return res.send(pdfBuffer);

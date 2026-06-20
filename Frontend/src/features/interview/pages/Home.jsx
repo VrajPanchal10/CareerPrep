@@ -35,8 +35,8 @@ const Home = () => {
 
             {/* Page Header */}
             <header className='page-header'>
-                <h1>Create Your Custom <span className='highlight'>Interview Plan</span></h1>
-                <p>Let our AI analyze the job requirements and your unique profile to build a winning strategy.</p>
+                <h1>Prepare Smarter with <span className="highlight">CareerPrep</span></h1>
+                <p>AI-powered career preparation platform for resumes, interviews, coding assessments, and project defense practice.</p>
             </header>
 
             {/* Main Card */}
@@ -125,6 +125,47 @@ const Home = () => {
                     </button>
                 </div>
             </div>
+
+            {/* GitHub Project Defense Promo Banner */}
+            <section className="github-defense-promo" style={{
+                margin: "2rem auto",
+                maxWidth: "1000px",
+                background: "linear-gradient(135deg, rgba(210, 13, 59, 0.15), rgba(138, 43, 226, 0.15))",
+                border: "1px solid rgba(138, 43, 226, 0.25)",
+                borderRadius: "12px",
+                padding: "2rem",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "1.5rem",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.15)"
+            }}>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.2rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        🛡️ GitHub Project Defense Interview Simulator
+                    </h3>
+                    <p style={{ margin: 0, fontSize: "0.88rem", color: "rgba(255, 255, 255, 0.7)", lineHeight: "1.5" }}>
+                        Audit your public and private repositories, generate a codebase Health Report and Project Snapshot, and defend your architectural, security, and database decisions in professional mock simulations tailored directly to your code!
+                    </p>
+                </div>
+                <button 
+                    onClick={() => navigate("/github-defense")} 
+                    style={{
+                        background: "linear-gradient(135deg, #d20d3b, #8a2be2)",
+                        border: "none",
+                        color: "#fff",
+                        padding: "0.75rem 1.5rem",
+                        borderRadius: "6px",
+                        fontWeight: "700",
+                        fontSize: "0.9rem",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "opacity 0.2s"
+                    }}
+                >
+                    🛡️ Enter Project Defense
+                </button>
+            </section>
 
             {/* Voice Interview Banner Entry Point */}
             <section className="voice-interview-promo" style={{

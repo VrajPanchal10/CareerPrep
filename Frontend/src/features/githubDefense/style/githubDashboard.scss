@@ -1,0 +1,619 @@
+/* GitHub Repository-Based Interviewing SCSS styling */
+.git-dashboard-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+
+    .git-header {
+        text-align: center;
+        margin-bottom: 3rem;
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+
+            .highlight {
+                background: linear-gradient(135deg, #d20d3b, #8a2be2);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+        }
+
+        p {
+            font-size: 1.05rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    }
+
+    .git-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+
+        @media (min-width: 992px) {
+            grid-template-columns: 350px 1fr;
+        }
+    }
+
+    .git-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        &__highlight {
+            border-color: rgba(210, 13, 59, 0.3);
+        }
+    }
+
+    .analyze-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+
+            label {
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: rgba(255, 255, 255, 0.6);
+            }
+
+            input {
+                background: rgba(10, 10, 10, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                padding: 0.75rem;
+                color: #ffffff;
+                font-size: 0.9rem;
+                outline: none;
+                transition: border-color 0.2s;
+
+                &:focus {
+                    border-color: #d20d3b;
+                }
+            }
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #d20d3b, #ab0a30);
+            border: none;
+            color: #ffffff;
+            padding: 0.8rem;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+
+            &:hover {
+                opacity: 0.9;
+            }
+
+            &:active {
+                transform: scale(0.98);
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+    }
+
+    .repos-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+
+        .repo-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.05);
+                border-color: rgba(210, 13, 59, 0.3);
+            }
+
+            &--active {
+                background: rgba(210, 13, 59, 0.1);
+                border-color: #d20d3b;
+            }
+
+            .repo-info {
+                h4 {
+                    margin: 0;
+                    font-size: 0.95rem;
+                    font-weight: 600;
+                }
+                span {
+                    font-size: 0.75rem;
+                    color: rgba(255, 255, 255, 0.4);
+                }
+            }
+
+            .repo-arrow {
+                font-size: 0.8rem;
+                color: rgba(255, 255, 255, 0.3);
+            }
+        }
+    }
+
+    .dashboard-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .mastery-overview-card {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+
+        @media (min-width: 768px) {
+            grid-template-columns: auto 1fr;
+        }
+
+        .mastery-score-dial {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 180px;
+            margin: 0 auto;
+
+            .dial-svg {
+                position: relative;
+                width: 150px;
+                height: 150px;
+            }
+
+            .dial-score-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+
+                .num {
+                    font-size: 2.2rem;
+                    font-weight: 800;
+                    color: #ffffff;
+                }
+                .label {
+                    font-size: 0.7rem;
+                    color: rgba(255, 255, 255, 0.4);
+                    text-transform: uppercase;
+                    font-weight: 700;
+                    letter-spacing: 0.5px;
+                }
+            }
+        }
+
+        .mastery-details {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.5rem;
+
+            h3 {
+                margin: 0;
+                font-size: 1.4rem;
+                font-weight: 700;
+            }
+
+            .repo-url-link {
+                color: #d20d3b;
+                text-decoration: none;
+                font-size: 0.88rem;
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+
+            p {
+                margin: 0.8rem 0;
+                font-size: 0.92rem;
+                color: rgba(255, 255, 255, 0.7);
+                line-height: 1.5;
+            }
+
+            .cta-btn {
+                background: linear-gradient(135deg, #d20d3b, #8a2be2);
+                border: none;
+                color: #ffffff;
+                padding: 0.75rem 1.5rem;
+                border-radius: 6px;
+                font-weight: 700;
+                font-size: 0.9rem;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                width: fit-content;
+                transition: opacity 0.2s, transform 0.1s;
+
+                &:hover {
+                    opacity: 0.9;
+                }
+                &:active {
+                    transform: scale(0.97);
+                }
+            }
+        }
+    }
+
+    .scores-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 1.2rem;
+
+        .score-bar-card {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+
+            .score-title {
+                font-size: 0.78rem;
+                color: rgba(255, 255, 255, 0.5);
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .score-value {
+                font-size: 1.8rem;
+                font-weight: 800;
+                color: #d20d3b;
+            }
+
+            .bar-track {
+                width: 100%;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 2px;
+                overflow: hidden;
+
+                .bar-fill {
+                    height: 100%;
+                    background: #d20d3b;
+                    border-radius: 2px;
+                }
+            }
+        }
+    }
+
+    .audit-tabs {
+        display: flex;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.2rem;
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding: 0.5rem 0;
+            cursor: pointer;
+            white-space: nowrap;
+            position: relative;
+            transition: color 0.2s;
+
+            &:hover {
+                color: #ffffff;
+            }
+
+            &--active {
+                color: #d20d3b;
+
+                &::after {
+                    content: "";
+                    position: absolute;
+                    bottom: -1px;
+                    left: 0;
+                    width: 100%;
+                    height: 2px;
+                    background: #d20d3b;
+                }
+            }
+        }
+    }
+
+    .audit-tab-panel {
+        font-size: 0.92rem;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.6;
+
+        ul {
+            padding-left: 1.2rem;
+            margin: 0;
+
+            li {
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        .health-item {
+            margin-bottom: 1rem;
+
+            h4 {
+                margin: 0 0 0.3rem 0;
+                font-size: 0.95rem;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+            }
+
+            &.strength h4 { color: #2ecc71; }
+            &.weakness h4 { color: #e67e22; }
+            &.security h4 { color: #e74c3c; }
+            &.scalability h4 { color: #3498db; }
+        }
+    }
+}
+
+/* Immersive Chat Terminal styling for Interview Room */
+.git-room-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    min-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+
+    .terminal-container {
+        flex: 1;
+        background: #0d0d0d;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .terminal-header {
+        background: #151515;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        .dots {
+            display: flex;
+            gap: 6px;
+            span {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                display: inline-block;
+
+                &:nth-child(1) { background: #ff5f56; }
+                &:nth-child(2) { background: #ffbd2e; }
+                &:nth-child(3) { background: #27c93f; }
+            }
+        }
+
+        .title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .badge {
+            background: rgba(210, 13, 59, 0.15);
+            color: #d20d3b;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            border: 1px solid rgba(210, 13, 59, 0.3);
+        }
+    }
+
+    .terminal-body {
+        flex: 1;
+        padding: 1.5rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        max-height: 480px;
+
+        .log-entry {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+
+            .sender {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+
+                &.system { color: #888888; }
+                &.ai { color: #d20d3b; }
+                &.user { color: #3498db; }
+            }
+
+            .bubble {
+                background: rgba(255, 255, 255, 0.02);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                padding: 1rem;
+                font-size: 0.92rem;
+                line-height: 1.5;
+                white-space: pre-wrap;
+
+                &.ai-bubble {
+                    border-left: 3px solid #d20d3b;
+                    background: rgba(210, 13, 59, 0.02);
+                }
+
+                &.user-bubble {
+                    border-left: 3px solid #3498db;
+                    background: rgba(52, 152, 219, 0.02);
+                }
+            }
+        }
+    }
+
+    .evaluation-panel {
+        background: rgba(255, 255, 255, 0.02);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+
+        .scores-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+
+            .score-tag {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 6px;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+                span {
+                    font-weight: 700;
+                    color: #d20d3b;
+                    margin-left: 0.3rem;
+                }
+            }
+        }
+
+        .feedback-box {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+
+            @media (min-width: 768px) {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .list {
+                h5 {
+                    margin: 0 0 0.4rem 0;
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                }
+                ul {
+                    margin: 0;
+                    padding-left: 1.1rem;
+                    font-size: 0.82rem;
+                    color: rgba(255, 255, 255, 0.7);
+                    li { margin-bottom: 0.3rem; }
+                }
+
+                &.pros h5 { color: #2ecc71; }
+                &.cons h5 { color: #e67e22; }
+            }
+        }
+    }
+
+    .terminal-footer {
+        background: #121212;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+
+        .input-wrapper {
+            display: flex;
+            gap: 1rem;
+
+            textarea {
+                flex: 1;
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 6px;
+                padding: 0.75rem;
+                color: #ffffff;
+                font-size: 0.9rem;
+                height: 60px;
+                outline: none;
+                resize: none;
+                transition: border-color 0.2s;
+
+                &:focus {
+                    border-color: #d20d3b;
+                }
+            }
+
+            .send-btn {
+                background: #d20d3b;
+                border: none;
+                color: #ffffff;
+                padding: 0 1.5rem;
+                border-radius: 6px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: opacity 0.2s;
+                align-self: center;
+                height: 48px;
+
+                &:hover {
+                    opacity: 0.9;
+                }
+
+                &:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+            }
+        }
+    }
+}

@@ -11,6 +11,8 @@ import CodeWorkspace from "./features/code/pages/CodeWorkspace";
 import CodingDashboard from "./features/code/pages/CodingDashboard";
 import VoiceDashboard from "./features/voiceInterview/pages/VoiceDashboard";
 import VoiceInterviewRoom from "./features/voiceInterview/pages/VoiceInterviewRoom";
+import GithubDashboard from "./features/githubDefense/pages/GithubDashboard";
+import GithubInterviewRoom from "./features/githubDefense/pages/GithubInterviewRoom";
 
 
 export const router = createBrowserRouter([
@@ -57,6 +59,14 @@ export const router = createBrowserRouter([
     {
         path: "/voice-interview/room/:sessionId",
         element: <Protected><VoiceInterviewRoom /></Protected>
+    },
+    {
+        path: "/github-defense",
+        element: <Protected><GithubDashboard /></Protected>
+    },
+    {
+        path: "/github-defense/room/:sessionId",
+        element: <Protected><GithubInterviewRoom /></Protected>
     }
 ])
 

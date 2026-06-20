@@ -10,7 +10,7 @@ const Navbar = () => {
         <header className="main-navbar">
             <div className="navbar-logo">
                 <span className="logo-icon">🚀</span>
-                <span className="logo-text">AI Career<span className="highlight">Prep</span></span>
+                <span className="logo-text">Career<span className="highlight">Prep</span></span>
             </div>
             <nav className="navbar-links">
                 <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'nav-link--active' : ''}`} end>

@@ -1,3 +1,5 @@
+@use "sass:color";
+
 /* Monaco Coding Workspace Stylesheet */
 
 $accent-red: #d20d3b;
@@ -406,7 +408,7 @@ $text-muted: rgba(255, 255, 255, 0.6);
             transition: background 0.2s;
 
             &:hover {
-                background: darken($accent-red, 5%);
+                background: color.adjust($accent-red, $lightness: -5%);
             }
 
             &:disabled {

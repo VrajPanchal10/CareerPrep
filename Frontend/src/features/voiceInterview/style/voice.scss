@@ -1,3 +1,5 @@
+@use "sass:color";
+
 /* Voice Interview Simulator Stylesheet */
 
 $accent-red: #d20d3b;
@@ -605,7 +607,7 @@ $text-muted: rgba(255, 255, 255, 0.6);
         &--primary {
             background: $accent-red;
             &:hover {
-                background: darken($accent-red, 5%);
+                background: color.adjust($accent-red, $lightness: -5%);
             }
             &:disabled {
                 background: #555;

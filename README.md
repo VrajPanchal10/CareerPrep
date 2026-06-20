@@ -6,6 +6,13 @@
 
 ---
 
+## 🚀 Live Demo
+
+🔗 **[View Live Portfolio](https://careerprep-platform.vercel.app/)**
+
+---
+
+
 ## 🚀 Core Features
 
 - **ATS Resume Analysis & Feedback**: Scans resume text layers, compares with job descriptions, evaluates keyword densities, and recommends optimizations.

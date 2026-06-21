@@ -696,7 +696,9 @@ async function generatePerformancePdf({ reportId, userId }) {
     `;
 
     // 8. Launch Puppeteer page to print A4 PDF buffer
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+        args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    });
     const p = await browser.newPage();
     await p.setContent(htmlContent, { waitUntil: "networkidle0" });
     

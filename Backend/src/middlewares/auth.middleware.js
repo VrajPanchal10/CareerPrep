@@ -10,7 +10,7 @@ function logSecurityEvent({ eventType, ip, details }) {
 }
 
 async function authUser(req, res, next) {
-    const token = req.cookies.token
+    const token = req.cookies ? req.cookies.token : undefined
     const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress
 
     if (!token) {
@@ -74,19 +74,22 @@ const csrfProtection = (req, res, next) => {
 
     const allowedOrigins = [
         "http://localhost:5173",
+        "https://careerprep-platform.vercel.app",
         process.env.FRONTEND_URL
-    ].filter(Boolean);
+    ].map(o => o && o.replace(/\/$/, "")).filter(Boolean);
 
     let isAllowed = false;
 
     if (origin) {
-        if (allowedOrigins.includes(origin)) {
+        const normalizedOrigin = origin.replace(/\/$/, "");
+        if (allowedOrigins.includes(normalizedOrigin)) {
             isAllowed = true;
         }
     } else if (referer) {
         try {
             const refererUrl = new URL(referer);
-            if (allowedOrigins.includes(refererUrl.origin)) {
+            const normalizedRefererOrigin = refererUrl.origin.replace(/\/$/, "");
+            if (allowedOrigins.includes(normalizedRefererOrigin)) {
                 isAllowed = true;
             }
         } catch (e) {

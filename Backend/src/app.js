@@ -17,16 +17,18 @@ app.use(cookieParser())
 // 4. Harden CORS configuration (Phase 3)
 const allowedOrigins = [
     "http://localhost:5173",
+    "https://careerprep-platform.vercel.app",
     process.env.FRONTEND_URL
-].filter(Boolean);
+].map(o => o && o.replace(/\/$/, "")).filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true); // Allow non-browser requests
-        if (allowedOrigins.includes(origin)) {
+        const normalizedOrigin = origin.replace(/\/$/, "");
+        if (allowedOrigins.includes(normalizedOrigin)) {
             callback(null, true);
         } else {
-            callback(new Error("CORS validation failed: Origin not allowed."));
+            callback(null, false); // Reject cross-origin requests cleanly
         }
     },
     credentials: true,
@@ -56,12 +58,42 @@ app.use("/api/github-defense", repositoryRouter)
 /* Global Error Handler Middleware */
 app.use((err, req, res, next) => {
     console.error("Unhandled Error Caught by Global Middleware:", err);
-    res.status(err.status || 500).json({
+    
+    let statusCode = err.status || err.statusCode || 500;
+    let message = err.message || "An unexpected error occurred on the server.";
+    let errCode = err.code || "INTERNAL_SERVER_ERROR";
+    let details = process.env.NODE_ENV === "development" ? err.message : undefined;
+
+    // Handle Mongoose validation errors
+    if (err.name === "ValidationError") {
+        statusCode = 400;
+        errCode = "VALIDATION_ERROR";
+        message = Object.values(err.errors).map(e => e.message).join(", ");
+    } 
+    // Handle Mongoose duplicate key errors
+    else if (err.code === 11000) {
+        statusCode = 400;
+        errCode = "DUPLICATE_KEY_ERROR";
+        const field = Object.keys(err.keyValue || {}).join(", ") || "field";
+        message = `An account or record already exists with this ${field}.`;
+    }
+    // Handle JWT signature/expiration errors
+    else if (err.name === "JsonWebTokenError") {
+        statusCode = 401;
+        errCode = "INVALID_TOKEN";
+        message = "Invalid authentication token session.";
+    } else if (err.name === "TokenExpiredError") {
+        statusCode = 401;
+        errCode = "TOKEN_EXPIRED";
+        message = "Authentication token session has expired.";
+    }
+
+    res.status(statusCode).json({
         success: false,
-        message: "An unexpected error occurred on the server.",
+        message,
         error: {
-            code: err.code || "INTERNAL_SERVER_ERROR",
-            details: process.env.NODE_ENV === "development" ? err.message : undefined
+            code: errCode,
+            details
         }
     });
 });

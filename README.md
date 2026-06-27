@@ -8,7 +8,7 @@
 
 ## 🚀 Live Demo
 
-🔗 **[View Live Portfolio](https://careerprep-platform.vercel.app/)**
+🔗 **[View Live Demo](https://careerprep-platform.vercel.app/)**
 
 ---
 

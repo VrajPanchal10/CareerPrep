@@ -1,0 +1,42 @@
+.loading-button {
+    position: relative;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .loading-content-flex {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .button-content-flex {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .button-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .spinner-mini {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        display: inline-block;
+    }
+}

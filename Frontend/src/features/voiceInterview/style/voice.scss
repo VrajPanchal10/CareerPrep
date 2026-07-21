@@ -4,11 +4,11 @@
 
 $accent-red: #d20d3b;
 $accent-purple: #8a2be2;
-$bg-dark: #0b0b0d;
-$card-bg: rgba(255, 255, 255, 0.03);
-$border-color: rgba(255, 255, 255, 0.08);
-$text-light: #ffffff;
-$text-muted: rgba(255, 255, 255, 0.6);
+$bg-dark: var(--bg-dark, #0b0b0d);
+$card-bg: var(--card-bg-subtle, rgba(255, 255, 255, 0.03));
+$border-color: var(--border-color, rgba(255, 255, 255, 0.08));
+$text-light: var(--text-light, #ffffff);
+$text-muted: var(--text-muted-subtle, rgba(255, 255, 255, 0.6));
 
 .voice-dashboard-container, .voice-room-container {
     min-height: 100vh;
@@ -20,7 +20,7 @@ $text-muted: rgba(255, 255, 255, 0.6);
 }
 
 .voice-header {
-    background: rgba(11, 11, 13, 0.8);
+    background: var(--bg-page, rgba(11, 11, 13, 0.8));
     border-bottom: 1px solid $border-color;
     padding: 1.2rem 2rem;
     display: flex;
@@ -33,7 +33,7 @@ $text-muted: rgba(255, 255, 255, 0.6);
             font-size: 1.5rem;
             font-weight: 800;
             margin: 0;
-            background: linear-gradient(135deg, #ffffff, rgba(255,255,255,0.75));
+            background: linear-gradient(135deg, var(--text-light, #ffffff), var(--text-muted-subtle, rgba(255,255,255,0.75)));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -47,9 +47,9 @@ $text-muted: rgba(255, 255, 255, 0.6);
 
     .header-right {
         .back-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
+            background: var(--theme-button-bg, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--theme-button-border, rgba(255, 255, 255, 0.1));
+            color: var(--theme-text, #fff);
             padding: 0.5rem 1.2rem;
             border-radius: 6px;
             font-size: 0.88rem;
@@ -84,7 +84,7 @@ $text-muted: rgba(255, 255, 255, 0.6);
 }
 
 .voice-card {
-    background: rgba(20, 20, 25, 0.6);
+    background: var(--bg-card, rgba(20, 20, 25, 0.6));
     border: 1px solid $border-color;
     border-radius: 12px;
     padding: 1.5rem;
@@ -135,9 +135,9 @@ $text-muted: rgba(255, 255, 255, 0.6);
         }
 
         select {
-            background: #1c1c24;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
+            background: var(--theme-input-bg, #1c1c24);
+            border: 1px solid var(--theme-input-border, rgba(255, 255, 255, 0.1));
+            color: var(--theme-text, #fff);
             padding: 0.6rem;
             border-radius: 6px;
             outline: none;
@@ -167,7 +167,7 @@ $text-muted: rgba(255, 255, 255, 0.6);
         span {
             font-size: 0.9rem;
             font-weight: 600;
-            color: rgba(255,255,255,0.85);
+            color: var(--text-light, rgba(255,255,255,0.85));
         }
     }
 
@@ -518,7 +518,7 @@ $text-muted: rgba(255, 255, 255, 0.6);
         font-family: monospace;
         font-size: 1.1rem;
         font-weight: 700;
-        color: #fff;
+        color: var(--theme-text, #fff);
         display: flex;
         align-items: center;
         gap: 0.35rem;
@@ -534,7 +534,7 @@ $text-muted: rgba(255, 255, 255, 0.6);
 }
 
 .transcript-card {
-    background: rgba(255,255,255,0.02);
+    background: var(--card-bg-subtle, rgba(255,255,255,0.02));
     border: 1px solid $border-color;
     border-radius: 10px;
     padding: 1.2rem;
@@ -551,10 +551,10 @@ $text-muted: rgba(255, 255, 255, 0.6);
     }
 
     textarea {
-        background: rgba(0,0,0,0.2);
-        border: 1px solid rgba(255,255,255,0.08);
+        background: var(--theme-input-bg, rgba(0,0,0,0.2));
+        border: 1px solid var(--theme-input-border, rgba(255,255,255,0.08));
         border-radius: 6px;
-        color: #fff;
+        color: var(--theme-text, #fff);
         padding: 0.75rem;
         font-size: 0.92rem;
         min-height: 120px;
@@ -595,9 +595,9 @@ $text-muted: rgba(255, 255, 255, 0.6);
         transition: all 0.2s;
 
         &--secondary {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: $text-muted;
+            background: var(--theme-button-bg, rgba(255,255,255,0.05));
+            border: 1px solid var(--theme-button-border, rgba(255,255,255,0.1));
+            color: var(--text-muted-subtle, $text-muted);
             &:hover {
                 background: rgba(255,255,255,0.08);
                 color: #fff;

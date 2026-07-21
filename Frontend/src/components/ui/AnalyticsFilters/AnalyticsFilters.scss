@@ -1,0 +1,113 @@
+.analytics-filters {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #151a24;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+
+    &__title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.45);
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    &__options {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+        flex: 1;
+        justify-content: flex-start;
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            min-width: 130px;
+
+            label {
+                font-size: 0.65rem;
+                font-weight: 700;
+                color: rgba(255, 255, 255, 0.4);
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+            }
+
+            select {
+                background: #0f131c;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 4px;
+                color: #fff;
+                padding: 0.35rem 0.6rem;
+                font-size: 0.8rem;
+                font-weight: 500;
+                cursor: pointer;
+                outline: none;
+                transition: all 0.15s;
+
+                &:hover {
+                    border-color: rgba(255, 255, 255, 0.15);
+                }
+
+                &:focus {
+                    border-color: #d20d3b;
+                    box-shadow: 0 0 5px rgba(210, 13, 89, 0.15);
+                }
+            }
+        }
+
+        .reset-filters-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.35rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            align-self: flex-end;
+            height: 30px;
+            transition: all 0.15s;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.08);
+                border-color: rgba(255, 255, 255, 0.15);
+                color: #fff;
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .analytics-filters {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+
+        &__options {
+            width: 100%;
+            gap: 0.75rem;
+
+            .filter-group {
+                flex: 1;
+                min-width: calc(50% - 0.375rem);
+            }
+
+            .reset-filters-btn {
+                width: 100%;
+            }
+        }
+    }
+}

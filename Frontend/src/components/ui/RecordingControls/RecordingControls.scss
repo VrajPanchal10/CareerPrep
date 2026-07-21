@@ -1,0 +1,107 @@
+.recording-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+
+    .rec-btn-group {
+        display: flex;
+        gap: 0.75rem;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .rec-btn {
+        font-family: inherit;
+        font-size: 0.88rem;
+        font-weight: 700;
+        padding: 0.65rem 1.4rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        border: none;
+        outline: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        &:focus-visible {
+            box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.25);
+        }
+
+        &:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        &--start {
+            background: #d20d3b;
+            color: #fff;
+
+            &:hover:not(:disabled) {
+                background: #b10b32;
+                transform: translateY(-1px);
+            }
+        }
+
+        &--pause {
+            background: #f1c40f;
+            color: #0f131c;
+
+            &:hover:not(:disabled) {
+                background: #d4a307;
+                transform: translateY(-1px);
+            }
+        }
+
+        &--resume {
+            background: #2ecc71;
+            color: #0f131c;
+
+            &:hover:not(:disabled) {
+                background: #27ae60;
+                transform: translateY(-1px);
+            }
+        }
+
+        &--stop {
+            background: #e74c3c;
+            color: #fff;
+
+            &:hover:not(:disabled) {
+                background: #c0392b;
+                transform: translateY(-1px);
+            }
+        }
+    }
+
+    .rec-state-indicator {
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.45);
+
+        .state-label {
+            font-size: 0.72rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+
+            &--stopped {
+                background: rgba(255, 255, 255, 0.05);
+                color: rgba(255, 255, 255, 0.45);
+            }
+
+            &--recording {
+                background: rgba(231, 76, 60, 0.12);
+                color: #e74c3c;
+            }
+
+            &--paused {
+                background: rgba(241, 196, 15, 0.12);
+                color: #f1c40f;
+            }
+        }
+    }
+}

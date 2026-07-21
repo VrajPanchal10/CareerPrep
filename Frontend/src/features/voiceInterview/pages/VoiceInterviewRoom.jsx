@@ -1,330 +1,209 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import Navbar from "../../ats/components/Navbar";
-import {
-    fetchVoiceSession,
-    submitVoiceAnswer,
-    completeVoiceSession
-} from "../services/voice.api";
+import { useToast, VolumeIndicator, HelpTooltip } from "../../../components/ui";
+import { useInterviewSession } from "../hooks/useInterviewSession";
+import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
+import { usePlayback } from "../hooks/usePlayback";
+import { useTimer } from "../hooks/useTimer";
+import { useTranslation } from "../hooks/useTranslation";
+import { QuestionCard } from "../components/QuestionCard";
+import { AudioControls } from "../components/AudioControls";
+import { RecordingControls } from "../components/RecordingControls";
+import { TranscriptPanel } from "../components/TranscriptPanel";
+import { EvaluationPanel } from "../components/EvaluationPanel";
+import { SummaryScreen } from "../components/SummaryScreen";
+import { ProgressBar } from "../components/ProgressBar";
+import { VoiceInterviewErrorBoundary } from "../components/ErrorService";
 import "../style/voice.scss";
 
-// Native Speech Recognition Setup
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-const VoiceInterviewRoom = () => {
+const VoiceInterviewRoomContent = () => {
     const { sessionId } = useParams();
     const navigate = useNavigate();
+    const { addToast } = useToast();
+    const evaluationRef = useRef(null);
 
-    // Session State
-    const [session, setSession] = useState(null);
-    const [currentQIndex, setCurrentQIndex] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
-    const [errorMsg, setErrorMsg] = useState("");
-
-    // TTS Speech Synthesis State
-    const [isSpeaking, setIsSpeaking] = useState(false);
-    const [isPausedTTS, setIsPausedTTS] = useState(false);
-    const [speakingRate, setSpeakingRate] = useState(1.0); // 0.8 to 1.5
-
-    // STT Speech Recognition State
-    const [isRecording, setIsRecording] = useState(false);
+    // ── STATE MACHINE (Strictly replacing boolean chaos) ────────────────
+    const [status, setStatus] = useState("LOADING");
     const [transcript, setTranscript] = useState("");
-    const [recognitionSupported, setRecognitionSupported] = useState(false);
-    const recognitionRef = useRef(null);
+    
+    // ── SETTINGS ────────────────────────────────────────────────────────
+    const [speakingRate, setSpeakingRate] = useState(() => parseFloat(localStorage.getItem("careerprep_speaking_rate") || "1.0"));
+    const [voiceLanguage, setVoiceLanguage] = useState(() => localStorage.getItem("careerprep_voice_language") || "en-IN");
+    const [voiceSpeaker, setVoiceSpeaker] = useState(() => {
+        const saved = localStorage.getItem("careerprep_voice_speaker") || "shreya";
+        return saved === "meera" ? "shreya" : saved;
+    });
+    const [assistantVolume, setAssistantVolume] = useState(1.0);
 
-    // Response Time Tracking State
-    const [timer, setTimer] = useState(0);
-    const [timerActive, setTimerActive] = useState(false);
-    const timerIntervalRef = useRef(null);
+    const [suggestedTranscript, setSuggestedTranscript] = useState("");
+    const [showDiffDialog, setShowDiffDialog] = useState(false);
 
-    // Evaluation State for Current Question
-    const [currentEvaluation, setCurrentEvaluation] = useState(null);
-    const [isEvaluating, setIsEvaluating] = useState(false);
-    const [followUpNotification, setFollowUpNotification] = useState("");
-
-    // Summary Screen State
-    const [isSessionCompleted, setIsSessionCompleted] = useState(false);
-    const [summaryData, setSummaryData] = useState(null);
-    const [isCompleting, setIsCompleting] = useState(false);
-
-    // Initialize Room
-    useEffect(() => {
-        setRecognitionSupported(!!SpeechRecognition);
-        loadSessionDetails();
-
-        return () => {
-            // Cleanup speech and timers on unmount
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
+    // ── HOOKS ───────────────────────────────────────────────────────────
+    const {
+        session, currentQIndex, summaryData, resumeData,
+        handleResumeSession, handleDiscardResume, nextQuestion, submitAnswer, completeSession
+    } = useInterviewSession(sessionId, (loadedSession, nextIdx) => {
+        if (loadedSession.status === "completed") {
+            setStatus("COMPLETED");
+        } else {
+            setStatus("READY");
+            const existingTranscript = loadedSession.transcripts?.find(t => t.questionIndex === nextIdx);
+            if (existingTranscript) {
+                setTranscript(existingTranscript.transcriptText);
+                setStatus("EVALUATED");
             }
-            stopTimer();
-            if (recognitionRef.current) {
-                recognitionRef.current.abort();
-            }
-        };
-    }, []);
+        }
+    }, (error) => {
+        addToast(error, "error");
+        setStatus("IDLE");
+    });
 
-    // Load active question speech on change
+    const { displayQuestion, displayEvaluation, displayFollowUpNotification } = useTranslation(session, currentQIndex, voiceLanguage);
+    const { timer, startTimer, pauseTimer, resetTimer } = useTimer();
+
+    const { playQuestion, stopPlayback, pausePlayback, resumePlayback, preloadNext, currentAudio } = usePlayback();
+    
+    const { startRecording, pauseRecording, resumeRecording, stopRecordingResources, mediaStream, browserConfidence } = useSpeechRecognition({
+        voiceLanguage,
+        onStateChange: (recState) => {
+            if (recState === "QUESTION_READY") setStatus("READY");
+            else if (recState === "PAUSED_RECORDING") setStatus("PAUSED");
+            else setStatus(recState);
+        },
+        onError: (err) => {
+            addToast(err, "error");
+            setStatus("READY");
+        },
+        onTranscriptUpdate: setTranscript,
+        onRecordingStart: startTimer,
+        onBackendTranscriptReady: (backendSttText) => {
+            if (transcript.trim() !== backendSttText.trim() && backendSttText.trim().length > 0) {
+                setSuggestedTranscript(backendSttText);
+                setShowDiffDialog(true);
+            }
+        }
+    });
+
+    // ── LANGUAGE SYNC ───────────────────────────────────────────────────
     useEffect(() => {
-        if (session && session.questions && session.questions[currentQIndex]) {
-            const question = session.questions[currentQIndex];
-            
-            // Speak question automatically
+        localStorage.setItem("careerprep_voice_language", voiceLanguage);
+        stopPlayback();
+    }, [voiceLanguage, stopPlayback]);
+
+    // ── SPEAKER SYNC ────────────────────────────────────────────────────
+    useEffect(() => {
+        localStorage.setItem("careerprep_voice_speaker", voiceSpeaker);
+        stopPlayback();
+    }, [voiceSpeaker, stopPlayback]);
+
+    // ── SPEED SYNC ──────────────────────────────────────────────────────
+    useEffect(() => {
+        localStorage.setItem("careerprep_speaking_rate", speakingRate.toString());
+        stopPlayback();
+    }, [speakingRate, stopPlayback]);
+
+    // ── VOLUME SYNC ─────────────────────────────────────────────────────
+    useEffect(() => {
+        if (currentAudio) {
+            currentAudio.volume = assistantVolume;
+        }
+    }, [currentAudio, assistantVolume]);
+
+    // ── AUTO SCROLL TO EVALUATION ───────────────────────────────────────
+    useEffect(() => {
+        if (status === "EVALUATED" && evaluationRef.current) {
+            // Delay slightly to ensure layout has updated and DOM rendered
             setTimeout(() => {
-                handleSpeak(question.questionText);
-            }, 800);
-
-            // Reset evaluation, timer, transcript for this index
-            const existingTranscript = session.transcripts?.find(t => t.questionIndex === currentQIndex);
-            const existingEval = session.evaluations?.find(e => e.questionIndex === currentQIndex);
-            
-            setTranscript(existingTranscript ? existingTranscript.transcriptText : "");
-            setCurrentEvaluation(existingEval || null);
-            setTimer(existingTranscript ? existingTranscript.responseTime : 0);
-            setTimerActive(false);
-            setFollowUpNotification("");
+                evaluationRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 100);
         }
-    }, [currentQIndex, session]);
+    }, [status]);
 
-    const loadSessionDetails = async () => {
-        setIsLoading(true);
-        setErrorMsg("");
-        try {
-            const data = await fetchVoiceSession(sessionId);
-            if (data.success) {
-                setSession(data.session);
-                
-                // Set index to the first unanswered question
-                const answeredIndexes = data.session.evaluations.map(e => e.questionIndex);
-                let nextIdx = 0;
-                for (let i = 0; i < data.session.questions.length; i++) {
-                    if (!answeredIndexes.includes(i)) {
-                        nextIdx = i;
-                        break;
-                    }
-                }
-                
-                // If all answered but status is started, place at end
-                if (answeredIndexes.length === data.session.questions.length) {
-                    nextIdx = data.session.questions.length - 1;
-                }
-
-                setCurrentQIndex(nextIdx);
-
-                if (data.session.status === "completed") {
-                    setIsSessionCompleted(true);
-                    setSummaryData(data.session);
-                }
+    // ── ACTION HANDLERS ─────────────────────────────────────────────────
+    const onPlay = useCallback(() => {
+        setStatus("PROCESSING");
+        playQuestion({
+            text: displayQuestion,
+            voiceLanguage,
+            voiceSpeaker,
+            speakingRate,
+            currentQIndex,
+            onStart: () => setStatus("PLAYING"),
+            onEnd: () => setStatus("READY"),
+            onError: (err) => {
+                addToast(err, "error");
+                setStatus("READY");
             }
-        } catch (err) {
-            console.error("Failed to load session details", err);
-            setErrorMsg("Could not retrieve session details.");
-        } finally {
-            setIsLoading(false);
+        });
+    }, [displayQuestion, voiceLanguage, voiceSpeaker, speakingRate, currentQIndex, playQuestion, addToast]);
+
+    const onRecordStart = useCallback(() => {
+        setTranscript("");
+        resetTimer(0);
+        const nextQText = session?.questions[currentQIndex + 1]?.questionText;
+        if (nextQText) {
+            preloadNext({ nextQText, nextQIndex: currentQIndex + 1, voiceLanguage, voiceSpeaker, speakingRate });
         }
-    };
+        startRecording("");
+    }, [resetTimer, session, currentQIndex, startRecording, preloadNext, voiceLanguage, voiceSpeaker, speakingRate]);
 
-    // --- TEXT TO SPEECH (TTS) HELPERS ---
-    const handleSpeak = (text) => {
-        if (!window.speechSynthesis) return;
-
-        window.speechSynthesis.cancel(); // stop any current speech
-        setIsPausedTTS(false);
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = speakingRate;
-
-        utterance.onstart = () => {
-            setIsSpeaking(true);
-        };
-
-        utterance.onend = () => {
-            setIsSpeaking(false);
-            // Proactively trigger timer to start counting once question is read
-            startTimer();
-        };
-
-        utterance.onerror = (e) => {
-            console.error("Speech Synthesis Error:", e);
-            setIsSpeaking(false);
-        };
-
-        window.speechSynthesis.speak(utterance);
-    };
-
-    const handlePauseResumeTTS = () => {
-        if (!window.speechSynthesis) return;
-
-        if (isSpeaking) {
-            if (isPausedTTS) {
-                window.speechSynthesis.resume();
-                setIsPausedTTS(false);
-            } else {
-                window.speechSynthesis.pause();
-                setIsPausedTTS(true);
-            }
-        }
-    };
-
-    const handleStopTTS = () => {
-        if (window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-            setIsSpeaking(false);
-            setIsPausedTTS(false);
-        }
-    };
-
-    // --- RESPONSE TIMER HELPERS ---
-    const startTimer = () => {
-        stopTimer();
-        setTimerActive(true);
-        timerIntervalRef.current = setInterval(() => {
-            setTimer(prev => prev + 1);
-        }, 1000);
-    };
-
-    const stopTimer = () => {
-        setTimerActive(false);
-        if (timerIntervalRef.current) {
-            clearInterval(timerIntervalRef.current);
-            timerIntervalRef.current = null;
-        }
-    };
-
-    // --- SPEECH TO TEXT (STT) HELPERS ---
-    const startSpeechRecognition = () => {
-        if (!recognitionSupported) return;
-
-        // Ensure TTS is stopped when user starts speaking
-        handleStopTTS();
-
-        if (recognitionRef.current) {
-            recognitionRef.current.abort();
-        }
-
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = "en-US";
-
-        recognition.onstart = () => {
-            setIsRecording(true);
-            startTimer(); // ensure timer is ticking
-        };
-
-        recognition.onresult = (event) => {
-            let finalResult = "";
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    finalResult += event.results[i][0].transcript + " ";
-                }
-            }
-            if (finalResult) {
-                setTranscript(prev => (prev + " " + finalResult).trim());
-            }
-        };
-
-        recognition.onerror = (event) => {
-            console.error("Speech Recognition Error:", event.error);
-            if (event.error !== "no-speech") {
-                setIsRecording(false);
-            }
-        };
-
-        recognition.onend = () => {
-            setIsRecording(false);
-        };
-
-        recognitionRef.current = recognition;
-        recognition.start();
-    };
-
-    const stopSpeechRecognition = () => {
-        if (recognitionRef.current) {
-            recognitionRef.current.stop();
-        }
-        setIsRecording(false);
-        stopTimer();
-    };
-
-    // --- QUESTION SUBMISSION & COMPLETION ---
-    const handleSubmitAnswer = async () => {
+    const onSubmit = useCallback(async () => {
         if (!transcript || transcript.trim() === "") {
-            alert("Please record or type your answer before submitting.");
+            addToast("Please provide an answer before submitting.", "warning");
             return;
         }
+        
+        setStatus("PROCESSING");
+        stopRecordingResources();
+        pauseTimer();
 
-        // Stop recording and timers if active
-        if (isRecording) {
-            stopSpeechRecognition();
-        }
-        stopTimer();
-        handleStopTTS();
-
-        setIsEvaluating(true);
-        setErrorMsg("");
-        setFollowUpNotification("");
-        try {
-            const data = await submitVoiceAnswer({
-                sessionId,
-                questionIndex: currentQIndex,
-                userAnswer: transcript,
-                responseTime: timer
-            });
-
-            if (data.success) {
-                setCurrentEvaluation(data.evaluation);
-                
-                // Check if a follow-up was generated and injected
-                if (data.followUpQuestion) {
-                    setFollowUpNotification("💡 Follow-up: The AI interviewer has generated a contextual follow-up question based on your answer!");
-                    
-                    // Update local session object with the injected question
-                    setSession(data.session);
-                }
+        const result = await submitAnswer({ transcript, timer, voiceLanguage });
+        if (result.success) {
+            if (result.hasFollowUp) {
+                addToast("A contextual follow-up question was generated!", "info");
             }
-        } catch (err) {
-            console.error(err);
-            setErrorMsg(err.response?.data?.message || "Failed to submit and evaluate your verbal answer.");
-        } finally {
-            setIsEvaluating(false);
-        }
-    };
-
-    const handleNextQuestion = () => {
-        if (!session || !session.questions) return;
-        if (currentQIndex < session.questions.length - 1) {
-            setCurrentQIndex(prev => prev + 1);
-        }
-    };
-
-    const handleCompleteSession = async () => {
-        setIsCompleting(true);
-        setErrorMsg("");
-        handleStopTTS();
-        try {
-            const data = await completeVoiceSession(sessionId);
-            if (data.success) {
-                setSummaryData(data.session);
-                setIsSessionCompleted(true);
-                // Also update local session
-                setSession(data.session);
+            if (result.languageMismatchWarning) {
+                addToast(result.languageMismatchWarning, "warning");
             }
-        } catch (err) {
-            console.error(err);
-            setErrorMsg("Failed to complete voice practice session statistics.");
-        } finally {
-            setIsCompleting(false);
+            setStatus("EVALUATED");
+        } else {
+            addToast(result.error, "error");
+            setStatus("READY");
+        }
+    }, [transcript, stopRecordingResources, pauseTimer, submitAnswer, timer, voiceLanguage, addToast]);
+
+    const onNext = useCallback(() => {
+        if (nextQuestion()) {
+            setTranscript("");
+            resetTimer(0);
+            setStatus("READY");
+        }
+    }, [nextQuestion, resetTimer]);
+
+    const onComplete = useCallback(async () => {
+        setStatus("PROCESSING");
+        stopPlayback();
+        const res = await completeSession();
+        if (res.success) {
+            setStatus("COMPLETED");
+        } else {
+            addToast(res.error, "error");
+            setStatus("EVALUATED");
+        }
+    }, [completeSession, stopPlayback, addToast]);
+
+    const acceptResume = () => {
+        const res = handleResumeSession();
+        if (res) {
+            setTranscript(res.transcript || "");
+            resetTimer(res.timer || 0);
+            setStatus(res.interviewState || "READY");
         }
     };
 
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-    };
-
-    if (isLoading || !session) {
+    // ── RENDER ──────────────────────────────────────────────────────────
+    if (status === "LOADING" || status === "IDLE" || !session) {
         return (
             <div className="voice-room-container">
                 <Navbar />
@@ -335,353 +214,242 @@ const VoiceInterviewRoom = () => {
         );
     }
 
-    const currentQuestion = session.questions[currentQIndex];
-    const isLastQuestion = currentQIndex === session.questions.length - 1;
-
-    // RENDER SESSION SUMMARY SCREEN IF COMPLETED
-    if (isSessionCompleted && summaryData) {
-        const solvedFollowUps = summaryData.questions.filter(q => q.isFollowUp).length;
-        
+    if (resumeData) {
         return (
             <div className="voice-room-container">
                 <Navbar />
-                <header className="voice-header">
-                    <div className="header-left">
-                        <h1>Practice Session Summary Report</h1>
-                        <p>Detailed performance analytics, score averages, and career coach recommendation.</p>
+                <div className="resume-banner" style={{ textAlign: "center", padding: "2rem", color: "#fff" }}>
+                    <p>You have an unsaved session in progress.</p>
+                    <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "1rem" }}>
+                        <button onClick={acceptResume} className="btn btn--primary">Resume</button>
+                        <button onClick={handleDiscardResume} className="btn btn--secondary">Discard</button>
                     </div>
-                    <div className="header-right">
-                        <button onClick={() => navigate("/voice-interview")} className="back-btn" id="finishBackBtn">
-                            Exit Summary
-                        </button>
-                    </div>
-                </header>
-
-                <main className="room-layout" id="summaryView">
-                    <div className="simulator-card summary-layout">
-                        <h2 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#fff", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "0.5rem", margin: "0" }}>
-                            🎯 Mock Performance Dashboard Card
-                        </h2>
-
-                        {/* Scores Grid */}
-                        <div className="summary-scores-grid">
-                            <div className="score-box overall" id="summaryOverallBox">
-                                <h3>Overall Score</h3>
-                                <div className="score">{summaryData.overallScore}<span>%</span></div>
-                            </div>
-                            <div className="score-box comm" id="summaryCommBox">
-                                <h3>Communication</h3>
-                                <div className="score">{summaryData.communicationScore}<span>%</span></div>
-                            </div>
-                            <div className="score-box tech" id="summaryTechBox">
-                                <h3>Technical Accuracy</h3>
-                                <div className="score">{summaryData.technicalScore}<span>%</span></div>
-                            </div>
-                        </div>
-
-                        {/* Coach recommendation */}
-                        <div className="coach-card" id="summaryCoachCard">
-                            <h3>🗣️ AI Career Coach Strategic Advice</h3>
-                            <p>{summaryData.topRecommendation}</p>
-                        </div>
-
-                        {/* Strong/Weak bullet lists */}
-                        <div className="summary-bullets-grid">
-                            <div className="bullet-card strong" id="summaryStrongCard">
-                                <h3>✔️ Strong Topics</h3>
-                                <ul>
-                                    {summaryData.strongAreas?.map((area, idx) => <li key={idx}>{area}</li>)}
-                                    {(!summaryData.strongAreas || summaryData.strongAreas.length === 0) && <li>No specific topic mastered yet.</li>}
-                                </ul>
-                            </div>
-                            <div className="bullet-card weak" id="summaryWeakCard">
-                                <h3>⚠️ Needs Practice</h3>
-                                <ul>
-                                    {summaryData.weakAreas?.map((area, idx) => <li key={idx}>{area}</li>)}
-                                    {(!summaryData.weakAreas || summaryData.weakAreas.length === 0) && <li>No significant topic gaps found!</li>}
-                                </ul>
-                            </div>
-                        </div>
-
-                        {/* Session statistics */}
-                        <div className="summary-stats-box" id="summaryStatsBox">
-                            <h3>Session Statistics</h3>
-                            <div className="stats-flex">
-                                <div className="stat-item">
-                                    <span className="lbl">Difficulty</span>
-                                    <span className="val">{summaryData.difficulty}</span>
-                                </div>
-                                <div className="stat-item">
-                                    <span className="lbl">Questions Solved</span>
-                                    <span className="val">{summaryData.questions.length} total</span>
-                                </div>
-                                <div className="stat-item">
-                                    <span className="lbl">Follow-Ups Solved</span>
-                                    <span className="val">{solvedFollowUps} questions</span>
-                                </div>
-                                <div className="stat-item">
-                                    <span className="lbl">Avg Response Time</span>
-                                    <span className="val" id="summaryAvgResponseTime">{summaryData.averageResponseTime}s</span>
-                                </div>
-                                <div className="stat-item">
-                                    <span className="lbl">Total Speaking Time</span>
-                                    <span className="val">{formatTime(summaryData.totalDuration)}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{ textAlign: "center", marginTop: "1rem" }}>
-                            <button 
-                                onClick={() => navigate("/voice-interview")} 
-                                className="btn btn--primary"
-                                style={{ display: "inline-flex", background: "linear-gradient(135deg, #8a2be2, #d20d3b)", padding: "0.8rem 2.5rem" }}
-                            >
-                                Return to Voice Dashboard
-                            </button>
-                        </div>
-                    </div>
-                </main>
+                </div>
             </div>
         );
     }
 
+    if (status === "COMPLETED") {
+        return <SummaryScreen summaryData={summaryData} />;
+    }
+
+    const currentQ = session.questions[currentQIndex];
+
     return (
         <div className="voice-room-container">
             <Navbar />
-
             <header className="voice-header">
                 <div className="header-left">
-                    <h1 id="roomTitle">Verbal Simulator Workspace</h1>
-                    <p>Listen, speak, edit transcriptions, and view detailed evaluations. Fallback keyboard support included.</p>
+                    <h1>AI Technical Interview</h1>
+                    <p>Voice-enabled interactive session. Answer verbally for the best experience.</p>
                 </div>
                 <div className="header-right">
-                    <button 
-                        onClick={() => {
-                            if (window.confirm("Exit practice session? Unsaved progress will be lost.")) {
-                                navigate("/voice-interview");
-                            }
-                        }} 
-                        className="back-btn"
-                        id="exitRoomBtn"
-                    >
-                        Exit Session
+                    <button onClick={onComplete} className="back-btn" disabled={status === "PROCESSING"}>
+                        <i className="fi fi-rr-flag"></i> End Session
                     </button>
                 </div>
             </header>
 
-            {errorMsg && (
-                <div style={{ background: "rgba(192, 41, 43, 0.15)", border: "1px solid #c0392b", color: "#c0392b", margin: "1.5rem auto 0", maxWidth: "900px", padding: "0.75rem 1.2rem", borderRadius: "6px", fontSize: "0.88rem" }}>
-                    <strong>Error:</strong> {errorMsg}
-                </div>
-            )}
-
             <main className="room-layout">
+                {displayFollowUpNotification && (
+                    <div style={{ background: "rgba(241, 196, 15, 0.1)", border: "1px solid rgba(241, 196, 15, 0.3)", padding: "1rem", borderRadius: "8px", color: "#f1c40f", marginBottom: "1.5rem" }}>
+                        {displayFollowUpNotification}
+                    </div>
+                )}
+                
+                <ProgressBar currentQIndex={currentQIndex} totalQuestions={session.questions.length} />
+
                 <div className="simulator-card">
-                    {/* Session Progress Header */}
-                    <div className="session-progress-bar">
-                        <div className="bar-text">
-                            <span>Questions Practice Progress</span>
-                            <span>{currentQIndex + 1} of {session.questions.length}</span>
-                        </div>
-                        <div className="track">
-                            <div 
-                                className="fill" 
-                                style={{ width: `${((currentQIndex + 1) / session.questions.length) * 100}%` }} 
-                            />
-                        </div>
+                    <QuestionCard 
+                        questionIndex={currentQIndex}
+                        totalQuestions={session.questions.length}
+                        displayQuestion={displayQuestion}
+                        isFollowUp={currentQ.isFollowUp}
+                        intention={currentQ.intention}
+                        voiceLanguage={voiceLanguage}
+                        interviewState={status}
+                    >
+                        <AudioControls 
+                            interviewState={status}
+                            onPlay={onPlay}
+                            onPause={() => { pausePlayback(); setStatus("PAUSED"); }}
+                            onResume={() => { resumePlayback(); setStatus("PLAYING"); }}
+                            onStop={() => { stopPlayback(); setStatus("READY"); }}
+                            speakingRate={speakingRate}
+                            setSpeakingRate={setSpeakingRate}
+                            voiceLanguage={voiceLanguage}
+                            setVoiceLanguage={setVoiceLanguage}
+                            voiceSpeaker={voiceSpeaker}
+                            setVoiceSpeaker={setVoiceSpeaker}
+                        >
+                            <div style={{ 
+                                background: "rgba(0,0,0,0.4)", 
+                                border: "1px solid rgba(255,255,255,0.1)", 
+                                padding: "0.8rem 1rem", 
+                                borderRadius: "8px", 
+                                display: "flex", 
+                                flexDirection: "column",
+                                alignItems: "center", 
+                                gap: "0.5rem",
+                                width: "100%"
+                            }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "1rem", width: "100%", justifyContent: "center" }}>
+                                    <span style={{ fontSize: "0.75rem", textTransform: "uppercase", fontWeight: "bold", color: "rgba(255,255,255,0.5)" }}>Assistant Volume Slider:</span>
+                                    <input 
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.05"
+                                        value={assistantVolume}
+                                        onChange={(e) => setAssistantVolume(parseFloat(e.target.value))}
+                                        style={{ width: "100px", accentColor: "#d20d3b" }}
+                                    />
+                                    <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#fff" }}>{Math.round(assistantVolume * 100)}%</span>
+                                </div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "1rem", width: "100%", justifyContent: "center" }}>
+                                    <VolumeIndicator 
+                                        audio={currentAudio} 
+                                        isSpeaking={status === "PLAYING"} 
+                                        isPaused={status === "PAUSED"} 
+                                    />
+                                </div>
+                            </div>
+                        </AudioControls>
+                    </QuestionCard>
+
+
+
+                    <RecordingControls 
+                        interviewState={status}
+                        onRecordStart={onRecordStart}
+                        onRecordPause={() => { pauseRecording(); pauseTimer(); }}
+                        onRecordResume={() => { resumeRecording(transcript); startTimer(); }}
+                        onSubmit={onSubmit}
+                        timer={timer}
+                    />
+
+                    <TranscriptPanel 
+                        transcript={transcript}
+                        onTranscriptChange={setTranscript}
+                        interviewState={status}
+                        timer={timer}
+                        browserConfidence={browserConfidence}
+                        voiceLanguage={voiceLanguage}
+                    />
+
+                    <div ref={evaluationRef}>
+                        <EvaluationPanel evaluation={displayEvaluation} voiceLanguage={voiceLanguage} />
                     </div>
 
-                    {/* Question text reading - Speech Synthesis panel */}
-                    <div className="speech-synth-card" id="speechSynthesisPanel">
-                        <div className={`ai-avatar ${isSpeaking ? "speaking" : ""}`} id="aiAvatar">
-                            🤖
+                    <div className="action-row" style={{ marginTop: "2rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", gap: "1rem" }}>
+                            <button onClick={() => {}} className="btn btn--secondary" disabled={true} style={{ padding: "0.8rem 1.5rem" }}>
+                                <i className="fi fi-rr-arrow-left"></i> Prev
+                            </button>
                         </div>
-                        <h2 className="question-speech-text" id="questionText">
-                            {currentQuestion ? currentQuestion.questionText : "Loading question..."}
-                        </h2>
                         
-                        {/* Audio controls */}
-                        <div className="speech-controls">
-                            <div className="speed-slider">
-                                <span>Speed: {speakingRate}x</span>
-                                <input
-                                    type="range"
-                                    min="0.8"
-                                    max="1.5"
-                                    step="0.1"
-                                    value={speakingRate}
-                                    onChange={(e) => setSpeakingRate(parseFloat(e.target.value))}
-                                    id="rateSlider"
-                                />
-                            </div>
-                            <button onClick={() => currentQuestion && handleSpeak(currentQuestion.questionText)} className="control-btn" id="replaySpeechBtn">
-                                🔊 Replay Question
-                            </button>
-                            <button onClick={handlePauseResumeTTS} className="control-btn" id="pauseSpeechBtn">
-                                {isPausedTTS ? "▶️ Resume" : "⏸️ Pause"}
-                            </button>
-                            <button onClick={handleStopTTS} className="control-btn" id="stopSpeechBtn">
-                                ⏹️ Stop Audio
-                            </button>
-                        </div>
-                    </div>
+                        <style>{`
+                            @keyframes inline-spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        `}</style>
 
-                    {/* Follow-up question banner notifier */}
-                    {followUpNotification && (
-                        <div style={{ background: "rgba(138,43,226,0.12)", border: "1px solid rgba(138,43,226,0.3)", color: "#c193f5", padding: "0.8rem 1.2rem", borderRadius: "8px", fontSize: "0.88rem" }} id="followUpNotification">
-                            {followUpNotification}
-                        </div>
-                    )}
-
-                    {/* Recording section - Speech recognition triggers */}
-                    <div className="recorder-section" id="recorderSection">
-                        {!recognitionSupported && (
-                            <div style={{ background: "rgba(243,156,18,0.15)", border: "1px solid #f39c12", color: "#f39c12", padding: "0.5rem 1rem", borderRadius: "6px", fontSize: "0.8rem", textAlign: "center" }}>
-                                ⚠️ Web Speech API is not supported in this browser. Please use Google Chrome or type answers manually.
-                            </div>
-                        )}
-                        <div className="mic-button-container">
-                            <button
-                                onClick={isRecording ? stopSpeechRecognition : startSpeechRecognition}
-                                className={`mic-btn ${isRecording ? "recording" : ""}`}
-                                disabled={!recognitionSupported}
-                                id="micToggleBtn"
-                                title={isRecording ? "Stop Recording" : "Start Speaking Answer"}
-                            >
-                                🎙️
-                            </button>
-                            {isRecording && <div className="pulse-ring" />}
-                        </div>
-                        <div className="timer-display" id="timerDisplay">
-                            {isRecording && <span className="dot" />}
-                            <span>Time elapsed: {formatTime(timer)}</span>
-                        </div>
-                    </div>
-
-                    {/* Transcript edit panel (Manual answer fallback) */}
-                    <div className="transcript-card" id="transcriptCard">
-                        <h4>Spoken Transcription / Typed Answer</h4>
-                        <textarea
-                            value={transcript}
-                            onChange={(e) => setTranscript(e.target.value)}
-                            placeholder="Your transcribed text will populate here as you speak. Alternatively, you can type your answer manually here..."
-                            disabled={isEvaluating}
-                            id="transcriptTextarea"
-                        />
-                    </div>
-
-                    {/* Bottom Action Row */}
-                    <div className="action-row">
-                        <div className="row-left">
+                        {status === "PROCESSING" ? (
                             <button 
-                                onClick={() => setCurrentQIndex(idx => Math.max(0, idx - 1))} 
-                                disabled={currentQIndex === 0 || isEvaluating}
-                                className="btn btn--secondary"
-                                id="prevQuestionBtn"
-                            >
-                                ⬅ Prev
-                            </button>
-                            <button
-                                onClick={handleNextQuestion}
-                                disabled={currentQIndex >= session.questions.length - 1 || !currentEvaluation || isEvaluating}
-                                className="btn btn--secondary"
-                                id="nextQuestionBtn"
-                            >
-                                Next ➡
-                            </button>
-                        </div>
-
-                        {/* Submit solution or Complete interview */}
-                        <div style={{ display: "flex", gap: "0.75rem" }}>
-                            <button
-                                onClick={handleSubmitAnswer}
-                                disabled={isEvaluating || !transcript.trim()}
                                 className="btn btn--primary"
-                                id="submitAnswerBtn"
+                                disabled={true}
+                                style={{ padding: "0.8rem 2rem", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", cursor: "not-allowed", display: "flex", alignItems: "center", gap: "0.5rem" }}
                             >
-                                {isEvaluating ? (
-                                    <>
-                                        <span className="spinner" style={{ display: "inline-block", width: "12px", height: "12px", border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite", marginRight: "5px" }} />
-                                        Evaluating...
-                                    </>
-                                ) : (
-                                    <>✨ Submit Answer</>
-                                )}
+                                <span style={{
+                                    display: "inline-block",
+                                    width: "14px",
+                                    height: "14px",
+                                    border: "2px solid rgba(255,255,255,0.3)",
+                                    borderTop: "2px solid #fff",
+                                    borderRadius: "50%",
+                                    animation: "inline-spin 1s linear infinite"
+                                }} />
+                                Evaluating...
                             </button>
-
-                            {/* Show complete button only if they have evaluated at least one answer */}
-                            {session.evaluations.length > 0 && (
-                                <button
-                                    onClick={handleCompleteSession}
-                                    disabled={isCompleting || isEvaluating}
-                                    className="btn btn--primary"
-                                    style={{ background: "linear-gradient(135deg, #8a2be2, #d20d3b)" }}
-                                    id="completeSessionBtn"
-                                >
-                                    {isCompleting ? "Compiling Report..." : "🏁 Finish Interview"}
+                        ) : status === "EVALUATED" ? (
+                            currentQIndex >= session.questions.length - 1 ? (
+                                <button onClick={onComplete} className="btn btn--primary" style={{ padding: "0.8rem 2rem", background: "#27ae60", color: "#fff" }}>
+                                    <i className="fi fi-rr-check"></i> Finish Interview
                                 </button>
-                            )}
+                            ) : (
+                                <button onClick={onNext} className="btn btn--primary" style={{ padding: "0.8rem 2rem", background: "#2ecc71", color: "#fff" }}>
+                                    Next Question <i className="fi fi-rr-arrow-right"></i>
+                                </button>
+                            )
+                        ) : (
+                            <button 
+                                onClick={onSubmit}
+                                className="btn btn--primary"
+                                disabled={!transcript || transcript.trim() === ""}
+                                style={{ padding: "0.8rem 2rem", background: "#d20d3b", color: "#fff" }}
+                            >
+                                <i className="fi fi-rr-magic-wand"></i> Submit Answer
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Diff Dialog for Backend STT verification */}
+                {showDiffDialog && (
+                    <div style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0,0,0,0.8)",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                        padding: "1rem"
+                    }}>
+                        <div style={{
+                            background: "#181824",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: "12px",
+                            padding: "2rem",
+                            maxWidth: "600px",
+                            width: "100%"
+                        }}>
+                            <h3 style={{ color: "#fff", marginBottom: "1rem" }}>We detected a cleaner audio transcription</h3>
+                            
+                            <div style={{ background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "8px", color: "rgba(255,255,255,0.6)", fontSize: "0.9rem", marginBottom: "1rem" }}>
+                                <strong style={{ color: "#fff" }}>Your Edited Text:</strong>
+                                <p style={{ marginTop: "0.5rem" }}>{transcript}</p>
+                            </div>
+
+                            <div style={{ background: "rgba(39, 174, 96, 0.1)", border: "1px solid rgba(39, 174, 96, 0.3)", padding: "1rem", borderRadius: "8px", color: "#27ae60", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
+                                <strong>Suggested Text (Backend STT):</strong>
+                                <p style={{ marginTop: "0.5rem" }}>{suggestedTranscript}</p>
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
+                                <button onClick={() => setShowDiffDialog(false)} className="btn btn--secondary" style={{ padding: "0.6rem 1.2rem" }}>
+                                    Keep Mine
+                                </button>
+                                <button onClick={() => { setTranscript(suggestedTranscript); setShowDiffDialog(false); }} className="btn btn--primary" style={{ padding: "0.6rem 1.2rem", background: "#27ae60" }}>
+                                    Replace
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    {/* Question evaluation feedback bullets */}
-                    {currentEvaluation && (
-                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "1.5rem" }} id="questionEvaluationBox">
-                            <h3 style={{ margin: "0 0 1rem 0", fontSize: "1rem", color: "#fff", display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "0.5rem" }}>
-                                <span>📊 Answer Score Evaluation</span>
-                                <span style={{ color: currentEvaluation.overallScore >= 75 ? "#2ecc71" : currentEvaluation.overallScore >= 60 ? "#f1c40f" : "#e74c3c", fontWeight: "800" }}>
-                                    {currentEvaluation.overallScore}%
-                                </span>
-                            </h3>
-
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
-                                <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "6px", padding: "0.6rem", textAlign: "center" }}>
-                                    <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", display: "block" }}>Comm</span>
-                                    <span style={{ fontSize: "1.1rem", fontWeight: "700" }}>{currentEvaluation.communicationScore}%</span>
-                                </div>
-                                <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "6px", padding: "0.6rem", textAlign: "center" }}>
-                                    <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", display: "block" }}>Clarity</span>
-                                    <span style={{ fontSize: "1.1rem", fontWeight: "700" }}>{currentEvaluation.clarityScore}%</span>
-                                </div>
-                                <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "6px", padding: "0.6rem", textAlign: "center" }}>
-                                    <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", display: "block" }}>Technical</span>
-                                    <span style={{ fontSize: "1.1rem", fontWeight: "700" }}>{currentEvaluation.technicalScore}%</span>
-                                </div>
-                                <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "6px", padding: "0.6rem", textAlign: "center" }}>
-                                    <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", display: "block" }}>Explanation</span>
-                                    <span style={{ fontSize: "1.1rem", fontWeight: "700" }}>{currentEvaluation.explanationScore}%</span>
-                                </div>
-                            </div>
-
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-                                <div>
-                                    <h4 style={{ color: "#27ae60", margin: "0 0 0.5rem 0", fontSize: "0.85rem", textTransform: "uppercase" }}>✅ Key Strengths</h4>
-                                    <ul style={{ margin: 0, paddingLeft: "1.1rem", fontSize: "0.82rem", color: "rgba(255,255,255,0.7)" }}>
-                                        {currentEvaluation.strengths?.map((s, i) => <li key={i} style={{ marginBottom: "0.3rem" }}>{s}</li>)}
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h4 style={{ color: "#e67e22", margin: "0 0 0.5rem 0", fontSize: "0.85rem", textTransform: "uppercase" }}>⚠️ Gaps / Improvements</h4>
-                                    <ul style={{ margin: 0, paddingLeft: "1.1rem", fontSize: "0.82rem", color: "rgba(255,255,255,0.7)" }}>
-                                        {currentEvaluation.weaknesses?.map((w, i) => <li key={i} style={{ marginBottom: "0.3rem" }}>{w}</li>)}
-                                    </ul>
-                                </div>
-                            </div>
-
-                            {currentEvaluation.suggestions && currentEvaluation.suggestions.length > 0 && (
-                                <div style={{ marginTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "1rem" }}>
-                                    <h4 style={{ color: "#3498db", margin: "0 0 0.5rem 0", fontSize: "0.85rem", textTransform: "uppercase" }}>💡 Career Coach Recommendations</h4>
-                                    <ul style={{ margin: 0, paddingLeft: "1.1rem", fontSize: "0.82rem", color: "rgba(255,255,255,0.7)" }}>
-                                        {currentEvaluation.suggestions.map((s, i) => <li key={i} style={{ marginBottom: "0.3rem" }}>{s}</li>)}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+                )}
             </main>
         </div>
     );
 };
 
-export default VoiceInterviewRoom;
+export default function VoiceInterviewRoom() {
+    return (
+        <VoiceInterviewErrorBoundary>
+            <VoiceInterviewRoomContent />
+        </VoiceInterviewErrorBoundary>
+    );
+}

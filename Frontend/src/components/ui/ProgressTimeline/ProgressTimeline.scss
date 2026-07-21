@@ -1,0 +1,192 @@
+.progress-timeline-card {
+    background: #151a24;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    box-sizing: border-box;
+    width: 100%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 0.6rem;
+
+        h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-indicator {
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 600;
+        }
+    }
+
+    .timeline-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        .timeline-step {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            position: relative;
+
+            // Connector line
+            &:not(:last-child)::after {
+                content: "";
+                position: absolute;
+                left: 11px;
+                top: 24px;
+                bottom: -12px;
+                width: 2px;
+                background: rgba(255, 255, 255, 0.06);
+                z-index: 1;
+            }
+
+            .step-marker {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.74rem;
+                font-weight: 700;
+                z-index: 2;
+                box-sizing: border-box;
+                transition: all 0.2s;
+            }
+
+            .step-content {
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+
+                .step-label {
+                    font-size: 0.84rem;
+                    font-weight: 500;
+                    transition: color 0.2s;
+                }
+
+                .active-badge {
+                    font-size: 0.6rem;
+                    font-weight: 700;
+                    color: #fff;
+                    background: #d20d3b;
+                    padding: 0.05rem 0.3rem;
+                    border-radius: 3px;
+                }
+            }
+
+            &--pending {
+                .step-marker {
+                    background: #0f131c;
+                    border: 1.5px solid rgba(255, 255, 255, 0.08);
+                    color: rgba(255, 255, 255, 0.3);
+                }
+
+                .step-content {
+                    .step-label {
+                        color: rgba(255, 255, 255, 0.3);
+                    }
+                }
+            }
+
+            &--active {
+                .step-marker {
+                    background: rgba(210, 13, 59, 0.15);
+                    border: 1.5px solid #d20d3b;
+                    color: #d20d3b;
+                    box-shadow: 0 0 8px rgba(210, 13, 59, 0.3);
+                }
+
+                .step-content {
+                    .step-label {
+                        color: #fff;
+                        font-weight: 600;
+                    }
+                }
+
+                &:not(:last-child)::after {
+                    background: linear-gradient(to bottom, #d20d3b, rgba(255, 255, 255, 0.06));
+                }
+            }
+
+            &--completed {
+                .step-marker {
+                    background: #2ecc71;
+                    border: 1.5px solid #2ecc71;
+                    color: #0f131c;
+                }
+
+                .step-content {
+                    .step-label {
+                        color: rgba(255, 255, 255, 0.65);
+                        text-decoration: line-through;
+                        text-decoration-color: rgba(255, 255, 255, 0.15);
+                    }
+                }
+
+                &:not(:last-child)::after {
+                    background: #2ecc71;
+                }
+            }
+        }
+    }
+
+    .live-progress-details {
+        background: #0f131c;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        box-sizing: border-box;
+
+        .details-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            align-items: center;
+            gap: 1rem;
+
+            .details-label {
+                color: rgba(255, 255, 255, 0.4);
+                font-weight: 500;
+                flex-shrink: 0;
+            }
+
+            .details-val {
+                color: rgba(255, 255, 255, 0.8);
+                text-align: right;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+
+                &.bold {
+                    font-weight: 600;
+                }
+
+                &.code-val {
+                    font-family: 'Fira Code', 'Consolas', monospace;
+                    font-size: 0.74rem;
+                    color: #d20d3b;
+                }
+            }
+        }
+    }
+}

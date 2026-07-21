@@ -1,0 +1,109 @@
+.keyword-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: help;
+    transition: all 0.15s ease-in-out;
+    user-select: none;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+
+    &:hover, &:focus {
+        transform: translateY(-1.5px);
+        outline: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    &.status--matched {
+        background: rgba(46, 204, 113, 0.1);
+        border-color: rgba(46, 204, 113, 0.2);
+        color: #2ecc71;
+
+        &:hover, &:focus {
+            background: rgba(46, 204, 113, 0.15);
+            border-color: rgba(46, 204, 113, 0.35);
+        }
+    }
+
+    &.status--missing {
+        background: rgba(241, 196, 15, 0.08);
+        border-color: rgba(241, 196, 15, 0.18);
+        color: #f1c40f;
+
+        &:hover, &:focus {
+            background: rgba(241, 196, 15, 0.12);
+            border-color: rgba(241, 196, 15, 0.35);
+        }
+    }
+
+    &.status--extra {
+        background: rgba(142, 68, 173, 0.08);
+        border-color: rgba(142, 68, 173, 0.18);
+        color: #9b59b6;
+
+        &:hover, &:focus {
+            background: rgba(142, 68, 173, 0.12);
+            border-color: rgba(142, 68, 173, 0.35);
+        }
+    }
+
+    &__name {
+        letter-spacing: 0.2px;
+    }
+
+    &__score {
+        font-size: 0.72rem;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.05rem 0.3rem;
+        border-radius: 10px;
+        opacity: 0.8;
+    }
+
+    &--clickable {
+        cursor: pointer !important;
+
+        &:active {
+            transform: scale(0.95);
+        }
+    }
+}
+
+.keyword-tooltip {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.2rem;
+    max-width: 220px;
+    font-family: inherit;
+
+    &__title {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.45);
+
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+
+            &--matched { background: #2ecc71; }
+            &--missing { background: #f1c40f; }
+            &--extra { background: #9b59b6; }
+        }
+    }
+
+    &__desc {
+        margin: 0;
+        font-size: 0.76rem;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.85);
+    }
+}

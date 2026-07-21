@@ -1,17 +1,16 @@
-import axios from "axios";
-
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
-    withCredentials: true,
-});
+import api from "../../../utils/apiClient";
 
 /**
- * Trigger deep AI analysis on a public/private repo.
+ * Trigger deep AI analysis on a public/private repository.
+ * The GitHub access token is resolved server-side from the user's
+ * encrypted OAuth credentials — it is never sent from the client.
  */
-export const analyzeRepository = async ({ repoUrl, githubToken }) => {
+export const analyzeRepository = async ({ repoUrl, owner, repo, forceAnalysis }) => {
     const response = await api.post("/api/github-defense/analyze", {
         repoUrl,
-        githubToken
+        owner,
+        repo,
+        forceAnalysis
     });
     return response.data;
 };
@@ -43,7 +42,7 @@ export const submitRepoAnswer = async ({ sessionId, questionIndex, userAnswer })
  * Complete the interview, compile overall metrics and feedback.
  */
 export const completeRepoInterview = async (sessionId) => {
-    const response = await api.post(`/api/github-defense/interview/${sessionId}/complete`);
+    const response = await api.post(`/api/github-defense/interview/${sessionId}/complete`, {});
     return response.data;
 };
 

@@ -3,24 +3,69 @@ import { useParams, useNavigate, useSearchParams } from 'react-router'
 import Navbar from '../../ats/components/Navbar'
 import { useInterview } from '../hooks/useInterview.js'
 import '../style/performanceDashboard.scss'
+import { Tooltip, ScrollToTop, ErrorBoundary, PdfPreview, useToast, EmptyState } from '../../../components/ui'
 
 // ── Pure SVG Radar Chart Component ──────────────────────────────────────────
-const RadarChart = ({ scores = {} }) => {
-    const topics = ["React", "JavaScript", "Node.js", "MongoDB", "Authentication", "Communication", "DSA"];
+const RadarChart = ({ 
+    scores = {}, 
+    strongAreas = [], 
+    weakAreas = [], 
+    studyPlan = {}, 
+    answers = [] 
+}) => {
+    // 1. Sanitize and validate inputs defensively to prevent crashes
+    const sanitizedScores = {};
+    const sanitizedTopics = [];
+    
+    if (scores && typeof scores === 'object') {
+        Object.entries(scores).forEach(([key, val]) => {
+            if (key && typeof key === 'string' && !sanitizedTopics.includes(key)) {
+                const parsedVal = parseFloat(val);
+                sanitizedScores[key] = isNaN(parsedVal) ? 0 : Math.max(0, parsedVal);
+                sanitizedTopics.push(key);
+            }
+        });
+    }
+
+    // Default topics fallback
+    const topics = sanitizedTopics.length > 0 
+        ? sanitizedTopics 
+        : ["React", "JavaScript", "Node.js", "MongoDB", "Authentication", "Communication", "DSA"];
+    
+    const finalScores = {};
+    topics.forEach(t => {
+        finalScores[t] = sanitizedScores[t] !== undefined ? sanitizedScores[t] : 30;
+    });
+
     const width = 360;
     const height = 300;
     const cx = width / 2;
     const cy = height / 2;
     const R = 90; // max radius
-    const gridLevels = [20, 40, 60, 80, 100];
+
+    const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, content: null });
+
+    // 2. Dynamic Score Scaling: Calculate min/max bounds and grid steps dynamically
+    const scoreValues = Object.values(finalScores);
+    const minVal = scoreValues.length > 0 ? Math.max(0, Math.min(...scoreValues) - 10) : 0;
+    const maxVal = scoreValues.length > 0 ? Math.max(100, Math.max(...scoreValues) + 10) : 100;
+    const range = maxVal - minVal;
+
+    const gridLevels = [
+        minVal + range * 0.2,
+        minVal + range * 0.4,
+        minVal + range * 0.6,
+        minVal + range * 0.8,
+        maxVal
+    ];
     const angleStep = (2 * Math.PI) / topics.length;
 
     const candidatePoints = [];
     topics.forEach((topic, i) => {
         const angle = i * angleStep - Math.PI / 2;
-        // Map scores. Convert string keys in topicScores Map
-        const score = scores[topic] !== undefined ? scores[topic] : 30; // fallback to baseline
-        const radius = R * (score / 100);
+        const score = finalScores[topic];
+        const normalizedScore = range > 0 ? ((score - minVal) / range) * 100 : 30;
+        const radius = R * (normalizedScore / 100);
         const x = cx + radius * Math.cos(angle);
         const y = cy + radius * Math.sin(angle);
         candidatePoints.push(`${x},${y}`);
@@ -28,15 +73,71 @@ const RadarChart = ({ scores = {} }) => {
 
     const candidatePolygon = candidatePoints.join(" ");
 
+    // 3. Data-Driven Tooltips: Extract feedback directly from AI results
+    const handleNodeHover = (e, topic, score) => {
+        const svgElement = e.target.ownerSVGElement;
+        if (!svgElement) return;
+
+        const svgRect = svgElement.getBoundingClientRect();
+        const circleRect = e.target.getBoundingClientRect();
+
+        const x = circleRect.left - svgRect.left + circleRect.width / 2;
+        const y = circleRect.top - svgRect.top;
+
+        let performanceLevel = "Critical Review Required";
+        if (score >= 80) performanceLevel = "Strong Mastery";
+        else if (score >= 60) performanceLevel = "Needs Improvement";
+
+        // Filter actual answer feedback matching this topic
+        const matchedAnswers = answers.filter(
+            a => a.topic?.toLowerCase() === topic.toLowerCase()
+        );
+        const matchedStrengths = matchedAnswers.flatMap(a => a.evaluation?.feedback?.strengths || []);
+        const matchedWeaknesses = matchedAnswers.flatMap(a => a.evaluation?.feedback?.weaknesses || []);
+
+        const roadmapEntry = studyPlan.improvementRoadmap?.find(
+            r => r.topic?.toLowerCase() === topic.toLowerCase()
+        );
+
+        const tooltipContent = (
+            <div className="radar-tooltip-content">
+                <div className="tooltip-title">{topic}</div>
+                <div className="tooltip-score">{score}% Accuracy ({performanceLevel})</div>
+                <div className="tooltip-desc">
+                    <p style={{ margin: "4px 0" }}>
+                        <strong>Strength:</strong> {matchedStrengths.length > 0 ? matchedStrengths.slice(0, 2).join(". ") : `Competent baseline performance in ${topic}.`}
+                    </p>
+                    <p style={{ margin: "4px 0" }}>
+                        <strong>Weakness:</strong> {matchedWeaknesses.length > 0 ? matchedWeaknesses.slice(0, 2).join(". ") : `No critical gaps flagged for ${topic}.`}
+                    </p>
+                    <p style={{ margin: "4px 0" }}>
+                        <strong>Recommendation:</strong> {roadmapEntry?.steps?.length > 0 ? roadmapEntry.steps.join(". ") : `Continue practice mock runs to compile guidance.`}
+                    </p>
+                </div>
+            </div>
+        );
+
+        setTooltip({
+            visible: true,
+            x,
+            y,
+            content: tooltipContent
+        });
+    };
+
+    const handleNodeLeave = () => {
+        setTooltip({ visible: false, x: 0, y: 0, content: null });
+    };
+
     return (
-        <div className="radar-chart-container">
+        <div className="radar-chart-container" style={{ position: "relative" }}>
             <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="radar-chart-svg">
                 {/* Grid Rings */}
                 {gridLevels.map((level, idx) => {
                     const ringPoints = [];
                     topics.forEach((_, i) => {
                         const angle = i * angleStep - Math.PI / 2;
-                        const r = R * (level / 100);
+                        const r = range > 0 ? R * ((level - minVal) / range) : R * (level / 100);
                         const x = cx + r * Math.cos(angle);
                         const y = cy + r * Math.sin(angle);
                         ringPoints.push(`${x},${y}`);
@@ -48,6 +149,7 @@ const RadarChart = ({ scores = {} }) => {
                             fill="none" 
                             stroke="rgba(255, 255, 255, 0.08)" 
                             strokeWidth="1" 
+                            className="radar-ring"
                         />
                     );
                 })}
@@ -69,6 +171,7 @@ const RadarChart = ({ scores = {} }) => {
                                 y2={outerY} 
                                 stroke="rgba(255, 255, 255, 0.12)" 
                                 strokeWidth="1" 
+                                className="radar-axis"
                             />
                             <text 
                                 x={labelX} 
@@ -78,6 +181,7 @@ const RadarChart = ({ scores = {} }) => {
                                 fill="rgba(255,255,255,0.6)"
                                 fontSize="10"
                                 fontWeight="600"
+                                className="radar-label"
                             >
                                 {topic}
                             </text>
@@ -94,7 +198,43 @@ const RadarChart = ({ scores = {} }) => {
                         strokeWidth="2.5" 
                     />
                 )}
+
+                {/* Interactive circles/nodes over polygon endpoints */}
+                {topics.map((topic, i) => {
+                    const angle = i * angleStep - Math.PI / 2;
+                    const score = finalScores[topic];
+                    const normalizedScore = range > 0 ? ((score - minVal) / range) * 100 : 30;
+                    const radius = R * (normalizedScore / 100);
+                    const x = cx + radius * Math.cos(angle);
+                    const y = cy + radius * Math.sin(angle);
+                    return (
+                        <circle
+                            key={i}
+                            cx={x}
+                            cy={y}
+                            r="5"
+                            fill="#ffffff"
+                            stroke="#d20d3b"
+                            strokeWidth="2.5"
+                            style={{ cursor: "pointer", transition: "all 0.15s ease" }}
+                            onMouseEnter={(e) => handleNodeHover(e, topic, score)}
+                            onMouseLeave={handleNodeLeave}
+                            onFocus={(e) => handleNodeHover(e, topic, score)}
+                            onBlur={handleNodeLeave}
+                            tabIndex="0"
+                            aria-label={`${topic} score: ${score}%`}
+                        />
+                    );
+                })}
             </svg>
+
+            {/* Reusable Tooltip Component */}
+            <Tooltip 
+                visible={tooltip.visible} 
+                x={tooltip.x} 
+                y={tooltip.y} 
+                content={tooltip.content} 
+            />
         </div>
     );
 };
@@ -121,9 +261,9 @@ const ProgressLineChart = ({ progress = [] }) => {
         <div className="progress-chart-container">
             <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="progress-line-svg">
                 {/* Horizontal Grid Bounds */}
-                <line x1={padding} y1={padding} x2={width - padding} y2={padding} stroke="rgba(255,255,255,0.04)" />
-                <line x1={padding} y1={height/2} x2={width - padding} y2={height/2} stroke="rgba(255,255,255,0.04)" />
-                <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="rgba(255,255,255,0.08)" />
+                <line x1={padding} y1={padding} x2={width - padding} y2={padding} stroke="rgba(255,255,255,0.04)" className="chart-grid-light" />
+                <line x1={padding} y1={height/2} x2={width - padding} y2={height/2} stroke="rgba(255,255,255,0.04)" className="chart-grid-light" />
+                <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="rgba(255,255,255,0.08)" className="chart-grid-axis" />
 
                 {/* Line Path */}
                 <polyline 
@@ -141,10 +281,10 @@ const ProgressLineChart = ({ progress = [] }) => {
                     return (
                         <g key={idx}>
                             <circle cx={x} cy={y} r="5.5" fill="#ffffff" stroke="#d20d3b" strokeWidth="2.5" />
-                            <text x={x} y={parseFloat(y) - 12} textAnchor="middle" fill="#ffffff" fontSize="10.5" fontWeight="700">
+                            <text x={x} y={parseFloat(y) - 12} textAnchor="middle" fill="#ffffff" fontSize="10.5" fontWeight="700" className="chart-data-text">
                                 {snap.overallScore}%
                             </text>
-                            <text x={x} y={height - 8} textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="9">
+                            <text x={x} y={height - 8} textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="9" className="chart-label">
                                 Attempt {idx + 1}
                             </text>
                         </g>
@@ -163,8 +303,10 @@ const PerformanceDashboard = () => {
     const sessionId = searchParams.get("session")
 
     const { 
-        report, getReportById, activeSession, loadSessionById, progressHistory, loadProgress, loading, downloadReportPdf 
+        report, getReportById, activeSession, loadSessionById, progressHistory, loadProgress, loading, downloadReportPdf, generateReport 
     } = useInterview()
+    const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
+    const { addToast } = useToast()
 
     useEffect(() => {
         const loadDashboardData = async () => {
@@ -187,10 +329,21 @@ const PerformanceDashboard = () => {
         return (
             <div className="ats-app-container">
                 <Navbar />
-                <main className='loading-screen-ats'>
-                    <div className="spinner"></div>
-                    <h1>Loading preparation stats dashboard...</h1>
-                </main>
+                <div className="ats-dashboard-page">
+                    <header className="dashboard-header-ats">
+                        <div className="skeleton-line" style={{ height: "32px", width: "350px", background: "var(--theme-border, rgba(255,255,255,0.06))", borderRadius: "4px", marginBottom: "0.5rem" }} />
+                        <div className="skeleton-line" style={{ height: "16px", width: "550px", background: "var(--theme-border, rgba(255,255,255,0.03))", borderRadius: "4px" }} />
+                    </header>
+                    <div className="dashboard-grid-main">
+                        <div className="ats-metric-card score-panel skeleton-card-pulse" style={{ height: "350px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+                            <div className="skeleton-circle" style={{ height: "130px", width: "130px", borderRadius: "50%", background: "var(--theme-border, rgba(255,255,255,0.05))", marginBottom: "1.5rem" }} />
+                            <div className="skeleton-line" style={{ height: "16px", width: "60%", background: "var(--theme-border, rgba(255,255,255,0.05))", borderRadius: "4px" }} />
+                        </div>
+                        <div className="ats-metric-card radar-panel skeleton-card-pulse" style={{ height: "350px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                            <div className="skeleton-line" style={{ height: "200px", width: "200px", borderRadius: "8px", background: "var(--theme-border, rgba(255,255,255,0.04))" }} />
+                        </div>
+                    </div>
+                </div>
             </div>
         )
     }
@@ -203,15 +356,14 @@ const PerformanceDashboard = () => {
                     <button className="back-btn" onClick={() => navigate(`/interview/${interviewId}`)}>
                         ⬅ Back to Preparation Plan
                     </button>
-                    <div className="ats-metric-card text-center" style={{ padding: "4rem 2rem", textAlign: "center" }}>
-                        <h2>No Completed Mock Practice Sessions Found</h2>
-                        <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: "2rem" }}>
-                            You need to start and complete a mock interview practice session first to compile weakness analytics and topic heatmaps.
-                        </p>
-                        <button className="complete-session-btn" style={{ padding: "0.8rem 2rem" }} onClick={() => navigate(`/interview/${interviewId}`)}>
-                            🎙 Start Session Now
-                        </button>
-                    </div>
+                    <EmptyState 
+                        title="No Completed Mock Practice Sessions Found"
+                        description="You need to start and complete a mock interview practice session first to compile weakness analytics and topic heatmaps."
+                        primaryAction={{
+                            label: "🎙 Start Session Now",
+                            onClick: () => navigate(`/interview/${interviewId}`)
+                        }}
+                    />
                 </div>
             </div>
         )
@@ -235,8 +387,9 @@ const PerformanceDashboard = () => {
     const readinessColorClass = overallScore >= 80 ? 'high' : overallScore >= 60 ? 'mid' : 'low'
 
     return (
-        <div className="ats-app-container">
-            <Navbar />
+        <ErrorBoundary>
+            <div className="ats-app-container">
+                <Navbar />
             <div className="ats-dashboard-page">
                 {/* Back Link */}
                 <button className="back-btn" onClick={() => navigate(`/interview/${interviewId}`)}>
@@ -250,12 +403,12 @@ const PerformanceDashboard = () => {
                         <p className="subtitle">Mock Interview Session Attempts analysis, Skill Radar mapping, and AI study guidelines.</p>
                     </div>
                     <button 
-                        onClick={() => downloadReportPdf(interviewId)}
+                        onClick={() => setIsPdfPreviewOpen(true)}
                         className="button primary-button"
                         style={{ margin: 0, padding: "0.6rem 1.25rem", borderRadius: "8px", background: "#10b981", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}
                     >
                         <svg height={"0.9rem"} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
-                        Download Report
+                        View PDF Report
                     </button>
                 </header>
 
@@ -305,7 +458,15 @@ const PerformanceDashboard = () => {
                     {/* Skill Radar Chart Card */}
                     <div className="ats-metric-card radar-panel">
                         <h2>Skills Radar Matrix</h2>
-                        <RadarChart scores={normalizedTopicScores} />
+                        <ErrorBoundary>
+                            <RadarChart 
+                                scores={normalizedTopicScores} 
+                                strongAreas={strongAreas}
+                                weakAreas={weakAreas}
+                                studyPlan={studyPlan}
+                                answers={activeSession.answers || []}
+                            />
+                        </ErrorBoundary>
                     </div>
 
                 </div>
@@ -323,7 +484,7 @@ const PerformanceDashboard = () => {
                     </div>
 
                     <div className="heatmap-grid">
-                        {heatmapData.length > 0 ? (
+                        {heatmapData && heatmapData.length > 0 ? (
                             heatmapData.map((item, idx) => (
                                 <div key={idx} className={`heatmap-item status--${item.status}`}>
                                     <span className="keyword-name">{item.topic}</span>
@@ -331,7 +492,10 @@ const PerformanceDashboard = () => {
                                 </div>
                             ))
                         ) : (
-                            <p className="no-keywords">No heatmap scores aggregated yet.</p>
+                            <EmptyState 
+                                title="No Topic Heatmap Data Available"
+                                description="Complete mock questions in this practice run to compile weakness analytics."
+                            />
                         )}
                     </div>
                 </div>
@@ -369,7 +533,9 @@ const PerformanceDashboard = () => {
                     {/* Progress Chart */}
                     <div className="ats-metric-card progress-chart-card">
                         <h2>Session Score Growth path</h2>
-                        <ProgressLineChart progress={progressHistory} />
+                        <ErrorBoundary>
+                            <ProgressLineChart progress={progressHistory} />
+                        </ErrorBoundary>
                     </div>
 
                 </div>
@@ -437,8 +603,29 @@ const PerformanceDashboard = () => {
                     )}
                 </div>
 
+                {isPdfPreviewOpen && (
+                    <PdfPreview 
+                        reportId={interviewId} 
+                        onClose={() => setIsPdfPreviewOpen(false)}
+                        onRegenerate={async () => {
+                            if (!report) return;
+                            addToast("Regenerating AI performance card report...", "info");
+                            const data = await generateReport({
+                                jobDescription: report.jobDescription,
+                                selfDescription: report.selfDescription,
+                                resumeText: report.resume
+                            });
+                            if (data && data._id) {
+                                addToast("New report compiled successfully!", "success");
+                                navigate(`/interview/${data._id}/dashboard`);
+                            }
+                        }}
+                    />
+                )}
+                <ScrollToTop />
             </div>
         </div>
+    </ErrorBoundary>
     )
 }
 

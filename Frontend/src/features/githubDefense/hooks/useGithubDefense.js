@@ -29,15 +29,15 @@ export const useGithubDefense = () => {
         }
     }, []);
 
-    const triggerAnalysis = useCallback(async ({ repoUrl, githubToken }) => {
+    const triggerAnalysis = useCallback(async ({ repoUrl, owner, repo, forceAnalysis }) => {
         setLoading(true);
         setError(null);
         try {
-            const data = await analyzeRepository({ repoUrl, githubToken });
+            const data = await analyzeRepository({ repoUrl, owner, repo, forceAnalysis });
             await loadDashboard(); // refresh
             return data.analysis;
         } catch (err) {
-            const msg = err.response?.data?.message || "Repository analysis failed.";
+            const msg = err.userMessage || err.response?.data?.message || "Repository analysis failed.";
             setError(msg);
             throw new Error(msg);
         } finally {

@@ -1,9 +1,4 @@
-import axios from "axios";
-
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
-    withCredentials: true,
-});
+import api from "../../../utils/apiClient";
 
 /**
  * Start a new verbal mock session.
@@ -19,15 +14,47 @@ export const startVoiceSession = async ({ interviewReportId, difficulty, enableF
 };
 
 /**
+ * Upload audio file for transcription via Sarvam STT.
+ * @param {FormData} formData
+ */
+export const transcribeVoiceAudio = async (formData) => {
+    const response = await api.post("/api/voice-session/transcribe", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data"
+        }
+    });
+    return response.data;
+};
+
+/**
+ * Request speech synthesis via Sarvam TTS.
+ * @param {Object} payload { text, languageCode, speaker }
+ */
+export const synthesizeSpeech = async ({ text, languageCode, speaker, gender, speed }, options = {}) => {
+    const response = await api.post("/api/voice-session/speak", {
+        text,
+        languageCode,
+        speaker,
+        gender,
+        speed
+    }, {
+        signal: options.signal,
+        ...options
+    });
+    return response.data;
+};
+
+/**
  * Submit spoken transcript for AI grading.
  * @param {Object} payload { sessionId, questionIndex, userAnswer, responseTime }
  */
-export const submitVoiceAnswer = async ({ sessionId, questionIndex, userAnswer, responseTime }) => {
+export const submitVoiceAnswer = async ({ sessionId, questionIndex, userAnswer, responseTime, languageCode }) => {
     const response = await api.post("/api/voice-session/evaluate", {
         sessionId,
         questionIndex,
         userAnswer,
-        responseTime
+        responseTime,
+        languageCode
     });
     return response.data;
 };
@@ -37,7 +64,7 @@ export const submitVoiceAnswer = async ({ sessionId, questionIndex, userAnswer, 
  * @param {String} sessionId 
  */
 export const completeVoiceSession = async (sessionId) => {
-    const response = await api.post(`/api/voice-session/${sessionId}/complete`);
+    const response = await api.post(`/api/voice-session/${sessionId}/complete`, {});
     return response.data;
 };
 
@@ -53,8 +80,9 @@ export const fetchVoiceProgress = async () => {
  * Fetch detailed verbal session history by ID.
  * @param {String} sessionId 
  */
-export const fetchVoiceSession = async (sessionId) => {
-    const response = await api.get(`/api/voice-session/${sessionId}`);
+export const fetchVoiceSession = async (sessionId, lang) => {
+    const url = lang ? `/api/voice-session/${sessionId}?lang=${lang}` : `/api/voice-session/${sessionId}`;
+    const response = await api.get(url);
     return response.data;
 };
 

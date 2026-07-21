@@ -1,0 +1,656 @@
+/* ============================================================
+   GitHub Integration Components — shared styles
+   GitHubConnectPanel | RepositoryPicker | GitHubStatusBar
+   ============================================================ */
+
+$primary:       #d20d3b;
+$primary-glow:  rgba(210, 13, 59, 0.25);
+$surface:       rgba(255, 255, 255, 0.04);
+$surface-hover: rgba(255, 255, 255, 0.07);
+$border:        rgba(255, 255, 255, 0.08);
+$text:          #ffffff;
+$text-muted:    rgba(255, 255, 255, 0.5);
+$text-faint:    rgba(255, 255, 255, 0.3);
+$success:       #27ae60;
+$warning:       #f39c12;
+$danger:        #e74c3c;
+$radius:        10px;
+$radius-sm:     6px;
+
+// ============================================================
+// GitHubConnectPanel
+// ============================================================
+
+.gh-connect-panel {
+    background: $surface;
+    border: 1px solid $border;
+    border-radius: $radius;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+
+    &__icon {
+        color: $text-muted;
+        margin-bottom: 0.25rem;
+        opacity: 0.8;
+    }
+
+    &__title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: $text;
+        margin: 0;
+    }
+
+    &__desc {
+        font-size: 0.9rem;
+        color: $text-muted;
+        max-width: 400px;
+        line-height: 1.6;
+        margin: 0;
+
+        strong { color: $text; }
+    }
+
+    &__perms {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: left;
+        align-self: stretch;
+        max-width: 360px;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+            color: $text-muted;
+        }
+
+        .perm-icon { font-size: 1rem; flex-shrink: 0; }
+    }
+
+    &__note {
+        font-size: 0.75rem;
+        color: $text-faint;
+        margin: 0;
+    }
+
+    &__error {
+        background: rgba(231, 76, 60, 0.1);
+        border: 1px solid $danger;
+        border-radius: $radius-sm;
+        padding: 0.6rem 1rem;
+        color: $danger;
+        font-size: 0.85rem;
+        width: 100%;
+        max-width: 400px;
+    }
+}
+
+.gh-connect-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: linear-gradient(135deg, #24292e, #3a3f44);
+    color: $text;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: $radius-sm;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.01em;
+
+    &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #2f3741, #4a4f56);
+        border-color: rgba(255, 255, 255, 0.25);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        transform: translateY(-1px);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    &__spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: $text;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+    }
+}
+
+// ============================================================
+// RepositoryPicker
+// ============================================================
+
+.repo-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    &__controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        @media (min-width: 600px) {
+            flex-direction: row;
+            align-items: center;
+        }
+    }
+
+    &__search-wrap {
+        position: relative;
+        flex: 1;
+    }
+
+    &__search-icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.85rem;
+        pointer-events: none;
+    }
+
+    &__search {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        color: $text;
+        padding: 0.6rem 0.75rem 0.6rem 2.25rem;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+
+        &::placeholder { color: $text-faint; }
+
+        &:focus {
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+        }
+    }
+
+    &__filters {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    &__select {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        color: $text;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        outline: none;
+
+        &:focus { border-color: rgba(255, 255, 255, 0.25); }
+    }
+
+    &__visibility-btns {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    &__vis-btn {
+        background: transparent;
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        color: $text-muted;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &--active {
+            background: $primary;
+            border-color: $primary;
+            color: $text;
+            font-weight: 600;
+        }
+
+        &:hover:not(.repo-picker__vis-btn--active) {
+            border-color: rgba(255, 255, 255, 0.2);
+            color: $text;
+        }
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 420px;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+
+        &::-webkit-scrollbar { width: 4px; }
+        &::-webkit-scrollbar-track { background: transparent; }
+        &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+    }
+
+    &__loading {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    &__skeleton {
+        background: $surface;
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        animation: pulse 1.5s ease-in-out infinite;
+
+        .skeleton-line {
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
+            height: 12px;
+            &--wide { width: 60%; }
+            &--narrow { width: 35%; }
+        }
+    }
+
+    &__empty {
+        color: $text-muted;
+        font-size: 0.9rem;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    &__item {
+        background: $surface;
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        padding: 0.85rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: default;
+        transition: all 0.15s ease;
+        outline: none;
+
+        &:hover, &--focused {
+            background: $surface-hover;
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+
+        &:focus-visible {
+            box-shadow: 0 0 0 2px $primary;
+        }
+    }
+
+    &__item-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    &__item-header {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    &__name {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: $text;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 100px;
+        font-weight: 600;
+        flex-shrink: 0;
+
+        &--private {
+            background: rgba(210, 13, 59, 0.15);
+            color: #f17094;
+            border: 1px solid rgba(210, 13, 59, 0.3);
+        }
+        &--public {
+            background: rgba(39, 174, 96, 0.1);
+            color: #5dcc8a;
+            border: 1px solid rgba(39, 174, 96, 0.2);
+        }
+    }
+
+    &__desc {
+        font-size: 0.78rem;
+        color: $text-muted;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        font-size: 0.75rem;
+        color: $text-faint;
+    }
+
+    &__lang {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        .lang-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #e8c547;
+            flex-shrink: 0;
+        }
+    }
+
+    &__analyze-btn {
+        background: rgba(210, 13, 59, 0.12);
+        border: 1px solid rgba(210, 13, 59, 0.3);
+        color: #f17094;
+        border-radius: $radius-sm;
+        padding: 0.4rem 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-shrink: 0;
+
+        &:hover:not(:disabled):not(.repo-picker__analyze-btn--loading) {
+            background: $primary;
+            border-color: $primary;
+            color: $text;
+            transform: translateY(-1px);
+        }
+
+        &:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        &--loading { cursor: not-allowed; }
+
+        .spinner {
+            width: 12px; height: 12px;
+            border: 2px solid rgba(241, 112, 148, 0.3);
+            border-top-color: #f17094;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+    }
+
+    &__pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding-top: 0.5rem;
+    }
+
+    &__page-btn {
+        background: $surface;
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        color: $text-muted;
+        padding: 0.4rem 0.85rem;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) { border-color: rgba(255,255,255,0.2); color: $text; }
+        &:disabled { opacity: 0.4; cursor: not-allowed; }
+    }
+
+    &__page-info {
+        font-size: 0.82rem;
+        color: $text-muted;
+    }
+}
+
+// ============================================================
+// GitHubStatusBar
+// ============================================================
+
+.gh-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    background: rgba(36, 41, 46, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: $radius;
+    padding: 0.75rem 1.2rem;
+    backdrop-filter: blur(8px);
+    flex-wrap: wrap;
+
+    &__left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    &__avatar {
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        width: 32px;
+        height: 32px;
+        object-fit: cover;
+    }
+
+    &__user {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    &__connected-label {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.7rem;
+        color: $text-faint;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    &__dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: $success;
+        animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    &__username {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: $text;
+        text-decoration: none;
+        &:hover { color: #a0cfff; }
+    }
+
+    &__rate {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex: 1;
+        min-width: 160px;
+    }
+
+    &__rate-label {
+        font-size: 0.72rem;
+        color: $text-faint;
+        white-space: nowrap;
+    }
+
+    &__rate-bar {
+        flex: 1;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 100px;
+        overflow: hidden;
+    }
+
+    &__rate-fill {
+        height: 100%;
+        border-radius: 100px;
+        transition: width 0.5s ease, background 0.3s;
+    }
+
+    &__rate-text {
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    &__reset {
+        font-weight: 400;
+        color: $text-faint;
+        margin-left: 0.25rem;
+    }
+
+    &__right {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-left: auto;
+    }
+
+    &__scopes {
+        display: flex;
+        gap: 0.3rem;
+    }
+
+    &__disconnect-btn {
+        background: transparent;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: rgba(231, 76, 60, 0.8);
+        border-radius: $radius-sm;
+        padding: 0.35rem 0.8rem;
+        font-size: 0.78rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) {
+            background: rgba(231, 76, 60, 0.1);
+            border-color: $danger;
+            color: $danger;
+        }
+
+        &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
+}
+
+.scope-badge {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: $text-faint;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    font-family: monospace;
+}
+
+// ============================================================
+// Shared animations
+// ============================================================
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(39, 174, 96, 0); }
+}
+
+// Large repo confirmation dialog
+.repo-confirm-dialog {
+    background: rgba(255, 165, 0, 0.06);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    border-radius: $radius;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+
+    h4 {
+        color: $warning;
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    p {
+        font-size: 0.85rem;
+        color: $text-muted;
+        margin: 0 0 1rem;
+        line-height: 1.5;
+    }
+
+    &__actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    &__confirm-btn {
+        background: rgba(255, 165, 0, 0.15);
+        border: 1px solid rgba(255, 165, 0, 0.4);
+        color: $warning;
+        border-radius: $radius-sm;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.15s;
+
+        &:hover { background: rgba(255, 165, 0, 0.25); }
+    }
+
+    &__cancel-btn {
+        background: transparent;
+        border: 1px solid $border;
+        color: $text-muted;
+        border-radius: $radius-sm;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.15s;
+
+        &:hover { border-color: rgba(255,255,255,0.2); color: $text; }
+    }
+}

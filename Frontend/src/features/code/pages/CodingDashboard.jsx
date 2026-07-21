@@ -3,11 +3,13 @@ import { Link } from "react-router";
 import Navbar from "../../ats/components/Navbar";
 import { fetchProgress } from "../services/code.api";
 import "../style/code.scss";
+import { SkeletonDashboard, EmptyState, ScrollToTop, ErrorBoundary, AnalyticsFilters } from "../../../components/ui";
 
 const CodingDashboard = () => {
     const [stats, setStats] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState("");
+    const [filters, setFilters] = useState({ dateRange: "all", role: "all", type: "all", repo: "all" });
 
     useEffect(() => {
         loadProgressData();
@@ -25,7 +27,6 @@ const CodingDashboard = () => {
             console.error("Failed to load progress stats", err);
             setErrorMsg("Could not retrieve coding analytics progress.");
         } finally {
-            setIsLoading(true); // Wait, this should be set to false! Oh, yes, set to false!
             setIsLoading(false);
         }
     };
@@ -34,8 +35,8 @@ const CodingDashboard = () => {
         return (
             <div className="coding-dashboard-container">
                 <Navbar />
-                <main style={{ padding: "3rem", textAlign: "center", color: "rgba(255,255,255,0.4)" }}>
-                    <h2>Loading coding analytics data...</h2>
+                <main style={{ padding: "2rem" }}>
+                    <SkeletonDashboard />
                 </main>
             </div>
         );
@@ -69,9 +70,26 @@ const CodingDashboard = () => {
         progressTracking: []
     };
 
+
+    // Client-side filtering logic for recent attempts
+    const filteredAttempts = (safeStats.recentAttempts || []).filter(attempt => {
+        if (filters.dateRange !== "all") {
+            const attemptDate = new Date(attempt.date || attempt.submittedAt || Date.now());
+            const limit = new Date();
+            if (filters.dateRange === "7days") limit.setDate(limit.getDate() - 7);
+            else if (filters.dateRange === "30days") limit.setDate(limit.getDate() - 30);
+            if (attemptDate < limit) return false;
+        }
+        if (filters.type !== "all" && filters.type !== "code") {
+            return false;
+        }
+        return true;
+    });
+
     return (
-        <div className="coding-dashboard-container">
-            <Navbar />
+        <ErrorBoundary>
+            <div className="coding-dashboard-container">
+                <Navbar />
 
             <header className="coding-header">
                 <div className="header-left">
@@ -86,9 +104,13 @@ const CodingDashboard = () => {
                 </div>
             </header>
 
+            <div style={{ padding: "0 2rem" }}>
+                <AnalyticsFilters onFilterChange={setFilters} />
+            </div>
+
             <main className="dashboard-grid">
                 {/* 1. Readiness Score Card */}
-                <div className="stat-card" id="readinessScoreCard">
+                <div className="stat-card micro-interactive-card" id="readinessScoreCard">
                     <h3>Coding Readiness Score</h3>
                     <div className="value" id="dashReadinessValue">{safeStats.codingReadinessScore}<span>%</span></div>
                     <div className="label">
@@ -97,7 +119,7 @@ const CodingDashboard = () => {
                 </div>
 
                 {/* 2. Average Score Card */}
-                <div className="stat-card" id="averageScoreCard">
+                <div className="stat-card micro-interactive-card" id="averageScoreCard">
                     <h3>Average Attempt Score</h3>
                     <div className="value" id="dashAverageValue">{safeStats.averageCodingScore}<span>%</span></div>
                     <div className="label" style={{ background: "rgba(210, 13, 59, 0.1)", color: "#d20d3b" }}>
@@ -106,7 +128,7 @@ const CodingDashboard = () => {
                 </div>
 
                 {/* 3. Difficulty Count Card */}
-                <div className="stat-card" id="difficultyCard" style={{ alignItems: "stretch", textAlign: "left" }}>
+                <div className="stat-card micro-interactive-card" id="difficultyCard" style={{ alignItems: "stretch", textAlign: "left" }}>
                     <h3 style={{ textAlign: "center" }}>Difficulty Solved</h3>
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem", marginTop: "0.5rem" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem" }}>
@@ -125,7 +147,7 @@ const CodingDashboard = () => {
                 </div>
 
                 {/* 4. Strong & Weak Topics */}
-                <div className="list-panel-card" id="topicsBreakdownCard">
+                <div className="list-panel-card micro-interactive-card" id="topicsBreakdownCard">
                     <h2>Competency Area Breakdown</h2>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
                         <div>
@@ -176,7 +198,7 @@ const CodingDashboard = () => {
                 </div>
 
                 {/* 5. Progress Tracking Timeline */}
-                <div className="timeline-panel-card" id="timelineCard">
+                <div className="timeline-panel-card micro-interactive-card" id="timelineCard">
                     <h2>Topic Improvement Roadmap (Attempt Progressions)</h2>
                     <div className="timeline-scroller" id="progressTrackingTimeline">
                         {safeStats.progressTracking.length === 0 ? (
@@ -210,7 +232,7 @@ const CodingDashboard = () => {
                 </div>
 
                 {/* 6. Recent Attempts */}
-                <div className="timeline-panel-card" id="recentAttemptsCard" style={{ gridColumn: "span 3" }}>
+                <div className="timeline-panel-card micro-interactive-card" id="recentAttemptsCard" style={{ gridColumn: "span 3" }}>
                     <h2>Recent Code Submissions History</h2>
                     <div style={{ overflowX: "auto" }}>
                         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }} id="recentSubmissionsTable">
@@ -225,14 +247,22 @@ const CodingDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {safeStats.recentAttempts.length === 0 ? (
+                                {filteredAttempts.length === 0 ? (
                                     <tr>
-                                        <td colSpan="6" style={{ padding: "2rem", textInterline: "center", color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
-                                            No recent code submissions found.
+                                        <td colSpan="6" style={{ padding: "1.5rem" }}>
+                                            <EmptyState
+                                                icon="💻"
+                                                title="No Coding Practice Submissions Yet"
+                                                description="Choose a question in the editor workspace, draft a solution, and run test cases to analyze runtime performance."
+                                                primaryAction={{
+                                                    label: "Start Code Practice",
+                                                    onClick: () => window.location.href = "/code"
+                                                }}
+                                            />
                                         </td>
                                     </tr>
                                 ) : (
-                                    safeStats.recentAttempts.map(attempt => (
+                                    filteredAttempts.map(attempt => (
                                         <tr key={attempt.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: "0.88rem" }}>
                                             <td style={{ padding: "0.9rem 1rem", fontWeight: "600" }}>{attempt.title}</td>
                                             <td style={{ padding: "0.9rem 1rem" }}>
@@ -258,7 +288,9 @@ const CodingDashboard = () => {
                     </div>
                 </div>
             </main>
+            <ScrollToTop />
         </div>
+    </ErrorBoundary>
     );
 };
 

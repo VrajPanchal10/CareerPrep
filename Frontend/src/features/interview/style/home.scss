@@ -1,13 +1,13 @@
 @use "sass:color";
 
 // ── Variables ────────────────────────────────────────────────────────────────
-$bg-page:        #0d1117;
-$bg-card:        #161b22;
-$bg-panel:       #1c2230;
-$bg-input:       #1e2535;
-$border-color:   #2a3348;
-$text-primary:   #e6edf3;
-$text-muted:     #7d8590;
+$bg-page:        var(--bg-page, #0d1117);
+$bg-card:        var(--bg-card, #161b22);
+$bg-panel:       var(--bg-panel, #1c2230);
+$bg-input:       var(--bg-input, #1e2535);
+$border-color:   var(--border-color, #2a3348);
+$text-primary:   var(--text-primary, #e6edf3);
+$text-muted:     var(--text-muted, #7d8590);
 $accent:         #ff2d78;
 $accent-alt:     #ff6b9d;
 $badge-required: #ff2d78;

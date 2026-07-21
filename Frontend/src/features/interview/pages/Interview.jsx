@@ -3,6 +3,7 @@ import '../style/interview.scss'
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate, useParams } from 'react-router'
 import Navbar from '../../ats/components/Navbar'
+import { PdfPreview, useToast, ErrorBoundary, ScrollToTop } from '../../../components/ui'
 
 
 
@@ -61,7 +62,7 @@ const RoadMapDay = ({ day }) => (
 const Interview = () => {
     const [ activeNav, setActiveNav ] = useState('technical')
     const { 
-        report, getReportById, loading, getResumePdf, downloadReportPdf,
+        report, getReportById, loading, getResumePdf, downloadReportPdf, generateReport,
         activeSession, startSession, submitAnswer, completeSession, progressHistory, loadSessionById
     } = useInterview()
     const { interviewId } = useParams()
@@ -70,6 +71,8 @@ const Interview = () => {
     const [ currentQIndex, setCurrentQIndex ] = useState(0)
     const [ answerText, setAnswerText ] = useState("")
     const [ localEvaluating, setLocalEvaluating ] = useState(false)
+    const [ isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
+    const { addToast } = useToast()
 
     useEffect(() => {
         if (interviewId) {
@@ -298,9 +301,10 @@ const Interview = () => {
     }
 
     return (
-        <div style={{ minHeight: "100vh" }}>
-            <Navbar />
-            <div className='interview-page'>
+        <ErrorBoundary>
+            <div style={{ minHeight: "100vh" }}>
+                <Navbar />
+                <div className='interview-page'>
                 
                 {/* Practice Mode Header Banner */}
                 <div className="practice-mode-banner">
@@ -349,12 +353,12 @@ const Interview = () => {
                                 Download Resume
                             </button>
                             <button
-                                onClick={() => { downloadReportPdf(interviewId) }}
+                                onClick={() => setIsPdfPreviewOpen(true)}
                                 className='button primary-button'
                                 style={{ width: '100%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             >
                                 <svg height={"0.8rem"} style={{ marginRight: "0.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
-                                Download Report
+                                View PDF Report
                             </button>
                         </div>
                     </nav>
@@ -463,7 +467,29 @@ const Interview = () => {
                     </aside>
                 </div>
             </div>
+
+            {isPdfPreviewOpen && (
+                <PdfPreview 
+                    reportId={interviewId} 
+                    onClose={() => setIsPdfPreviewOpen(false)}
+                    onRegenerate={async () => {
+                        if (!report) return;
+                        addToast("Regenerating AI performance card report...", "info");
+                        const data = await generateReport({
+                            jobDescription: report.jobDescription,
+                            selfDescription: report.selfDescription,
+                            resumeText: report.resume
+                        });
+                        if (data && data._id) {
+                            addToast("New report compiled successfully!", "success");
+                            navigate(`/interview/${data._id}`);
+                        }
+                    }}
+                />
+            )}
+            <ScrollToTop />
         </div>
+    </ErrorBoundary>
     )
 }
 

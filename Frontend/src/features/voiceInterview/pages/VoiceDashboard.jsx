@@ -4,6 +4,7 @@ import Navbar from "../../ats/components/Navbar";
 import { getAllInterviewReports } from "../../interview/services/interview.api";
 import { startVoiceSession, fetchVoiceProgress } from "../services/voice.api";
 import "../style/voice.scss";
+import { useToast, SkeletonDashboard, EmptyState, ScrollToTop, ErrorBoundary, LoadingButton, AnalyticsFilters, RadialScoreMeter } from "../../../components/ui";
 
 const VoiceDashboard = () => {
     const [reports, setReports] = useState([]);
@@ -14,6 +15,8 @@ const VoiceDashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isStarting, setIsStarting] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
+    const [filters, setFilters] = useState({ dateRange: "all", role: "all", type: "all", repo: "all" });
+    const { addToast } = useToast();
 
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -55,7 +58,7 @@ const VoiceDashboard = () => {
     const handleStartSession = async (e) => {
         e.preventDefault();
         if (!selectedReportId) {
-            alert("Please select or generate an interview plan first.");
+            addToast("Please select or generate an interview plan first.", "warning");
             return;
         }
 
@@ -68,11 +71,13 @@ const VoiceDashboard = () => {
                 enableFollowUps
             });
             if (data.success) {
+                addToast("Verbal practice session initialized!", "success");
                 navigate(`/voice-interview/room/${data.session._id}`);
             }
         } catch (err) {
             console.error("Failed to start voice session", err);
             setErrorMsg(err.response?.data?.message || "Failed to initialize mock session.");
+            addToast("Failed to initialize verbal practice run.", "error");
         } finally {
             setIsStarting(false);
         }
@@ -82,8 +87,8 @@ const VoiceDashboard = () => {
         return (
             <div className="voice-dashboard-container">
                 <Navbar />
-                <main style={{ padding: "3rem", textAlign: "center", color: "rgba(255,255,255,0.4)" }}>
-                    <h2>Loading voice dashboard analytics...</h2>
+                <main style={{ padding: "2rem" }}>
+                    <SkeletonDashboard />
                 </main>
             </div>
         );
@@ -98,9 +103,26 @@ const VoiceDashboard = () => {
         trends: []
     };
 
+
+    // Client-side filtering logic for recent sessions
+    const filteredSessions = (safeStats.recentSessions || []).filter(session => {
+        if (filters.dateRange !== "all") {
+            const sessDate = new Date(session.date || session.completedAt || Date.now());
+            const limit = new Date();
+            if (filters.dateRange === "7days") limit.setDate(limit.getDate() - 7);
+            else if (filters.dateRange === "30days") limit.setDate(limit.getDate() - 30);
+            if (sessDate < limit) return false;
+        }
+        if (filters.type !== "all" && filters.type !== "voice") {
+            return false;
+        }
+        return true;
+    });
+
     return (
-        <div className="voice-dashboard-container">
-            <Navbar />
+        <ErrorBoundary>
+            <div className="voice-dashboard-container">
+                <Navbar />
 
             <header className="voice-header">
                 <div className="header-left">
@@ -115,6 +137,10 @@ const VoiceDashboard = () => {
                 </div>
             </header>
 
+            <div style={{ padding: "0 2rem" }}>
+                <AnalyticsFilters onFilterChange={setFilters} />
+            </div>
+
             {errorMsg && (
                 <div style={{ background: "rgba(192, 41, 43, 0.15)", border: "1px solid #c0392b", color: "#c0392b", margin: "1.5rem 2rem 0", padding: "0.75rem 1.2rem", borderRadius: "6px", fontSize: "0.88rem" }}>
                     <strong>Error:</strong> {errorMsg}
@@ -123,7 +149,7 @@ const VoiceDashboard = () => {
 
             <main className="voice-grid">
                 {/* 1. Setup Panel Card */}
-                <div className="voice-card">
+                <div className="voice-card micro-interactive-card">
                     <h2>Mock Session Setup</h2>
                     <form className="setup-form" onSubmit={handleStartSession}>
                         <div className="form-group">
@@ -176,35 +202,27 @@ const VoiceDashboard = () => {
                             </p>
                         </div>
 
-                        <button
+                        <LoadingButton
                             type="submit"
+                            loading={isStarting}
+                            loadingText="Initializing..."
                             className="start-session-btn"
-                            disabled={isStarting || reports.length === 0}
+                            disabled={reports.length === 0}
                             id="startVoiceSessionBtn"
                         >
-                            {isStarting ? "Initializing..." : "🎙️ Start Verbal Mock Session"}
-                        </button>
+                            🎙️ Start Verbal Mock Session
+                        </LoadingButton>
                     </form>
                 </div>
 
                 {/* 2. Stats and Gauges Card */}
-                <div className="voice-card voice-card--span-2">
+                <div className="voice-card voice-card--span-2 micro-interactive-card hover-card">
                     <h2>Verbal mock metrics</h2>
                     <div className="gauges-row">
                         <div className="gauge-item readiness" id="voiceReadinessGauge">
                             <h3>Voice Readiness Score</h3>
-                            <div className="radial-container">
-                                <svg width="120" height="120">
-                                    <circle className="track" cx="60" cy="60" r="55" />
-                                    <circle 
-                                        className="fill" 
-                                        cx="60" 
-                                        cy="60" 
-                                        r="55" 
-                                        strokeDashoffset={345 - (345 * safeStats.voiceReadinessScore) / 100}
-                                    />
-                                </svg>
-                                <div className="value-text" id="voiceReadinessText">{safeStats.voiceReadinessScore}%</div>
+                            <div className="radial-container" style={{ display: "flex", justifyContent: "center", margin: "1rem 0" }}>
+                                <RadialScoreMeter score={safeStats.voiceReadinessScore} size={120} strokeWidth={8} />
                             </div>
                             <div className="badge-sub">
                                 {safeStats.voiceReadinessScore >= 80 ? "EXCELLENT READY" : safeStats.voiceReadinessScore >= 60 ? "PRACTICED" : "PRACTICE REQUIRED"}
@@ -252,7 +270,7 @@ const VoiceDashboard = () => {
                 </div>
 
                 {/* 3. Trends and Progress Card */}
-                <div className="voice-card">
+                <div className="voice-card micro-interactive-card">
                     <h2>Improvement trends</h2>
                     <div className="trend-timeline" id="voiceTrendsTimeline">
                         {safeStats.trends.length === 0 ? (
@@ -287,7 +305,7 @@ const VoiceDashboard = () => {
                 </div>
 
                 {/* 4. Recent Session Attempts List */}
-                <div className="voice-card voice-card--span-2">
+                <div className="voice-card voice-card--span-2 micro-interactive-card">
                     <h2>Recent Sessions Logs</h2>
                     <div style={{ overflowX: "auto" }} id="recentVoiceSessionsTableContainer">
                         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }} id="recentVoiceSessionsTable">
@@ -301,14 +319,24 @@ const VoiceDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {safeStats.recentSessions.length === 0 ? (
+                                {filteredSessions.length === 0 ? (
                                     <tr>
-                                        <td colSpan="5" style={{ padding: "2rem", color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
-                                            No verbal sessions completed yet.
+                                        <td colSpan="5" style={{ padding: "1.5rem" }}>
+                                            <EmptyState
+                                                icon="🎙️"
+                                                title="No Voice Session Logs"
+                                                description="Begin a voice-to-voice interview setup. Once completed, your average communication flow and accuracy will be analyzed here."
+                                                primaryAction={{
+                                                    label: "Begin Interview Setup",
+                                                    onClick: () => {
+                                                        document.getElementById("reportSelect")?.focus();
+                                                    }
+                                                }}
+                                            />
                                         </td>
                                     </tr>
-                                ) : (
-                                    safeStats.recentSessions.map(session => (
+                                 ) : (
+                                    filteredSessions.map(session => (
                                         <tr key={session.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: "0.88rem" }}>
                                             <td style={{ padding: "0.9rem 0.8rem", fontWeight: "600" }}>{session.reportTitle}</td>
                                             <td style={{ padding: "0.9rem 0.8rem" }}>
@@ -331,7 +359,9 @@ const VoiceDashboard = () => {
                     </div>
                 </div>
             </main>
+            <ScrollToTop />
         </div>
+    </ErrorBoundary>
     );
 };
 

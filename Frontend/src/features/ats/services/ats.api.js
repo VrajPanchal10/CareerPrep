@@ -1,14 +1,9 @@
-import axios from "axios";
-
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
-    withCredentials: true,
-})
+import api from "../../../utils/apiClient";
 
 /**
  * @description Service to generate ATS match report based on resume file and job description.
  */
-export const generateAtsReport = async ({ jobDescription, resumeFile }) => {
+export const generateAtsReport = async ({ jobDescription, resumeFile, onUploadProgress }) => {
     const formData = new FormData()
     formData.append("jobDescription", jobDescription)
     formData.append("resume", resumeFile)
@@ -16,7 +11,8 @@ export const generateAtsReport = async ({ jobDescription, resumeFile }) => {
     const response = await api.post("/api/ats/analyze", formData, {
         headers: {
             "Content-Type": "multipart/form-data"
-        }
+        },
+        onUploadProgress
     })
 
     return response.data

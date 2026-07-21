@@ -1,3 +1,9 @@
+$bg-page: var(--bg-page, #0d1117);
+$bg-card: var(--bg-card, #161b22);
+$border-color: var(--border-color, rgba(255, 255, 255, 0.08));
+$text-primary: var(--text-primary, #ffffff);
+$text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
+
 .ats-dashboard-page {
     max-width: 1200px;
     margin: 0 auto;
@@ -27,13 +33,13 @@
     h1 {
         font-size: 2.2rem;
         font-weight: 800;
-        color: #ffffff;
+        color: $text-primary;
         margin-bottom: 0.5rem;
     }
 
     .subtitle {
         font-size: 1rem;
-        color: rgba(255, 255, 255, 0.5);
+        color: $text-muted;
     }
 }
 
@@ -49,8 +55,8 @@
 }
 
 .ats-metric-card {
-    background: rgba(30, 30, 30, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: $bg-card;
+    border: 1px solid $border-color;
     border-radius: 12px;
     padding: 1.8rem;
     backdrop-filter: blur(10px);
@@ -59,7 +65,7 @@
     h2 {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #ffffff;
+        color: $text-primary;
         margin-bottom: 1.5rem;
         border-left: 3px solid #d20d3b;
         padding-left: 0.75rem;
@@ -86,7 +92,7 @@
 
         &__bg {
             fill: none;
-            stroke: rgba(255, 255, 255, 0.05);
+            stroke: var(--theme-divider, rgba(255, 255, 255, 0.05));
             stroke-width: 8;
         }
 
@@ -466,3 +472,58 @@
         }
     }
 }
+
+.ats-dashboard-layout {
+    display: grid;
+    grid-template-columns: 48% 52%;
+    gap: 1.5rem;
+    align-items: start;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+
+    @media (max-width: 1024px) {
+        grid-template-columns: 100%;
+    }
+}
+
+.ats-pdf-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: sticky;
+    top: 20px;
+    height: calc(100vh - 160px);
+    overflow: hidden;
+
+    @media (max-width: 1024px) {
+        position: static;
+        height: 600px;
+    }
+}
+
+.ats-results-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: calc(100vh - 160px);
+    overflow-y: auto;
+    padding-right: 0.5rem;
+
+    @media (max-width: 1024px) {
+        height: auto;
+        overflow-y: visible;
+        padding-right: 0;
+    }
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: var(--theme-border, rgba(255, 255, 255, 0.08));
+        border-radius: 3px;
+    }
+}
+

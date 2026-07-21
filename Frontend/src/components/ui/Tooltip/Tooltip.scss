@@ -1,0 +1,79 @@
+.tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+    width: max-content;
+}
+
+.tooltip-box {
+    position: absolute;
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    max-width: 250px;
+    width: max-content;
+    line-height: 1.4;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    /* Wrapper placements */
+    &--top {
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-6px);
+        margin-bottom: 4px;
+    }
+
+    &--bottom {
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(6px);
+        margin-top: 4px;
+    }
+
+    &--left {
+        right: 100%;
+        top: 50%;
+        transform: translateY(-50%) translateX(-6px);
+        margin-right: 4px;
+    }
+
+    &--right {
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%) translateX(6px);
+        margin-left: 4px;
+    }
+
+    /* Absolute position overrides (e.g. SVG coordinate charts) */
+    &--absolute {
+        position: absolute;
+        transform: translate(-50%, -100%) translateY(-8px);
+        border: 1px solid rgba(210, 13, 59, 0.35);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        background: rgba(18, 18, 18, 0.98);
+
+        .tooltip-title {
+            font-weight: 700;
+            color: #d20d3b;
+            margin-bottom: 0.2rem;
+            font-size: 0.85rem;
+        }
+
+        .tooltip-score {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.2rem;
+        }
+
+        .tooltip-desc {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    }
+}

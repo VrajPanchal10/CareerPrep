@@ -1,0 +1,207 @@
+.pdf-viewer-module {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--theme-card, #1e1e1e);
+    border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--theme-shadow, 0 4px 20px rgba(0, 0, 0, 0.2));
+
+    .pdf-viewer-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--theme-surface, #151515);
+        padding: 0.6rem 1rem;
+        border-bottom: 1px solid var(--theme-border, rgba(255, 255, 255, 0.08));
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    .toolbar-group {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        color: var(--theme-text, #ffffff);
+
+        &.navigation {
+            font-weight: 500;
+        }
+    }
+
+    .btn-action {
+        background: var(--theme-button-bg, rgba(255, 255, 255, 0.05));
+        border: 1px solid var(--theme-button-border, rgba(255, 255, 255, 0.1));
+        color: var(--theme-text, #ffffff);
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) {
+            background: var(--theme-hover-bg, rgba(255, 255, 255, 0.1));
+            border-color: var(--theme-primary, #d20d3b);
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    }
+
+    .btn-text {
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--theme-subtext, rgba(255, 255, 255, 0.7));
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) {
+            color: var(--theme-text, #ffffff);
+            background: var(--theme-button-bg, rgba(255, 255, 255, 0.05));
+        }
+
+        &.primary {
+            background: var(--theme-primary, #d20d3b);
+            color: #ffffff !important;
+            border-color: var(--theme-primary, #d20d3b);
+
+            &:hover:not(:disabled) {
+                background: #b80b33;
+                border-color: #b80b33;
+            }
+        }
+    }
+
+    .page-indicator,
+    .scale-indicator {
+        font-size: 0.8rem;
+        min-width: 60px;
+        text-align: center;
+        color: var(--theme-subtext, rgba(255, 255, 255, 0.7));
+    }
+
+    .pdf-viewer-stage {
+        flex: 1;
+        background: var(--theme-bg, #111111);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        min-height: 200px;
+    }
+
+    .pdf-canvas-scroller {
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 1.5rem;
+
+        // Custom scrollbar layout
+        &::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: var(--theme-border, rgba(255, 255, 255, 0.12));
+            border-radius: 4px;
+        }
+    }
+
+    .pdf-canvas-node {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+        background: #ffffff;
+        border-radius: 4px;
+        transition: transform 0.15s ease;
+    }
+
+    .pdf-viewer-error {
+        color: #ef4444;
+        text-align: center;
+        padding: 2rem;
+
+        .error-message {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+    }
+
+    /* PDF Skeleton Loaders */
+    .pdf-viewer-skeleton {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: var(--theme-bg, #121212);
+        padding: 1.5rem;
+        gap: 1.5rem;
+
+        .skeleton-bar {
+            height: 40px;
+            width: 100%;
+            background: var(--theme-card, rgba(255, 255, 255, 0.04));
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+
+            &::after {
+                content: "";
+                position: absolute;
+                top: 0; right: 0; bottom: 0; left: 0;
+                transform: translateX(-100%);
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.05),
+                    transparent
+                );
+                animation: shimmer 1.5s infinite;
+            }
+        }
+
+        .skeleton-canvas-dummy {
+            flex: 1;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--theme-card, rgba(255, 255, 255, 0.02));
+            border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.05));
+            border-radius: 8px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .skeleton-pulse {
+            height: 12px;
+            background: var(--theme-border, rgba(255, 255, 255, 0.06));
+            border-radius: 4px;
+            width: 100%;
+
+            &.short {
+                width: 60%;
+            }
+        }
+    }
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}

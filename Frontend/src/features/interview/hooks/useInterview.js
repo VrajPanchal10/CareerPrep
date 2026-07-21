@@ -13,12 +13,14 @@ import {
 import { useContext, useEffect } from "react"
 import { InterviewContext } from "../interview.context"
 import { useParams } from "react-router"
+import { useToast } from "../../../context/ToastContext"
 
 
 export const useInterview = () => {
 
     const context = useContext(InterviewContext)
     const { interviewId } = useParams()
+    const { addToast } = useToast()
 
     if (!context) {
         throw new Error("useInterview must be used within an InterviewProvider")
@@ -32,19 +34,22 @@ export const useInterview = () => {
         progressHistory, setProgressHistory
     } = context
 
-    const generateReport = async ({ jobDescription, selfDescription, resumeFile }) => {
+    const generateReport = async ({ jobDescription, selfDescription, resumeFile, resumeText, onUploadProgress }) => {
         setLoading(true)
         let response = null
         try {
-            response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile })
-            setReport(response.interviewReport)
+            response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile, resumeText, onUploadProgress })
+            if (response && response.interviewReport) {
+                setReport(response.interviewReport)
+            }
         } catch (error) {
-            console.log(error)
+            console.error("Error in useInterview generateReport:", error)
+            throw error
         } finally {
             setLoading(false)
         }
 
-        return response.interviewReport
+        return response ? response.interviewReport : null
     }
 
     const getReportById = async (id) => {
@@ -54,11 +59,11 @@ export const useInterview = () => {
             response = await getInterviewReportById(id)
             setReport(response.interviewReport)
         } catch (error) {
-            console.log(error)
+            console.error("Error in useInterview getReportById:", error)
         } finally {
             setLoading(false)
         }
-        return response.interviewReport
+        return response?.interviewReport || null
     }
 
     const getReports = async () => {
@@ -68,12 +73,12 @@ export const useInterview = () => {
             response = await getAllInterviewReports()
             setReports(response.interviewReports)
         } catch (error) {
-            console.log(error)
+            console.error("Error in useInterview getReports:", error)
         } finally {
             setLoading(false)
         }
 
-        return response.interviewReports
+        return response?.interviewReports || []
     }
 
     const getResumePdf = async (interviewReportId) => {
@@ -81,15 +86,18 @@ export const useInterview = () => {
         let response = null
         try {
             response = await generateResumePdf({ interviewReportId })
-            const url = window.URL.createObjectURL(new Blob([ response ], { type: "application/pdf" }))
+            const blob = new Blob([ response ], { type: "application/pdf" })
+            const url = window.URL.createObjectURL(blob)
             const link = document.createElement("a")
             link.href = url
             link.setAttribute("download", `resume_${interviewReportId}.pdf`)
             document.body.appendChild(link)
             link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
         }
         catch (error) {
-            console.log(error)
+            console.error("Error in useInterview getResumePdf:", error)
         } finally {
             setLoading(false)
         }
@@ -106,6 +114,7 @@ export const useInterview = () => {
             setActiveSession(data)
         } catch (error) {
             console.error("Error startSession hook:", error)
+            addToast(error?.response?.data?.message || "Failed to start mock practice session.", "error")
         } finally {
             setLoading(false)
         }
@@ -127,6 +136,7 @@ export const useInterview = () => {
             setActiveSession(response.session)
         } catch (error) {
             console.error("Error submitAnswer hook:", error)
+            addToast(error?.response?.data?.message || "Failed to evaluate answer.", "error")
         } finally {
             setLoading(false)
         }
@@ -145,6 +155,7 @@ export const useInterview = () => {
             }
         } catch (error) {
             console.error("Error completeSession hook:", error)
+            addToast(error?.response?.data?.message || "Failed to complete interview session statistics.", "error")
         } finally {
             setLoading(false)
         }
@@ -160,6 +171,7 @@ export const useInterview = () => {
             setActiveSession(data)
         } catch (error) {
             console.error("Error loadSessionById hook:", error)
+            addToast("Failed to load interview session details.", "error")
         } finally {
             setLoading(false)
         }
@@ -172,6 +184,7 @@ export const useInterview = () => {
             setProgressHistory(response.progress || [])
         } catch (error) {
             console.error("Error loadProgress hook:", error)
+            addToast("Failed to retrieve historical progress.", "error")
         }
     }
 
@@ -179,15 +192,18 @@ export const useInterview = () => {
         setLoading(true)
         try {
             const response = await downloadPerformancePdf({ reportId })
-            const url = window.URL.createObjectURL(new Blob([ response ], { type: "application/pdf" }))
+            const blob = new Blob([ response ], { type: "application/pdf" })
+            const url = window.URL.createObjectURL(blob)
             const link = document.createElement("a")
             link.href = url
             link.setAttribute("download", `performance_report_${reportId}.pdf`)
             document.body.appendChild(link)
             link.click()
             document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
         } catch (error) {
             console.error("Error downloadReportPdf hook:", error)
+            addToast("Failed to compile or download Performance Report PDF.", "error")
         } finally {
             setLoading(false)
         }

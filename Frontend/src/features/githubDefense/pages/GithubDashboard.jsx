@@ -2,7 +2,23 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import Navbar from "../../ats/components/Navbar";
 import { useGithubDefense } from "../hooks/useGithubDefense";
+import { useGithubOAuth } from "../hooks/useGithubOAuth";
 import "../style/githubDashboard.scss";
+import { 
+    LoadingButton, 
+    SkeletonDashboard, 
+    EmptyState, 
+    ScrollToTop, 
+    ErrorBoundary, 
+    ProgressTimeline, 
+    useToast,
+    AnalyticsFilters,
+    RepositoryHistory
+} from "../../../components/ui";
+import GitHubStatusBar from "../components/GitHubStatusBar";
+import GitHubConnectPanel from "../components/GitHubConnectPanel";
+import RepositoryPicker from "../components/RepositoryPicker";
+import DevLogger from "../../../utils/devLogger";
 
 const GithubDashboard = () => {
     const navigate = useNavigate();
@@ -16,34 +32,227 @@ const GithubDashboard = () => {
         startInterview
     } = useGithubDefense();
 
+    const {
+        isConnected,
+        githubUser,
+        repositories,
+        reposLoading,
+        repoTotal,
+        rateLimitStatus,
+        statusLoading,
+        disconnecting,
+        error: oauthError,
+        connect,
+        disconnect,
+        fetchRepositories
+    } = useGithubOAuth();
+
     const [repoUrl, setRepoUrl] = useState("");
-    const [githubToken, setGithubToken] = useState("");
     const [selectedAnalysisId, setSelectedAnalysisId] = useState("");
     const [activeTab, setActiveTab] = useState("snapshot");
-    const [interviewLength, setInterviewLength] = useState("Quick"); // Quick, Standard, Deep
+    const [interviewLength, setInterviewLength] = useState("Quick");
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [analyzingRepo, setAnalyzingRepo] = useState(null); // fullName of repo being analyzed
+
+    // Large repository confirmation state
+    const [largeRepoInfo, setLargeRepoInfo] = useState(null); // { owner, repo, sizeMb, sizeTier }
+
+    // Progress timeline states
+    const [scrapeStage, setScrapeStage] = useState("connecting");
+    const [filesCount, setFilesCount] = useState(0);
+    const [activeFile, setActiveFile] = useState("");
+    const [activeFolder, setActiveFolder] = useState("");
+    const [isScraping, setIsScraping] = useState(false);
+    const { addToast } = useToast();
+
+    const [filters, setFilters] = useState({ dateRange: "all", role: "all", type: "all", repo: "all" });
+
+    const [deletedAnalysisIds, setDeletedAnalysisIds] = useState(() => {
+        const saved = localStorage.getItem("careerprep_deleted_analysis_ids");
+        return saved ? JSON.parse(saved) : [];
+    });
+
+
+    const handleDeleteAnalysis = (id) => {
+        setDeletedAnalysisIds(prev => {
+            const next = [...prev, id];
+            localStorage.setItem("careerprep_deleted_analysis_ids", JSON.stringify(next));
+            return next;
+        });
+        addToast("Repository analysis log deleted from history", "success");
+        DevLogger.log("Repository Analysis", { action: "delete_log", repoId: id });
+    };
+
+    const activeAnalyses = (analyses || []).filter(a => !deletedAnalysisIds.includes(a._id));
+
+    // Client-side filtering logic
+    const filteredAnalyses = activeAnalyses.filter(item => {
+        if (filters.dateRange !== "all") {
+            const itemDate = new Date(item.createdAt || Date.now());
+            const limit = new Date();
+            if (filters.dateRange === "7days") limit.setDate(limit.getDate() - 7);
+            else if (filters.dateRange === "30days") limit.setDate(limit.getDate() - 30);
+            if (itemDate < limit) return false;
+        }
+        if (filters.type !== "all" && filters.type !== "github") {
+            return false;
+        }
+        return true;
+    });
 
     useEffect(() => {
-        loadDashboard();
+        const initDashboard = async () => {
+            await loadDashboard();
+            setInitialLoading(false);
+        };
+        initDashboard();
     }, [loadDashboard]);
 
     // Set first analysis as selected by default when they load
     useEffect(() => {
-        if (analyses.length > 0 && !selectedAnalysisId) {
-            setSelectedAnalysisId(analyses[0]._id);
+        if (filteredAnalyses.length > 0 && !selectedAnalysisId) {
+            setSelectedAnalysisId(filteredAnalyses[0]._id);
         }
-    }, [analyses, selectedAnalysisId]);
+    }, [filteredAnalyses, selectedAnalysisId]);
 
-    const handleAnalyze = async (e) => {
-        e.preventDefault();
-        if (!repoUrl) return;
+    const handleAnalyze = async (e, customRepoUrl) => {
+        if (e && e.preventDefault) e.preventDefault();
+        const targetUrl = customRepoUrl || repoUrl;
+        if (!targetUrl) return;
+        setIsScraping(true);
+        setScrapeStage("connecting");
+        setFilesCount(0);
+        setActiveFile("");
+        setActiveFolder("root/");
+        setLargeRepoInfo(null);
+        DevLogger.log("Repository Analysis", { action: "scrape_start", repoUrl: targetUrl });
+
+        const timelineTimers = [];
+        const setStageTimeout = (stage, delay, count, file, folder) => {
+            const timer = setTimeout(() => {
+                setScrapeStage(stage);
+                if (count !== undefined) setFilesCount(count);
+                if (file !== undefined) setActiveFile(file);
+                if (folder !== undefined) setActiveFolder(folder);
+            }, delay);
+            timelineTimers.push(timer);
+        };
+
+        setStageTimeout("fetching", 1200, 0, "", "root/git-tree");
+        setStageTimeout("reading", 2600, 2, "package.json", "src/");
+        setStageTimeout("parsing", 4500, 10, "src/index.js", "src/routes/");
+        setStageTimeout("parsing", 6500, 18, "src/controllers/auth.js", "src/controllers/");
+        setStageTimeout("ai", 9000, 24, "src/models/user.js", "src/models/");
+        setStageTimeout("report", 13000, 32, "Generating architecture graph...", "db/");
+
         try {
-            const analysis = await triggerAnalysis({ repoUrl, githubToken });
-            setSelectedAnalysisId(analysis._id);
+            addToast("Triggering deep repository analysis...", "info");
+            // Token is now resolved server-side — never sent from frontend
+            const result = await triggerAnalysis({ repoUrl: targetUrl });
+
+            // Handle large repository confirmation
+            if (result && result.requiresConfirmation) {
+                timelineTimers.forEach(clearTimeout);
+                setScrapeStage("connecting");
+                setIsScraping(false);
+                // Parse owner/repo from URL for force-confirm flow
+                const urlMatch = targetUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+                if (urlMatch) {
+                    setLargeRepoInfo({ owner: urlMatch[1], repo: urlMatch[2], repoUrl: targetUrl, sizeMb: result.sizeMb, sizeTier: result.sizeTier });
+                }
+                return;
+            }
+
+            timelineTimers.forEach(clearTimeout);
+            setScrapeStage("completed");
+            setFilesCount(42);
+            setActiveFile("");
+            setActiveFolder("Completed!");
+            
+            setSelectedAnalysisId(result._id);
             setRepoUrl("");
-            setGithubToken("");
+            addToast(result.cached ? "Returning cached analysis." : "Auditing complete! Performance snapshot compiled.", "success");
+            DevLogger.log("Repository Analysis", { action: "scrape_success", repoId: result._id });
         } catch (err) {
-            // Error set in hook
+            timelineTimers.forEach(clearTimeout);
+            setScrapeStage("connecting");
+            addToast(err.message || "Failed to analyze codebase.", "error");
+            DevLogger.log("Repository Analysis", { action: "scrape_failed", error: err.message });
+        } finally {
+            setIsScraping(false);
         }
+    };
+
+    // Force analysis on large repo after user confirms
+    const handleForceAnalyze = async () => {
+        if (!largeRepoInfo) return;
+        setLargeRepoInfo(null);
+        setIsScraping(true);
+        setScrapeStage("connecting");
+        try {
+            addToast("Proceeding with large repository analysis...", "info");
+            const result = await triggerAnalysis({ owner: largeRepoInfo.owner, repo: largeRepoInfo.repo, forceAnalysis: true });
+            setScrapeStage("completed");
+            setSelectedAnalysisId(result._id);
+            addToast("Large repository analysis complete!", "success");
+        } catch (err) {
+            setScrapeStage("connecting");
+            addToast(err.message || "Analysis failed.", "error");
+        } finally {
+            setIsScraping(false);
+        }
+    };
+
+    // Called from RepositoryPicker when user clicks Analyze on a connected repo
+    const handlePickerAnalyze = async (repo) => {
+        if (analyzingRepo) return;
+        setAnalyzingRepo(repo.fullName);
+        setLargeRepoInfo(null);
+        setIsScraping(true);
+        setScrapeStage("connecting");
+        DevLogger.log("Repository Analysis", { action: "picker_start", repo: repo.fullName });
+
+        const timelineTimers = [];
+        const setStageTimeout = (stage, delay) => {
+            const timer = setTimeout(() => setScrapeStage(stage), delay);
+            timelineTimers.push(timer);
+        };
+        setStageTimeout("fetching", 800);
+        setStageTimeout("reading", 2000);
+        setStageTimeout("parsing", 4000);
+        setStageTimeout("ai", 7000);
+        setStageTimeout("report", 12000);
+
+        try {
+            addToast(`Analyzing ${repo.name}...`, "info");
+            const result = await triggerAnalysis({ owner: repo.owner, repo: repo.name });
+
+            if (result && result.requiresConfirmation) {
+                timelineTimers.forEach(clearTimeout);
+                setScrapeStage("connecting");
+                setIsScraping(false);
+                setAnalyzingRepo(null);
+                setLargeRepoInfo({ owner: repo.owner, repo: repo.name, repoUrl: repo.htmlUrl, sizeMb: result.sizeMb, sizeTier: result.sizeTier });
+                return;
+            }
+
+            timelineTimers.forEach(clearTimeout);
+            setScrapeStage("completed");
+            setSelectedAnalysisId(result._id);
+            addToast(result.cached ? `Returning cached analysis for ${repo.name}.` : `${repo.name} analyzed!`, "success");
+            DevLogger.log("Repository Analysis", { action: "picker_success", repoId: result._id });
+        } catch (err) {
+            timelineTimers.forEach(clearTimeout);
+            setScrapeStage("connecting");
+            addToast(err.message || `Failed to analyze ${repo.name}.`, "error");
+        } finally {
+            setIsScraping(false);
+            setAnalyzingRepo(null);
+        }
+    };
+
+    const handleReanalyze = ({ repoUrl }) => {
+        handleAnalyze(null, repoUrl);
     };
 
     const handleStartInterview = async () => {
@@ -70,97 +279,169 @@ const GithubDashboard = () => {
     };
     const currentDashboard = getRepoDashboard();
 
+    if (initialLoading) {
+        return (
+            <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
+                <Navbar />
+                <main className="git-dashboard-page" style={{ padding: "2rem" }}>
+                    <SkeletonDashboard />
+                </main>
+            </div>
+        );
+    }
+
     return (
-        <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
-            <Navbar />
-            
-            <main className="git-dashboard-page">
-                <header className="git-header">
-                    <h1>🛡️ GitHub <span className="highlight">Project Defense</span></h1>
-                    <p>Audit repository structures and defend architectural decisions in tough technical mock simulations.</p>
-                </header>
+        <ErrorBoundary>
+            <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
+                <Navbar />
+                
+                <main className="git-dashboard-page">
+                    <header className="git-header">
+                        <h1>🛡️ GitHub <span className="highlight">Project Defense</span></h1>
+                        <p>Audit repository structures and defend architectural decisions in tough technical mock simulations.</p>
+                    </header>
 
-                {error && (
-                    <div style={{
-                        background: "rgba(231, 76, 60, 0.1)",
-                        border: "1px solid #e74c3c",
-                        borderRadius: "8px",
-                        padding: "1rem",
-                        marginBottom: "2rem",
-                        color: "#e74c3c",
-                        fontSize: "0.9rem"
-                    }}>
-                        ⚠️ {error}
+                    <div style={{ padding: "0 2rem", marginBottom: "1.5rem" }}>
+                        <AnalyticsFilters onFilterChange={setFilters} />
                     </div>
-                )}
 
-                <div className="git-grid">
-                    {/* Left Sidebar: URL Submission & History */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-                        {/* URL Submission Card */}
-                        <div className="git-card">
-                            <h2>Submit Repository</h2>
-                            <form className="analyze-section" onSubmit={handleAnalyze}>
-                                <div className="form-group">
-                                    <label htmlFor="repoUrl">GitHub URL</label>
-                                    <input 
-                                        type="url" 
-                                        id="repoUrl" 
-                                        placeholder="https://github.com/user/repo" 
-                                        value={repoUrl}
-                                        onChange={(e) => setRepoUrl(e.target.value)}
-                                        required
-                                        disabled={loading}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="githubToken">
-                                        GitHub Access Token <span style={{fontSize: "0.75rem", color: "rgba(255,255,255,0.3)"}}>(Optional for Private Repos)</span>
-                                    </label>
-                                    <input 
-                                        type="password" 
-                                        id="githubToken" 
-                                        placeholder="ghp_xxxxxxxxxxxx" 
-                                        value={githubToken}
-                                        onChange={(e) => setGithubToken(e.target.value)}
-                                        disabled={loading}
-                                    />
-                                </div>
-                                <button className="submit-btn" type="submit" disabled={loading}>
-                                    {loading ? "Analyzing..." : "🔍 Analyze Repository"}
-                                </button>
-                            </form>
+                    {error && (
+                        <div style={{
+                            background: "rgba(231, 76, 60, 0.1)",
+                            border: "1px solid #e74c3c",
+                            borderRadius: "8px",
+                            padding: "1rem",
+                            marginBottom: "2rem",
+                            color: "#e74c3c",
+                            fontSize: "0.9rem"
+                        }}>
+                            ⚠️ {error}
                         </div>
+                    )}
+
+                    <div className="git-grid">
+                        {/* Left Sidebar: GitHub OAuth + Repository Picker + History */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+
+                            {/* GitHub Status Bar — shown when connected */}
+                            {isConnected && githubUser && (
+                                <GitHubStatusBar
+                                    githubUser={githubUser}
+                                    rateLimitStatus={rateLimitStatus}
+                                    onDisconnect={disconnect}
+                                    disconnecting={disconnecting}
+                                />
+                            )}
+
+                            {/* Large repository confirmation dialog */}
+                            {largeRepoInfo && (
+                                <div className="repo-confirm-dialog">
+                                    <h4>⚠️ Large Repository ({largeRepoInfo.sizeMb} MB)</h4>
+                                    <p>
+                                        This repository is larger than usual. Analysis will take longer and use more GitHub API quota. Do you want to proceed?
+                                    </p>
+                                    <div className="repo-confirm-dialog__actions">
+                                        <button
+                                            className="repo-confirm-dialog__confirm-btn"
+                                            onClick={handleForceAnalyze}
+                                            id="confirmLargeRepoBtn"
+                                        >
+                                            Yes, Analyze Anyway
+                                        </button>
+                                        <button
+                                            className="repo-confirm-dialog__cancel-btn"
+                                            onClick={() => setLargeRepoInfo(null)}
+                                            id="cancelLargeRepoBtn"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Connected: Repository Picker */}
+                            {!statusLoading && isConnected && (
+                                <div className="git-card">
+                                    <h2>Select Repository</h2>
+                                    <RepositoryPicker
+                                        repositories={repositories}
+                                        loading={reposLoading}
+                                        total={repoTotal}
+                                        onFetch={fetchRepositories}
+                                        onAnalyze={handlePickerAnalyze}
+                                        analyzingRepo={analyzingRepo}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Not connected: Connect Panel */}
+                            {!statusLoading && !isConnected && (
+                                <GitHubConnectPanel
+                                    onConnect={connect}
+                                    loading={statusLoading}
+                                    error={oauthError}
+                                />
+                            )}
+
+                            {/* Public Repository URL fallback (always available) */}
+                            <div className="git-card">
+                                <h2>
+                                    Public Repository URL
+                                    <span style={{ fontSize: "0.7rem", fontWeight: 400, color: "rgba(255,255,255,0.4)", marginLeft: "0.5rem" }}>
+                                        No login required
+                                    </span>
+                                </h2>
+                                <form className="analyze-section" onSubmit={handleAnalyze}>
+                                    <div className="form-group">
+                                        <label htmlFor="repoUrl">GitHub URL</label>
+                                        <input 
+                                            type="url" 
+                                            id="repoUrl" 
+                                            placeholder="https://github.com/user/repo" 
+                                            value={repoUrl}
+                                            onChange={(e) => setRepoUrl(e.target.value)}
+                                            required
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                    <LoadingButton 
+                                        type="submit" 
+                                        loading={loading}
+                                        loadingText="Analyzing..."
+                                        className="submit-btn" 
+                                        id="repoSubmitBtn"
+                                    >
+                                        🔍 Analyze Repository
+                                    </LoadingButton>
+                                </form>
+                            </div>
+
+                            {isScraping && (
+                                <ProgressTimeline 
+                                    currentStage={scrapeStage}
+                                    filesAnalyzed={filesCount}
+                                    currentFile={activeFile}
+                                    currentFolder={activeFolder}
+                                />
+                            )}
 
                         {/* Analysis History Card */}
-                        <div className="git-card">
+                        <div className="git-card micro-interactive-card">
                             <h2>My Repositories</h2>
-                            {analyses.length === 0 ? (
-                                <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.4)" }}>
-                                    No repositories analyzed yet. Submit one above to start!
-                                </p>
-                            ) : (
-                                <ul className="repos-list">
-                                    {analyses.map(item => (
-                                        <li 
-                                            key={item._id}
-                                            className={`repo-item ${item._id === selectedAnalysisId ? 'repo-item--active' : ''}`}
-                                            onClick={() => setSelectedAnalysisId(item._id)}
-                                        >
-                                            <div className="repo-info">
-                                                <h4>{item.repoName}</h4>
-                                                <span>by {item.owner}</span>
-                                            </div>
-                                            <div className="repo-arrow">➔</div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
+                            <RepositoryHistory 
+                                analyses={filteredAnalyses}
+                                selectedAnalysisId={selectedAnalysisId}
+                                onSelect={setSelectedAnalysisId}
+                                onReanalyze={handleReanalyze}
+                                onDelete={handleDeleteAnalysis}
+                            />
                         </div>
-                    </div>
+                        </div>
+                        {/* end left sidebar column */}
 
-                    {/* Right Main Panel: Audit & Results */}
-                    <div>
+                        {/* Right Main Panel: Audit & Results */}
+                        <div>
+
                         {!selectedAnalysis ? (
                             <div className="git-card" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "350px", textAlign: "center" }}>
                                 <div>
@@ -446,10 +727,14 @@ const GithubDashboard = () => {
                                 </div>
                             </div>
                         )}
+                        </div>
+                        {/* end right panel */}
                     </div>
-                </div>
-            </main>
-        </div>
+                    {/* end git-grid */}
+                </main>
+                <ScrollToTop />
+            </div>
+        </ErrorBoundary>
     );
 };
 

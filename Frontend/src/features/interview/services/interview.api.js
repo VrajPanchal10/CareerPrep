@@ -1,25 +1,26 @@
-import axios from "axios";
-
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
-    withCredentials: true,
-})
+import api from "../../../utils/apiClient";
 
 
 /**
  * @description Service to generate interview report based on user self description, resume and job description.
  */
-export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }) => {
+export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile, resumeText, onUploadProgress }) => {
 
     const formData = new FormData()
     formData.append("jobDescription", jobDescription)
-    formData.append("selfDescription", selfDescription)
-    formData.append("resume", resumeFile)
+    formData.append("selfDescription", selfDescription || "")
+    if (resumeFile) {
+        formData.append("resume", resumeFile)
+    }
+    if (resumeText) {
+        formData.append("resumeText", resumeText)
+    }
 
     const response = await api.post("/api/interview/", formData, {
         headers: {
             "Content-Type": "multipart/form-data"
-        }
+        },
+        onUploadProgress
     })
 
     return response.data
@@ -51,7 +52,7 @@ export const getAllInterviewReports = async () => {
  * @description Service to generate resume pdf based on user self description, resume content and job description.
  */
 export const generateResumePdf = async ({ interviewReportId }) => {
-    const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
+    const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, {}, {
         responseType: "blob"
     })
 
@@ -73,7 +74,7 @@ export const startInterviewSession = async ({ interviewReportId }) => {
  * @description Complete the current active interview session.
  */
 export const completeInterviewSession = async ({ sessionId }) => {
-    const response = await api.post(`/api/interview/session/${sessionId}/complete`)
+    const response = await api.post(`/api/interview/session/${sessionId}/complete`, {})
     return response.data
 }
 

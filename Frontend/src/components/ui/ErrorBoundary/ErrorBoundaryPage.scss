@@ -1,0 +1,204 @@
+.error-boundary-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0c10;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    color: #fff;
+    padding: 1.5rem;
+    box-sizing: border-box;
+
+    .error-card {
+        background: #11151c;
+        border: 1px solid rgba(231, 76, 60, 0.2);
+        border-radius: 12px;
+        width: 100%;
+        max-width: 550px;
+        padding: 2.5rem;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+        box-sizing: border-box;
+
+        &__icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+
+        &__title {
+            margin: 0 0 0.75rem 0;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #fff;
+        }
+
+        &__desc {
+            margin: 0 0 2rem 0;
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
+        }
+
+        .error-details {
+            margin-bottom: 2rem;
+            text-align: left;
+
+            &__expand {
+                background: #0a0c10;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 6px;
+                overflow: hidden;
+
+                summary {
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    color: rgba(255, 255, 255, 0.5);
+                    padding: 0.6rem 1rem;
+                    cursor: pointer;
+                    user-select: none;
+                    outline: none;
+
+                    &:hover {
+                        color: #fff;
+                        background: rgba(255, 255, 255, 0.02);
+                    }
+                }
+
+                .error-details__content {
+                    padding: 1rem;
+                    border-top: 1px solid rgba(255, 255, 255, 0.04);
+                    font-size: 0.8rem;
+
+                    .error-msg {
+                        margin: 0 0 0.75rem 0;
+                        color: #e74c3c;
+                        font-weight: 600;
+                    }
+
+                    .error-stack {
+                        margin: 0;
+                        background: #050608;
+                        border: 1px solid rgba(255, 255, 255, 0.04);
+                        border-radius: 4px;
+                        padding: 0.75rem;
+                        font-family: 'Fira Code', 'Consolas', monospace;
+                        overflow-x: auto;
+                        max-height: 180px;
+                        color: rgba(255, 255, 255, 0.75);
+                        line-height: 1.4;
+                    }
+                }
+            }
+        }
+
+        &__actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+
+            .err-btn {
+                font-size: 0.88rem;
+                font-weight: 700;
+                padding: 0.65rem 1.5rem;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: all 0.15s;
+                border: none;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+
+                &--primary {
+                    background: #d20d3b;
+                    color: #fff;
+
+                    &:hover {
+                        background: #b10b32;
+                        transform: translateY(-1px);
+                    }
+                }
+
+                &--secondary {
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    color: rgba(255, 255, 255, 0.8);
+
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.08);
+                        border-color: rgba(255, 255, 255, 0.15);
+                        color: #fff;
+                        transform: translateY(-1px);
+                    }
+                }
+            }
+        }
+    }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.light-theme {
+    .error-boundary-page {
+        background: #f8f9fa;
+        color: #212529;
+
+        .error-card {
+            background: #ffffff;
+            border-color: rgba(231, 76, 60, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+
+            &__title {
+                color: #212529;
+            }
+
+            &__desc {
+                color: rgba(0, 0, 0, 0.6);
+            }
+
+            .error-details {
+                &__expand {
+                    background: #f8f9fa;
+                    border-color: rgba(0, 0, 0, 0.08);
+
+                    summary {
+                        color: rgba(0, 0, 0, 0.5);
+                        &:hover {
+                            color: #000;
+                            background: rgba(0, 0, 0, 0.02);
+                        }
+                    }
+
+                    .error-details__content {
+                        border-top-color: rgba(0, 0, 0, 0.06);
+
+                        .error-stack {
+                            background: #e9ecef;
+                            border-color: rgba(0, 0, 0, 0.08);
+                            color: #212529;
+                        }
+                    }
+                }
+            }
+
+            &__actions {
+                .err-btn--secondary {
+                    background: rgba(0, 0, 0, 0.03);
+                    border-color: rgba(0, 0, 0, 0.08);
+                    color: rgba(0, 0, 0, 0.7);
+
+                    &:hover {
+                        background: rgba(0, 0, 0, 0.06);
+                        border-color: rgba(0, 0, 0, 0.12);
+                        color: #000;
+                    }
+                }
+            }
+        }
+    }
+}

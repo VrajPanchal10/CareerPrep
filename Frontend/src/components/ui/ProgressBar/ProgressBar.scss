@@ -1,0 +1,59 @@
+.progress-bar-container {
+    width: 100%;
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    .progress-bar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+
+        .status-text {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .percentage-text {
+            color: #d20d3b;
+        }
+    }
+
+    .progress-track {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: #d20d3b;
+        border-radius: 4px;
+        transition: width 0.2s ease-out;
+
+        &--uploading {
+            background: linear-gradient(90deg, #d20d3b, #f39c12);
+        }
+
+        &--evaluating {
+            background: #f1c40f;
+            animation: pulse 1.5s infinite;
+        }
+
+        &--success, &--complete {
+            background: #2ecc71;
+            box-shadow: 0 0 8px rgba(46, 204, 113, 0.4);
+        }
+
+        &--error {
+            background: #e74c3c;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.4);
+        }
+    }
+}

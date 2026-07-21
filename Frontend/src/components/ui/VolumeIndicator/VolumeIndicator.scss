@@ -1,0 +1,53 @@
+.volume-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    user-select: none;
+    letter-spacing: 0.3px;
+    max-width: 280px;
+    width: 100%;
+    box-sizing: border-box;
+
+    .vol-status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        transition: background 0.2s ease;
+    }
+
+    .vol-label {
+        flex-shrink: 0;
+    }
+
+    .vol-bar-wrapper {
+        flex: 1;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+
+        .vol-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            width: 0%;
+            transition: width 0.08s ease-out;
+            border-radius: 4px;
+        }
+    }
+
+    .vol-status-text {
+        font-size: 0.65rem;
+        color: rgba(255, 255, 255, 0.4);
+        flex-shrink: 0;
+        min-width: 50px;
+        text-align: right;
+    }
+}

@@ -1,0 +1,60 @@
+.radial-score-meter-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    box-sizing: border-box;
+
+    .radial-score-meter-svg {
+        display: block;
+    }
+
+    .radial-meter-bg {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.05);
+    }
+
+    .radial-meter-fill {
+        fill: none;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.85s cubic-bezier(0.25, 1, 0.5, 1);
+
+        &.stroke--high {
+            stroke: #2ecc71; // Green
+            filter: drop-shadow(0 0 4px rgba(46, 204, 113, 0.25));
+        }
+
+        &.stroke--mid {
+            stroke: #f1c40f; // Yellow
+            filter: drop-shadow(0 0 4px rgba(241, 196, 15, 0.25));
+        }
+
+        &.stroke--low {
+            stroke: #e74c3c; // Red
+            filter: drop-shadow(0 0 4px rgba(231, 76, 60, 0.25));
+        }
+    }
+
+    .radial-score-text {
+        position: absolute;
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        font-family: 'Outfit', 'Inter', sans-serif;
+        color: #fff;
+
+        .value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .percent {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            margin-left: 0.05rem;
+        }
+    }
+}

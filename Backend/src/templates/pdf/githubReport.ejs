@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="template-version" content="1.0.0">
+  <title>GitHub Project Defense Report</title>
+  <%- include('partials/styles') %>
+</head>
+<body>
+  <div class="page">
+    <%- include('partials/header', { title: 'GitHub Project Defense Report' }) %>
+    
+    <div class="candidate-info">
+      <div class="section-title">Candidate Evaluation Metadata</div>
+      <table>
+        <tr>
+          <td class="label">Candidate Name:</td>
+          <td><%= username %></td>
+          <td class="label">Evaluation Date:</td>
+          <td><%= date %></td>
+        </tr>
+        <tr>
+          <td class="label">Repository:</td>
+          <td><%= repoResult.repoName %></td>
+          <td class="label">Repository URL:</td>
+          <td><%= repoResult.repoUrl %></td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="section-title">GitHub Project Defense Performance</div>
+    <div class="score-cards-container" style="margin-bottom: 40px; gap: 20px;">
+      <div class="score-card">
+        <h3>Project Mastery Score</h3>
+        <div class="score" style="color: #27ae60;"><%= repoResult.scores.overallMasteryScore %><span>%</span></div>
+        <div class="status" style="color: #27ae60;">
+          <%= repoResult.scores.overallMasteryScore >= 80 ? "EXCELLENT MASTERY" : repoResult.scores.overallMasteryScore >= 60 ? "MODERATE MASTERY" : "BASIC UNDERSTANDING" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Project Defense Scores</div>
+    <div class="topic-list">
+      <div class="topic-item">
+        <div class="topic-name">
+          <span>Architecture Score</span>
+          <span><%= repoResult.scores.architectureScore %>%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" style="width: <%= repoResult.scores.architectureScore %>%;"></div>
+        </div>
+      </div>
+      <div class="topic-item">
+        <div class="topic-name">
+          <span>Security Score</span>
+          <span><%= repoResult.scores.securityScore %>%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" style="width: <%= repoResult.scores.securityScore %>%;"></div>
+        </div>
+      </div>
+      <div class="topic-item">
+        <div class="topic-name">
+          <span>Database Score</span>
+          <span><%= repoResult.scores.databaseScore %>%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" style="width: <%= repoResult.scores.databaseScore %>%;"></div>
+        </div>
+      </div>
+      <div class="topic-item">
+        <div class="topic-name">
+          <span>API Design Score</span>
+          <span><%= repoResult.scores.apiDesignScore %>%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" style="width: <%= repoResult.scores.apiDesignScore %>%;"></div>
+        </div>
+      </div>
+      <div class="topic-item">
+        <div class="topic-name">
+          <span>Deployment Score</span>
+          <span><%= repoResult.scores.deploymentScore %>%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" style="width: <%= repoResult.scores.deploymentScore %>%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Mastery Feedback</div>
+    <div class="heatmap-summary">
+      <div class="heatmap-column">
+        <h4 style="color: #27ae60; font-size: 13px; text-transform: uppercase;">✓ Strengths</h4>
+        <ul class="heatmap-list strong">
+          <% repoResult.feedback.strengths.slice(0, 3).forEach(s => { %>
+            <li>✓ <%= s %></li>
+          <% }) %>
+        </ul>
+      </div>
+      <div class="heatmap-column">
+        <h4 style="color: #d35400; font-size: 13px; text-transform: uppercase;">⚠ Recommendations</h4>
+        <ul class="heatmap-list needs-improvement">
+          <% repoResult.feedback.recommendations.slice(0, 3).forEach(r => { %>
+            <li>⚠ <%= r %></li>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

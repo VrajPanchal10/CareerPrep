@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const userModel = require("../models/user.model");
 const repositoryAnalysisModel = require("../models/repositoryAnalysis.model");
 const repositoryInterviewModel = require("../models/repositoryInterview.model");
 const repositoryInterviewResultModel = require("../models/repositoryInterviewResult.model");
@@ -10,41 +11,59 @@ const {
     generateRepoOverallFeedback 
 } = require("../services/repositoryAi.service");
 
-// Helper to fetch from GitHub API
-async function fetchGithub(url, token) {
-    const headers = {
-        "User-Agent": "AI-Resume-Analyzer-App",
-        "Accept": "application/json"
-    };
-    if (token) {
-        headers["Authorization"] = `token ${token}`;
-    }
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-        throw new Error(`GitHub request failed: ${res.status} ${res.statusText}`);
-    }
-    return res.json();
-}
+// New modular GitHub service layer
+const oauthService = require("../services/github/githubOAuth.service");
+const githubRepositoryService = require("../services/github/githubRepository.service");
+const githubApiService = require("../services/github/githubApi.service");
+const { GITHUB_ERROR_CODES } = require("../services/github/githubApi.service");
 
-// Helper to fetch raw content of a file from GitHub
-async function fetchGithubRaw(owner, repo, path, branch, token) {
-    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
-    const headers = {
-        "User-Agent": "AI-Resume-Analyzer-App",
-        "Accept": "application/vnd.github.v3.raw"
-    };
-    if (token) {
-        headers["Authorization"] = `token ${token}`;
+const { logger } = require("../utils/securityLogger");
+
+/**
+ * Resolves the plaintext GitHub access token from the User document.
+ * Returns null if no GitHub account is connected.
+ * @param {string} userId
+ * @returns {Promise<string|null>}
+ */
+/**
+ * Resolves the plaintext GitHub access token from the User document.
+ * Returns GITHUB_SYSTEM_TOKEN as fallback, or null for anonymous.
+ * Throws GITHUB_DECRYPTION_FAILED if user token is corrupted.
+ * @param {string} userId
+ * @returns {Promise<{token: string|null, source: string, scopes: string[]}>}
+ */
+async function resolveUserToken(userId) {
+    const user = await userModel.findById(userId).select("githubOAuth");
+    const gh = user?.githubOAuth;
+    
+    if (!gh || !gh.encryptedAccessToken || !gh.tokenIv || !gh.tokenAuthTag) {
+        return {
+            token: process.env.GITHUB_SYSTEM_TOKEN || null,
+            source: process.env.GITHUB_SYSTEM_TOKEN ? "system" : "anonymous",
+            scopes: []
+        };
     }
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-        throw new Error(`Failed to fetch file content: ${path}`);
+
+    try {
+        const decrypted = oauthService.decryptToken({
+            encrypted: gh.encryptedAccessToken,
+            iv: gh.tokenIv,
+            authTag: gh.tokenAuthTag
+        });
+        return {
+            token: decrypted,
+            source: "user",
+            scopes: gh.scopes || []
+        };
+    } catch (err) {
+        logger.error(`[repositoryInterview] Token decryption failed for user ${userId}:`, err.message);
+        throw new Error("GITHUB_DECRYPTION_FAILED");
     }
-    return res.text();
 }
 
 /**
- * @description Parses GitHub repository URL to extract owner and repo name.
+ * Parses GitHub repository URL to extract owner and repo name.
+ * Retained for public-repo URL input fallback path.
  */
 function parseGithubUrl(repoUrl) {
     const cleaned = repoUrl.trim().replace(/\.git$/, "").replace(/\/$/, "");
@@ -56,182 +75,114 @@ function parseGithubUrl(repoUrl) {
 }
 
 /**
- * @description Phase 1: Fetch and Analyze public/private repository.
+ * Maps GitHubApiError codes to user-friendly HTTP responses.
+ */
+function handleGithubError(err, res) {
+    const userMessages = {
+        [GITHUB_ERROR_CODES.UNAUTHORIZED]: { status: 401, message: err.message || "GitHub token is invalid or expired. Please reconnect your GitHub account in Settings." },
+        [GITHUB_ERROR_CODES.FORBIDDEN]:    { status: 403, message: err.message || "Access denied. You do not have permission to access this repository." },
+        [GITHUB_ERROR_CODES.NOT_FOUND]:    { status: 404, message: err.message || "Repository not found. Please check the URL or your access permissions." },
+        [GITHUB_ERROR_CODES.RATE_LIMITED]: { status: 429, message: err.message || "GitHub API rate limit reached. Please wait a few minutes before retrying." },
+        [GITHUB_ERROR_CODES.NETWORK_ERROR]:{ status: 503, message: "Could not reach GitHub. Please check your internet connection and try again." },
+        "REPO_TOO_LARGE":                  { status: 413, message: err.message },
+        "EMPTY_REPOSITORY":                { status: 400, message: err.message || "Repository contains no analyzable source files." },
+        "ANALYSIS_CANCELLED":              { status: 409, message: "Repository analysis was cancelled." }
+    };
+    const mapped = userMessages[err.code] || { status: err.httpStatus || 500, message: err.message || "An unexpected error occurred during repository analysis." };
+    return res.status(mapped.status).json({ success: false, message: mapped.message });
+}
+
+/**
+ * @description Phase 1: Analyze repository (public or private via OAuth).
+ *
+ * Request body:
+ *   repoUrl     {string}  — GitHub URL (used for public repos or as fallback)
+ *   owner       {string}  — Optional; if provided alongside repo, URL is not needed
+ *   repo        {string}  — Optional; same as above
+ *   forceAnalysis {boolean} — Skip large-repo confirmation prompt
+ *
+ * Token is NEVER accepted from the request body. It is resolved server-side
+ * from the authenticated user's encrypted OAuth credentials.
  */
 async function analyzeRepositoryController(req, res, next) {
     try {
-        const { repoUrl, githubToken } = req.body;
-        if (!repoUrl) {
-            return res.status(400).json({
-                success: false,
-                message: "GitHub repository URL is required."
-            });
-        }
+        const { repoUrl, owner: bodyOwner, repo: bodyRepo, forceAnalysis = false } = req.body;
 
+        // Resolve owner/repo — either from explicit params or by parsing the URL
         let owner, repo;
         try {
-            const parsed = parseGithubUrl(repoUrl);
-            owner = parsed.owner;
-            repo = parsed.repo;
-        } catch (urlErr) {
-            return res.status(400).json({
-                success: false,
-                message: urlErr.message
-            });
+            if (bodyOwner && bodyRepo) {
+                owner = bodyOwner;
+                repo = bodyRepo;
+            } else if (repoUrl) {
+                const parsed = parseGithubUrl(repoUrl);
+                owner = parsed.owner;
+                repo = parsed.repo;
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: "Provide either a GitHub repository URL or owner + repo fields."
+                });
+            }
+        } catch (parseErr) {
+            return res.status(400).json({ success: false, message: parseErr.message });
         }
 
-        console.log(`[Repo Analyzer] Starting analysis for repository: ${owner}/${repo}...`);
-
-        // 1. Fetch Repository Metadata
-        let metadata;
+        // Resolve token from the User document
+        let tokenInfo;
         try {
-            metadata = await fetchGithub(`https://api.github.com/repos/${owner}/${repo}`, githubToken);
-        } catch (metaErr) {
-            return res.status(404).json({
-                success: false,
-                message: "Repository not found or inaccessible. Make sure it is public."
+            tokenInfo = await resolveUserToken(req.user.id);
+        } catch (err) {
+            if (err.message === "GITHUB_DECRYPTION_FAILED") {
+                return res.status(401).json({
+                    success: false,
+                    message: "Your GitHub credentials could not be decrypted. Please reconnect your GitHub account in Settings."
+                });
+            }
+            throw err;
+        }
+
+        const { token, source, scopes } = tokenInfo;
+
+        logger.debug(`[Repo Analyzer] Starting analysis for ${owner}/${repo} (auth source: ${source})`);
+
+        // Delegate to the repository analysis service pipeline
+        const result = await githubRepositoryService.analyzeRepository({
+            owner,
+            repo,
+            token,
+            source,
+            scopes,
+            userId: req.user.id,
+            forceAnalysis: Boolean(forceAnalysis)
+        });
+
+        // Large repo — needs user confirmation before proceeding
+        if (result.requiresConfirmation) {
+            return res.status(200).json({
+                success: true,
+                requiresConfirmation: true,
+                sizeMb: result.sizeMb,
+                sizeTier: result.sizeTier,
+                message: `This repository is ${result.sizeMb} MB. Analysis may take longer and use more resources. Set forceAnalysis: true to proceed.`
             });
         }
 
-        const sizeKb = metadata.size || 0;
-        const defaultBranch = metadata.default_branch || "main";
-        const isPrivate = metadata.private || false;
-
-        // Safeguard Limit: Max Repository Size (50MB = 51200 KB)
-        const isLargeRepo = sizeKb > 51200;
-
-        // 2. Fetch file tree recursively
-        let tree = [];
-        let fallbackMode = isLargeRepo;
-        
-        if (!fallbackMode) {
-            try {
-                const treeData = await fetchGithub(`https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`, githubToken);
-                tree = treeData.tree || [];
-            } catch (treeErr) {
-                console.warn(`[Repo Analyzer] Failed to fetch recursive tree. Falling back to basic mode.`, treeErr.message);
-                fallbackMode = true; // Fallback gracefully if tree API fails
-            }
-        }
-
-        // Exclusion pattern matching
-        const excludePatterns = [
-            /node_modules/i, /dist/i, /build/i, /coverage/i, /\.git/i, /\.github/i,
-            /bower_components/i, /vendor/i, /assets/i, /public/i, /generated/i, /tmp/i,
-            /\.(png|jpg|jpeg|gif|svg|ico|webp|pdf|zip|gz|tar|woff|woff2|eot|ttf|mp4|mp3)$/i
-        ];
-
-        const isExcluded = (path) => {
-            return excludePatterns.some(regex => regex.test(path));
-        };
-
-        // Filter and compile folder structure layout text
-        let folderStructureLines = [];
-        const filteredTree = tree.filter(node => !isExcluded(node.path));
-
-        // Create directory structure preview (max 100 lines)
-        filteredTree.slice(0, 100).forEach(node => {
-            folderStructureLines.push(node.path + (node.type === "tree" ? "/" : ""));
-        });
-        const folderStructureText = folderStructureLines.join("\n") || "Tree unavailable";
-
-        // 3. Prioritize key source/manifest/config files for deep analysis
-        const prioritizedFiles = [];
-        
-        // Find README
-        const readmeNode = filteredTree.find(n => n.type === "blob" && /readme\.md$/i.test(n.path));
-        if (readmeNode) prioritizedFiles.push(readmeNode.path);
-
-        // Find dependency manifests
-        const manifestNode = filteredTree.find(n => n.type === "blob" && /(package\.json|requirements\.txt|go\.mod|pom\.xml|cargo\.toml)$/i.test(n.path));
-        if (manifestNode) prioritizedFiles.push(manifestNode.path);
-
-        // Find docker/deployment configs
-        const deployNodes = filteredTree.filter(n => n.type === "blob" && /(Dockerfile|docker-compose\.yml|vercel\.json|netlify\.toml)$/i.test(n.path));
-        deployNodes.forEach(n => prioritizedFiles.push(n.path));
-
-        // Find env files
-        const envNodes = filteredTree.filter(n => n.type === "blob" && /\.env\.(example|sample|dev)$/i.test(n.path));
-        envNodes.forEach(n => prioritizedFiles.push(n.path));
-
-        // Find controller, route, model, services, app entry files
-        const codeNodes = filteredTree.filter(n => 
-            n.type === "blob" && 
-            /\.(js|jsx|ts|tsx|py|go|java|rs|cpp|h)$/i.test(n.path) &&
-            (/(controller|route|service|model)/i.test(n.path) || 
-             /(app|server|index|main)\.[a-z]+$/i.test(n.path))
-        );
-        codeNodes.slice(0, 8).forEach(n => {
-            if (!prioritizedFiles.includes(n.path)) {
-                prioritizedFiles.push(n.path);
-            }
-        });
-
-        // 4. Fetch content of selected files within limits
-        let filesContextText = "";
-        let filesAnalyzedCount = 0;
-        const maxFilesLimit = 15;
-        const maxCharBudget = 60000; // Character limit sent to AI
-
-        // Fallback check: if large or fallback is active, only fetch README and package.json
-        const filesToFetch = fallbackMode 
-            ? prioritizedFiles.filter(p => /readme\.md|package\.json/i.test(p))
-            : prioritizedFiles;
-
-        for (const filepath of filesToFetch) {
-            if (filesAnalyzedCount >= maxFilesLimit) break;
-            if (filesContextText.length >= maxCharBudget) break;
-
-            try {
-                const rawText = await fetchGithubRaw(owner, repo, filepath, defaultBranch, githubToken);
-                // Add header details for the AI
-                filesContextText += `\n\n--- FILE: ${filepath} ---\n`;
-                // Slice code if single file is too large to fit budget
-                filesContextText += rawText.slice(0, 10000);
-                filesAnalyzedCount++;
-            } catch (fetchErr) {
-                console.warn(`[Repo Analyzer] Failed to fetch content for file ${filepath}`, fetchErr.message);
-            }
-        }
-
-        if (filesContextText.trim() === "") {
-            filesContextText = "No codebase files could be retrieved.";
-        }
-
-        // 5. Invoke Gemini service to compile Project Audit and Knowledge Graph
-        const aiAnalysis = await generateRepoAnalysis({
-            repoUrl,
-            repoName: repo,
-            owner,
-            filesContext: filesContextText.slice(0, maxCharBudget),
-            folderStructure: folderStructureText
-        });
-
-        // 6. Save in DB
-        const savedAnalysis = await repositoryAnalysisModel.create({
-            user: req.user.id,
-            repoUrl,
-            repoName: repo,
-            owner,
-            isPrivate,
-            authMethod: githubToken ? "token" : "none",
-            summary: aiAnalysis.summary,
-            knowledgeGraph: aiAnalysis.knowledgeGraph,
-            healthReport: aiAnalysis.healthReport,
-            projectSnapshot: aiAnalysis.projectSnapshot
-        });
-
-        return res.status(201).json({
+        return res.status(result.cached ? 200 : 201).json({
             success: true,
-            message: "Repository analyzed successfully.",
-            analysis: savedAnalysis
+            cached: result.cached,
+            message: result.cached
+                ? "Returning cached repository analysis."
+                : "Repository analyzed successfully.",
+            analysis: result.analysis
         });
 
-    } catch (error) {
-        console.error("Error in analyzeRepositoryController:", error);
-        next(error);
+    } catch (err) {
+        logger.error("Error in analyzeRepositoryController:", err);
+        return handleGithubError(err, res);
     }
 }
+
 
 /**
  * @description Phase 3 & 4: Start a new mock Project Defense Interview session.
@@ -267,7 +218,7 @@ async function startRepositoryInterviewController(req, res, next) {
         }
 
         // Generate tailored questions using Gemini
-        console.log(`[Repo Interview] Generating ${limit} questions for ${analysis.repoName}...`);
+        logger.debug(`[Repo Interview] Generating ${limit} questions for ${analysis.repoName}...`);
         const rawQuestions = await generateRepoQuestions({
             knowledgeGraph: analysis.knowledgeGraph,
             limit
@@ -298,7 +249,7 @@ async function startRepositoryInterviewController(req, res, next) {
         });
 
     } catch (error) {
-        console.error("Error in startRepositoryInterviewController:", error);
+        logger.error("Error in startRepositoryInterviewController:", error);
         next(error);
     }
 }
@@ -345,7 +296,7 @@ async function submitRepositoryAnswerController(req, res, next) {
         }
 
         // Evaluate user answer
-        console.log(`[Repo Interview] Evaluating question index ${questionIndex}...`);
+        logger.debug(`[Repo Interview] Evaluating question index ${questionIndex}...`);
         const evaluation = await evaluateRepoAnswer({
             question: question.questionText,
             referenceAnswer: question.referenceAnswer,
@@ -375,7 +326,7 @@ async function submitRepositoryAnswerController(req, res, next) {
             );
 
             if (!alreadyHasFollowUp) {
-                console.log(`[Repo Interview] Generating follow-up check...`);
+                logger.debug(`[Repo Interview] Generating follow-up check...`);
                 const followUpResult = await generateRepoFollowUp({
                     question,
                     userAnswer
@@ -393,7 +344,7 @@ async function submitRepositoryAnswerController(req, res, next) {
 
                     // Inject follow-up immediately below the answered question index
                     session.questions.splice(questionIndex + 1, 0, followUpQuestion);
-                    console.log(`[Repo Interview] Follow-up question injected at index ${questionIndex + 1}`);
+                    logger.debug(`[Repo Interview] Follow-up question injected at index ${questionIndex + 1}`);
                 }
             }
         }
@@ -409,7 +360,7 @@ async function submitRepositoryAnswerController(req, res, next) {
         });
 
     } catch (error) {
-        console.error("Error in submitRepositoryAnswerController:", error);
+        logger.error("Error in submitRepositoryAnswerController:", error);
         next(error);
     }
 }
@@ -512,7 +463,7 @@ async function completeRepositoryInterviewController(req, res, next) {
         });
 
     } catch (error) {
-        console.error("Error in completeRepositoryInterviewController:", error);
+        logger.error("Error in completeRepositoryInterviewController:", error);
         next(error);
     }
 }
@@ -589,7 +540,7 @@ async function getRepositoryDashboardDataController(req, res, next) {
         });
 
     } catch (error) {
-        console.error("Error in getRepositoryDashboardDataController:", error);
+        logger.error("Error in getRepositoryDashboardDataController:", error);
         next(error);
     }
 }
@@ -618,7 +569,83 @@ async function getRepositoryInterviewByIdController(req, res, next) {
         });
 
     } catch (error) {
-        console.error("Error in getRepositoryInterviewByIdController:", error);
+        logger.error("Error in getRepositoryInterviewByIdController:", error);
+        next(error);
+    }
+}
+
+/**
+ * @description Fetch aggregated historical progress for GitHub Defense.
+ * Strictly uses MongoDB data (NO AI calls).
+ */
+async function getRepositoryProgressStatsController(req, res, next) {
+    try {
+        const userId = req.user.id;
+        const limit = 50; // Pagination/limit for analytics
+
+        // Fetch recent historical records only
+        const results = await repositoryInterviewResultModel.find({ user: userId })
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .lean();
+
+        if (results.length === 0) {
+            return res.status(200).json({
+                success: true,
+                stats: {
+                    totalAttempts: 0,
+                    averageScore: 0,
+                    bestScore: 0,
+                    latestScore: 0,
+                    recentAttempts: []
+                }
+            });
+        }
+
+        let totalScore = 0;
+        let bestScore = 0;
+        let latestScore = results[0].scores?.overallMasteryScore || 0;
+
+        const recentAttempts = results.map(r => {
+            const score = r.scores?.overallMasteryScore || 0;
+            totalScore += score;
+            if (score > bestScore) bestScore = score;
+            
+            // Reconstruct strong and weak areas for the dashboard
+            const strongAreas = [];
+            const weakAreas = [];
+            
+            if (r.scores) {
+                if (r.scores.architectureScore >= 75) strongAreas.push("Architecture"); else weakAreas.push("Architecture");
+                if (r.scores.securityScore >= 75) strongAreas.push("Security"); else weakAreas.push("Security");
+                if (r.scores.databaseScore >= 75) strongAreas.push("Database"); else weakAreas.push("Database");
+            }
+
+            return {
+                id: r._id,
+                repoName: r.repoName,
+                score: score,
+                strongAreas,
+                weakAreas,
+                createdAt: r.createdAt
+            };
+        });
+
+        const averageScore = Math.round(totalScore / results.length);
+
+        return res.status(200).json({
+            success: true,
+            stats: {
+                totalAttempts: results.length,
+                averageScore,
+                bestScore,
+                latestScore,
+                recentAttempts
+            }
+        });
+
+    } catch (error) {
+        logger.error("Error in getRepositoryProgressStatsController:", error);
         next(error);
     }
 }
@@ -629,5 +656,6 @@ module.exports = {
     submitRepositoryAnswerController,
     completeRepositoryInterviewController,
     getRepositoryDashboardDataController,
-    getRepositoryInterviewByIdController
+    getRepositoryInterviewByIdController,
+    getRepositoryProgressStatsController
 };

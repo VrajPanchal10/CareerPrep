@@ -49,6 +49,38 @@ const atsReportSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    resumeName: {
+        type: String,
+        default: "resume.pdf"
+    },
+    resumeMimetype: {
+        type: String,
+        default: "application/pdf"
+    },
+    storageProvider: {
+        type: String,
+        default: "local"
+    },
+    relativePath: {
+        type: String
+    },
+    publicUrl: {
+        type: String
+    },
+    resumePages: [
+        {
+            pageNum: { type: Number },
+            text: { type: String }
+        }
+    ],
+    diagnostics: {
+        fileSize: { type: Number },
+        pageCount: { type: Number },
+        characterCount: { type: Number },
+        parsingDuration: { type: Number },
+        confidenceScore: { type: Number },
+        warnings: [String]
+    },
     atsScore: {
         type: Number,
         required: true,

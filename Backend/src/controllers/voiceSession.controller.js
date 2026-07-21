@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 const voiceSessionModel = require("../models/voiceSession.model");
-const interviewReportModel = require("../models/interviewReport.model");
-const { 
-    evaluateVoiceAnswer, 
-    generateAiFollowUpQuestion, 
-    generateVoiceSessionSummaryRecommendation 
-} = require("../services/ai.service");
+const { generateVoiceSessionSummaryRecommendation } = require("../services/ai.service");
+const { logger } = require("../utils/securityLogger");
+const translationService = require("../services/translation.service");
+const sessionService = require("../services/session.service");
+const voiceOrchestrator = require("../services/voiceOrchestrator.service");
+const gateway = require("../services/aiGateway.service");
 
 /**
  * @description Start a new voice interview session.
@@ -38,7 +38,7 @@ async function startSession(req, res, next) {
         }
 
         // 2. Fetch linked Interview Report Plan
-        const report = await interviewReportModel.findOne({ _id: interviewReportId, user: req.user.id });
+        const report = await sessionService.getInterviewReport(interviewReportId, req.user.id);
         if (!report) {
             return res.status(404).json({
                 success: false,
@@ -51,7 +51,6 @@ async function startSession(req, res, next) {
         const reportTech = report.technicalQuestions || [];
         const reportBehav = report.behavioralQuestions || [];
 
-        // In V1, we take the top slices. In harder difficulties we can describe it or select specific indexes.
         const techSlice = reportTech.slice(0, 3);
         const behavSlice = reportBehav.slice(0, 2);
 
@@ -84,17 +83,17 @@ async function startSession(req, res, next) {
             });
         }
 
-        // 4. Create Voice session
-        const session = await voiceSessionModel.create({
-            user: req.user.id,
-            interviewReport: report._id,
+        // 4. Create base session
+        const session = await sessionService.createSession({
+            userId: req.user.id,
+            reportId: report._id,
             difficulty,
-            enableFollowUps: !!enableFollowUps,
-            questions: selectedQuestions,
-            transcripts: [],
-            evaluations: [],
-            status: "started"
+            enableFollowUps,
+            questions: selectedQuestions
         });
+
+        // 5. Fire and forget: Translation Engine pre-generates in background
+        translationService.preGenerateTranslationsAsync(session._id, selectedQuestions);
 
         return res.status(201).json({
             success: true,
@@ -103,7 +102,7 @@ async function startSession(req, res, next) {
         });
 
     } catch (error) {
-        console.error("Error in startSession:", error);
+        logger.error("Error in startSession:", error);
         next(error);
     }
 }
@@ -113,7 +112,7 @@ async function startSession(req, res, next) {
  */
 async function submitAnswer(req, res, next) {
     try {
-        const { sessionId, questionIndex, userAnswer, responseTime } = req.body;
+        const { sessionId, questionIndex, userAnswer, responseTime, languageCode } = req.body;
 
         // 1. Input Validation
         if (!sessionId || questionIndex === undefined || userAnswer === undefined || responseTime === undefined) {
@@ -130,116 +129,38 @@ async function submitAnswer(req, res, next) {
             });
         }
 
-        const session = await voiceSessionModel.findOne({ _id: sessionId, user: req.user.id });
-        if (!session) {
-            return res.status(404).json({
-                success: false,
-                message: "Voice session not found."
-            });
-        }
-
-        if (session.status === "completed") {
-            return res.status(400).json({
-                success: false,
-                message: "Cannot submit answers to a completed session."
-            });
-        }
-
-        const question = session.questions[questionIndex];
-        if (!question) {
-            return res.status(404).json({
-                success: false,
-                message: "Question not found at index."
-            });
-        }
-
-        console.log(`[Voice Simulator] Evaluating question ${questionIndex} for session ${sessionId}...`);
-
-        // 2. Evaluate verbal answer transcript using Gemini AI
-        const evaluationResult = await evaluateVoiceAnswer({
-            question: question.questionText,
-            intention: question.intention,
-            modelAnswer: question.answer,
+        const result = await voiceOrchestrator.processVoiceAnswer({
+            sessionId,
+            userId: req.user.id,
+            questionIndex,
             userAnswer,
-            topic: question.topic
+            responseTime,
+            languageCode
         });
-
-        // 3. Store transcript response time
-        // Check if transcript already exists for this index
-        const existingTransIdx = session.transcripts.findIndex(t => t.questionIndex === questionIndex);
-        const transcriptObj = {
-            questionIndex,
-            transcriptText: userAnswer,
-            responseTime: Number(responseTime)
-        };
-        if (existingTransIdx > -1) {
-            session.transcripts[existingTransIdx] = transcriptObj;
-        } else {
-            session.transcripts.push(transcriptObj);
-        }
-
-        // Store evaluation results
-        const existingEvalIdx = session.evaluations.findIndex(e => e.questionIndex === questionIndex);
-        const evaluationObj = {
-            questionIndex,
-            overallScore: evaluationResult.overallScore,
-            communicationScore: evaluationResult.communicationScore,
-            clarityScore: evaluationResult.clarityScore,
-            technicalScore: evaluationResult.technicalScore,
-            explanationScore: evaluationResult.explanationScore,
-            strengths: evaluationResult.strengths || [],
-            weaknesses: evaluationResult.weaknesses || [],
-            suggestions: evaluationResult.suggestions || []
-        };
-        if (existingEvalIdx > -1) {
-            session.evaluations[existingEvalIdx] = evaluationObj;
-        } else {
-            session.evaluations.push(evaluationObj);
-        }
-
-        // 4. Handle Contextual Follow-Up Generation (depth limit of 1)
-        let followUpQuestion = null;
-        if (session.enableFollowUps && !question.isFollowUp) {
-            // Check if a follow-up for this parent question was already generated to prevent duplication
-            const alreadyHasFollowUp = session.questions.some(q => q.isFollowUp && q.parentQuestionIndex === questionIndex);
-            
-            if (!alreadyHasFollowUp) {
-                console.log("[Voice Simulator] Generating contextual follow-up...");
-                const followUpCheck = await generateAiFollowUpQuestion({
-                    question,
-                    userAnswer
-                });
-
-                if (followUpCheck.hasFollowUp) {
-                    followUpQuestion = {
-                        questionText: followUpCheck.questionText,
-                        intention: followUpCheck.intention,
-                        answer: followUpCheck.answer,
-                        topic: question.topic,
-                        type: question.type,
-                        isFollowUp: true,
-                        parentQuestionIndex: questionIndex
-                    };
-
-                    // Inject follow-up immediately after the current question index
-                    session.questions.splice(questionIndex + 1, 0, followUpQuestion);
-                    console.log(`[Voice Simulator] Follow-up question injected at index ${questionIndex + 1}`);
-                }
-            }
-        }
-
-        await session.save();
 
         return res.status(200).json({
             success: true,
             message: "Answer evaluated successfully.",
-            evaluation: evaluationObj,
-            followUpQuestion,
-            session
+            evaluation: result.evaluation,
+            followUpQuestion: result.followUpQuestion,
+            session: result.session,
+            languageMismatchWarning: result.languageMismatchWarning
         });
 
     } catch (error) {
-        console.error("Error in submitAnswer:", error);
+        logger.error("Error in submitAnswer:", error);
+
+        if (error.name === "ValidationError") {
+            const errors = Object.keys(error.errors).map(key => ({
+                field: key,
+                message: error.errors[key].message
+            }));
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed: " + error.message,
+                errors
+            });
+        }
 
         if (error.model || error.status) {
             const isUnavailable = [503, "UNAVAILABLE"].includes(error.status);
@@ -298,84 +219,27 @@ async function completeSession(req, res, next) {
             });
         }
 
-        // 1. Calculate Score Averages
-        let sumOverall = 0, sumComm = 0, sumClar = 0, sumTech = 0, sumExpl = 0;
-        const topicScores = {}; // topic -> sum overall score, count
-        
-        session.evaluations.forEach(evalu => {
-            sumOverall += evalu.overallScore;
-            sumComm += evalu.communicationScore;
-            sumClar += evalu.clarityScore;
-            sumTech += evalu.technicalScore;
-            sumExpl += evalu.explanationScore;
-
-            // Find question topic matching the index
-            const q = session.questions[evalu.questionIndex];
-            if (q) {
-                const topic = q.topic;
-                if (!topicScores[topic]) {
-                    topicScores[topic] = { sum: 0, count: 0 };
-                }
-                topicScores[topic].sum += evalu.overallScore;
-                topicScores[topic].count += 1;
-            }
-        });
-
-        const numEvaluations = session.evaluations.length;
-        session.overallScore = Math.round(sumOverall / numEvaluations);
-        session.communicationScore = Math.round(sumComm / numEvaluations);
-        session.clarityScore = Math.round(sumClar / numEvaluations);
-        session.technicalScore = Math.round(sumTech / numEvaluations);
-        session.explanationScore = Math.round(sumExpl / numEvaluations);
-
-        // 2. Response Time Statistics
-        let totalTime = 0;
-        session.transcripts.forEach(trans => {
-            totalTime += trans.responseTime || 0;
-        });
-        session.totalDuration = totalTime;
-        session.averageResponseTime = session.transcripts.length > 0 
-            ? Math.round(totalTime / session.transcripts.length) 
-            : 0;
-
-        // 3. Competency Strengths & Weaknesses Areas
-        const strongAreas = [];
-        const weakAreas = [];
-        Object.entries(topicScores).forEach(([topic, data]) => {
-            const avg = Math.round(data.sum / data.count);
-            if (avg >= 75) {
-                strongAreas.push(topic);
-            } else {
-                weakAreas.push(topic);
-            }
-        });
-        session.strongAreas = strongAreas;
-        session.weakAreas = weakAreas;
-
-        // 4. Generate AI Career Coach strategic advice summary
-        console.log(`[Voice Simulator] Generating summary recommendation advice for session ${session._id}...`);
+        logger.debug(`[Voice Simulator] Generating summary recommendation advice for session ${session._id}...`);
+        let topRecommendation = "";
         try {
-            session.topRecommendation = await generateVoiceSessionSummaryRecommendation({
+            topRecommendation = await generateVoiceSessionSummaryRecommendation({
                 evaluations: session.evaluations
             });
         } catch (recErr) {
-            console.error("Failed to generate career coach advice:", recErr);
-            session.topRecommendation = "Structure responses with the STAR framework (Situation, Task, Action, Result) to state clear deliverables, and expand technical concepts using domain keywords.";
+            logger.error("Failed to generate career coach advice:", recErr);
+            topRecommendation = "Structure responses with the STAR framework (Situation, Task, Action, Result) to state clear deliverables, and expand technical concepts using domain keywords.";
         }
 
-        session.status = "completed";
-        session.completedAt = new Date();
-
-        await session.save();
+        const completedSession = await sessionService.completeSessionDetails(session, topRecommendation);
 
         return res.status(200).json({
             success: true,
             message: "Voice mock interview session completed successfully.",
-            session
+            session: completedSession
         });
 
     } catch (error) {
-        console.error("Error in completeSession:", error);
+        logger.error("Error in completeSession:", error);
         next(error);
     }
 }
@@ -460,7 +324,7 @@ async function getProgressStats(req, res, next) {
         });
 
     } catch (error) {
-        console.error("Error in getProgressStats:", error);
+        logger.error("Error in getProgressStats:", error);
         next(error);
     }
 }
@@ -494,7 +358,7 @@ async function getSessionById(req, res, next) {
             session
         });
     } catch (error) {
-        console.error("Error in getSessionById:", error);
+        logger.error("Error in getSessionById:", error);
         next(error);
     }
 }
@@ -513,10 +377,121 @@ async function getSessions(req, res, next) {
             sessions
         });
     } catch (error) {
-        console.error("Error in getSessions:", error);
+        logger.error("Error in getSessions:", error);
         next(error);
     }
 }
+
+
+
+/**
+ * @description Transcribe user's audio file using Sarvam STT.
+ */
+async function transcribeAudio(req, res, next) {
+    logger.debug(`[Voice Controller] [Route reached] POST /api/voice-session/transcribe`);
+    try {
+        if (!req.file) {
+            logger.warn(`[Voice Controller] No audio file uploaded in request`);
+            return res.status(400).json({
+                success: false,
+                message: "No audio file uploaded for transcription."
+            });
+        }
+
+        const duration = req.body.duration ? parseFloat(req.body.duration) : 0;
+        if (req.file.size < 500 && duration < 0.5) {
+            logger.warn(`[Voice Controller] Audio file too small (${req.file.size} bytes) and duration too short (${duration}s). Rejected as empty recording.`);
+            return res.status(400).json({
+                success: false,
+                message: "Audio recording is empty or too short."
+            });
+        }
+
+        const languageCode = req.body.languageCode || "en-IN";
+        logger.debug(`[Voice Controller] [STT Stage] Received audio file: name='${req.file.originalname}', size=${req.file.size} bytes, mimetype='${req.file.mimetype}', languageCode='${languageCode}'`);
+
+        const response = await gateway.routeTask("speechToText", {
+            fileBuffer: req.file.buffer,
+            filename: req.file.originalname,
+            mimetype: req.file.mimetype,
+            languageCode
+        });
+
+        if (!response.success || !response.output) {
+            logger.error(`[Voice Controller] [STT Stage] Provider failed or returned empty output:`, JSON.stringify(response.error, null, 2));
+            return res.status(response.error?.status || 502).json({
+                success: false,
+                message: response.error?.message || "Transcription provider failed."
+            });
+        }
+
+        logger.debug(`[Voice Controller] [STT Stage] Transcription result: '${response.output.transcript || ""}'`);
+
+        return res.status(200).json({
+            success: true,
+            transcript: response.output.transcript || ""
+        });
+    } catch (error) {
+        logger.error("[Voice Controller] [STT Stage] Error in transcribeAudio with full stack trace:", error.stack || error);
+        // Prevent generic 500 errors by returning a controlled 502/503 status when gateway or provider fails
+        const statusCode = error.status || 502;
+        return res.status(statusCode).json({
+            success: false,
+            message: error.message || "Speech-to-Text transcription service is currently unavailable."
+        });
+    }
+}
+
+/**
+ * @description Synthesize audio file from text using Sarvam TTS.
+ */
+async function textToSpeech(req, res, next) {
+    logger.debug(`[Voice Controller] [Route reached] POST /api/voice-session/speak`);
+    try {
+        const { text, languageCode, speaker, gender, speed } = req.body;
+        logger.debug(`[Voice Controller] [TTS Stage] Request body:`, JSON.stringify(req.body, null, 2));
+
+        if (!text) {
+            logger.warn(`[Voice Controller] Text parameter missing for TTS synthesis`);
+            return res.status(400).json({
+                success: false,
+                message: "Text parameter is required for speech synthesis."
+            });
+        }
+
+        const response = await gateway.routeTask("textToSpeech", {
+            text,
+            languageCode: languageCode || "en-IN",
+            speaker: speaker || "shreya", // default to shreya since meera is not supported
+            gender: gender || (speaker === "shubh" ? "male" : "female"),
+            speed: speed || 1.0
+        });
+
+        if (!response.success || !response.output) {
+            logger.error(`[Voice Controller] [TTS Stage] Provider failed or returned empty output:`, JSON.stringify(response.error, null, 2));
+            return res.status(response.error?.status || 502).json({
+                success: false,
+                message: response.error?.message || "Speech synthesis provider failed."
+            });
+        }
+
+        logger.debug(`[Voice Controller] [TTS Stage] Success! Base64 Audio tracks length: ${response.output.audios ? response.output.audios.length : 0}`);
+
+        return res.status(200).json({
+            success: true,
+            audios: response.output.audios || []
+        });
+    } catch (error) {
+        logger.error("[Voice Controller] [TTS Stage] Error in textToSpeech with full stack trace:", error.stack || error);
+        // Prevent generic 500 errors by returning a controlled 502/503 status
+        const statusCode = error.status || 502;
+        return res.status(statusCode).json({
+            success: false,
+            message: error.message || "Text-to-Speech synthesis service is currently unavailable."
+        });
+    }
+}
+
 
 module.exports = {
     startSession,
@@ -524,5 +499,7 @@ module.exports = {
     completeSession,
     getProgressStats,
     getSessionById,
-    getSessions
+    getSessions,
+    transcribeAudio,
+    textToSpeech
 };

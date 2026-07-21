@@ -1,6 +1,7 @@
 const multer = require("multer")
 const path = require("path")
 const { logSecurityEvent } = require("./auth.middleware")
+const { logger } = require("../utils/securityLogger")
 
 /**
  * Sanitizes a filename to prevent path traversal and remove unsafe characters.
@@ -96,7 +97,7 @@ async function parseDocumentText(file) {
             }
             return text;
         } catch (pdfErr) {
-            console.error("PDF Parsing Error:", pdfErr);
+            logger.error("PDF Parsing Error:", pdfErr);
             throw new Error("Uploaded file is corrupted.");
         }
     } else if (ext === ".docx") {
@@ -109,7 +110,7 @@ async function parseDocumentText(file) {
             }
             return text;
         } catch (docxErr) {
-            console.error("DOCX Parsing Error:", docxErr);
+            logger.error("DOCX Parsing Error:", docxErr);
             throw new Error("Uploaded file is corrupted.");
         }
     } else {

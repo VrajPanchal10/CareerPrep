@@ -2,7 +2,7 @@ const { Router } = require('express')
 const authController = require("../controllers/auth.controller")
 const authMiddleware = require("../middlewares/auth.middleware")
 
-const { authLimiter } = require("../middlewares/auth.middleware")
+const { authLimiter, forgotPasswordLimiter } = require("../middlewares/auth.middleware")
 
 const authRouter = Router()
 
@@ -36,6 +36,57 @@ authRouter.get("/logout", authController.logoutUserController)
  * @access private
  */
 authRouter.get("/get-me", authMiddleware.authUser, authController.getMeController)
+
+
+/**
+ * @route POST /api/auth/refresh
+ * @description refresh current user session token
+ * @access Public
+ */
+authRouter.post("/refresh", authController.refreshTokenController)
+
+
+/**
+ * @route POST /api/auth/forgot-password
+ * @description Inbound password reset request
+ */
+authRouter.post("/forgot-password", forgotPasswordLimiter, authController.forgotPasswordController)
+
+/**
+ * @route GET /api/auth/reset-password/validate/:token
+ * @description Validate password recovery token status before showing password form
+ */
+authRouter.get("/reset-password/validate/:token", authLimiter, authController.validateResetTokenController)
+
+/**
+ * @route POST /api/auth/reset-password
+ * @description Submit new password using recovery token
+ */
+authRouter.post("/reset-password", authLimiter, authController.resetPasswordController)
+
+/**
+ * @route POST /api/auth/mfa/enable
+ * @description Initialize authenticator setup and retrieve QR Code
+ */
+authRouter.post("/mfa/enable", authMiddleware.authUser, authController.enableMfaController)
+
+/**
+ * @route POST /api/auth/mfa/confirm
+ * @description Verify first code input and fully activate MFA
+ */
+authRouter.post("/mfa/confirm", authMiddleware.authUser, authController.confirmMfaController)
+
+/**
+ * @route POST /api/auth/mfa/disable
+ * @description Turn off MFA security
+ */
+authRouter.post("/mfa/disable", authMiddleware.authUser, authController.disableMfaController)
+
+/**
+ * @route POST /api/auth/mfa/verify
+ * @description Verify 2-step verification code to finish login
+ */
+authRouter.post("/mfa/verify", authLimiter, authController.verifyMfaController)
 
 
 module.exports = authRouter

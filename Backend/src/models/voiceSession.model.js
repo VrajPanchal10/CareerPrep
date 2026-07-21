@@ -2,12 +2,20 @@ const mongoose = require("mongoose");
 
 const voiceQuestionSchema = new mongoose.Schema({
     questionText: { type: String, required: true },
-    intention: { type: String, required: true },
-    answer: { type: String, required: true },
+    intention: { type: String },
+    answer: { type: String },
     topic: { type: String, required: true },
     type: { type: String, enum: ["technical", "behavioral"], required: true },
     isFollowUp: { type: Boolean, default: false },
-    parentQuestionIndex: { type: Number }
+    parentQuestionIndex: { type: Number },
+    translations: {
+        type: Map,
+        of: new mongoose.Schema({
+            status: { type: String, enum: ["pending", "processing", "completed", "failed"], default: "pending" },
+            text: { type: String }
+        }, { _id: false }),
+        default: {}
+    }
 }, { _id: false });
 
 const voiceTranscriptSchema = new mongoose.Schema({
@@ -25,7 +33,26 @@ const voiceEvaluationSchema = new mongoose.Schema({
     explanationScore: { type: Number, required: true },
     strengths: { type: [String], default: [] },
     weaknesses: { type: [String], default: [] },
-    suggestions: { type: [String], default: [] }
+    suggestions: { type: [String], default: [] },
+    technicalDepth: { type: Number, default: 70 },
+    completeness: { type: Number, default: 70 },
+    relevance: { type: Number, default: 70 },
+    communicationFlow: { type: Number, default: 70 },
+    grammarScore: { type: Number, default: 70 },
+    fluencyScore: { type: Number, default: 70 },
+    responseStructure: { type: String, default: "STAR" },
+    timeUtilization: { type: Number, default: 1.0 },
+    fillerWords: { type: [String], default: [] },
+    translations: {
+        type: Map,
+        of: new mongoose.Schema({
+            status: { type: String, enum: ["pending", "processing", "completed", "failed"], default: "pending" },
+            strengths: { type: [String], default: [] },
+            weaknesses: { type: [String], default: [] },
+            suggestions: { type: [String], default: [] }
+        }, { _id: false }),
+        default: {}
+    }
 }, { _id: false });
 
 const voiceInterviewSessionSchema = new mongoose.Schema({
@@ -61,6 +88,10 @@ const voiceInterviewSessionSchema = new mongoose.Schema({
     strongAreas: { type: [String], default: [] },
     weakAreas: { type: [String], default: [] },
     topRecommendation: { type: String, default: "" },
+    conversationMemory: { type: [String], default: [] },
+    overallConfidence: { type: Number, default: 0 },
+    averageFluency: { type: Number, default: 0 },
+    speakingSpeedTrend: { type: [Number], default: [] },
     status: {
         type: String,
         enum: ["started", "completed"],

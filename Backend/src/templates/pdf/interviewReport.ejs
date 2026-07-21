@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="template-version" content="1.0.0">
+  <title>Mock Interview Performance Report</title>
+  <%- include('partials/styles') %>
+</head>
+<body>
+  <div class="page">
+    <%- include('partials/header', { title: 'Mock Interview Performance Report' }) %>
+    
+    <div class="candidate-info">
+      <div class="section-title">Candidate Evaluation Metadata</div>
+      <table>
+        <tr>
+          <td class="label">Candidate Name:</td>
+          <td><%= username %></td>
+          <td class="label">Job Title:</td>
+          <td><%= jobTitle %></td>
+        </tr>
+        <tr>
+          <td class="label">Evaluation Date:</td>
+          <td><%= date %></td>
+          <td class="label">Evaluation Mode:</td>
+          <td>AI Coach Simulation</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="section-title">Mock Interview Score Summary</div>
+    <div class="score-cards-container">
+      <div class="score-card">
+        <h3>Readiness Score</h3>
+        <div class="score"><%= readinessScore %><span>%</span></div>
+        <div class="status"><%= readinessStatus %></div>
+      </div>
+    </div>
+    
+    <div class="section-title">Topic Performance Breakdown</div>
+    <div class="topic-list">
+      <% if (topicBreakdown && topicBreakdown.length > 0) { %>
+        <% topicBreakdown.forEach(row => { %>
+          <div class="topic-item">
+            <div class="topic-name">
+              <span><%= row.topic %> (<%= row.questionsAttempted %> attempts)</span>
+              <span><%= row.averageScore %>%</span>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" style="width: <%= row.averageScore %>%;"></div>
+            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p style="font-size: 13px; color: #888888;">No mock practice scores categorized yet.</p>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="page">
+    <%- include('partials/header', { title: 'AI Performance Evaluation' }) %>
+    
+    <div class="section-title">Weakness Heatmap Analysis</div>
+    <div class="heatmap-summary" style="margin-bottom: 40px;">
+      <div class="heatmap-column">
+        <h4>✓ Strong Areas (Score &ge; 60%)</h4>
+        <ul class="heatmap-list strong">
+          <% if (heatmapData && heatmapData.length > 0) { %>
+            <% heatmapData.forEach(item => { %>
+              <% if (item.status === 'strong' || item.status === 'moderate') { %>
+                <li>✓ <%= item.topic %> (<%= item.score %>% accuracy)</li>
+              <% } %>
+            <% }) %>
+          <% } else { %>
+            <li style="color:#888888">No categories logged.</li>
+          <% } %>
+        </ul>
+      </div>
+      <div class="heatmap-column">
+        <h4>⚠ Needs Review (Score &lt; 60%)</h4>
+        <ul class="heatmap-list needs-improvement">
+          <% if (heatmapData && heatmapData.length > 0) { %>
+            <% heatmapData.forEach(item => { %>
+              <% if (item.status !== 'strong' && item.status !== 'moderate') { %>
+                <li>⚠ <%= item.topic %> (<%= item.score %>% gaps)</li>
+              <% } %>
+            <% }) %>
+          <% } else { %>
+            <li style="color:#888888">No categories logged.</li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-title">AI Performance Review</div>
+    <h4 style="margin: 0 0 10px 0; color: #27ae60; font-size: 13px;">Key Strengths</h4>
+    <ul class="bullet-list" style="margin-bottom: 25px;">
+      <% if (strengthItems && strengthItems.length > 0) { %>
+        <% strengthItems.forEach(item => { %>
+          <li><%= item %></li>
+        <% }) %>
+      <% } else { %>
+        <li>Displays solid educational background matching target core disciplines.</li>
+      <% } %>
+    </ul>
+    
+    <h4 style="margin: 0 0 10px 0; color: #c0392b; font-size: 13px;">Gaps & Focus Areas</h4>
+    <ul class="bullet-list" style="margin-bottom: 25px;">
+      <% if (weaknessItems && weaknessItems.length > 0) { %>
+        <% weaknessItems.forEach(item => { %>
+          <li><%= item %></li>
+        <% }) %>
+      <% } else { %>
+        <li>Need more detail and real-world examples under responses.</li>
+      <% } %>
+    </ul>
+  </div>
+</body>
+</html>

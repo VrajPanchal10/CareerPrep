@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="template-version" content="1.0.0">
+  <title>ATS Match Report</title>
+  <%- include('partials/styles') %>
+</head>
+<body>
+  <div class="page">
+    <%- include('partials/header', { title: 'ATS Resume Match Report' }) %>
+    
+    <div class="candidate-info">
+      <div class="section-title">Candidate Evaluation Metadata</div>
+      <table>
+        <tr>
+          <td class="label">Candidate Name:</td>
+          <td><%= username %></td>
+          <td class="label">Job Title:</td>
+          <td><%= jobTitle %></td>
+        </tr>
+        <tr>
+          <td class="label">Evaluation Date:</td>
+          <td><%= date %></td>
+          <td class="label">Evaluation Mode:</td>
+          <td>Automated ATS Check</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="section-title">ATS Score Summary</div>
+    <div class="score-cards-container">
+      <div class="score-card">
+        <h3>ATS Match Score</h3>
+        <div class="score"><%= atsScore %><span>%</span></div>
+        <div class="status"><%= atsStatus %></div>
+      </div>
+    </div>
+    
+    <div class="section-title">Keyword Alignment Breakdown</div>
+    <div class="heatmap-summary">
+      <div class="heatmap-column">
+        <h4>✓ Matched Keywords</h4>
+        <ul class="heatmap-list strong">
+          <% if (strongMatches && strongMatches.length > 0) { %>
+            <% strongMatches.forEach(item => { %>
+              <li>✓ <%= item %></li>
+            <% }) %>
+          <% } else { %>
+            <li style="color:#888888">No matching keywords identified.</li>
+          <% } %>
+        </ul>
+      </div>
+      <div class="heatmap-column">
+        <h4>⚠ Missing Keywords</h4>
+        <ul class="heatmap-list needs-improvement">
+          <% if (missingKeywords && missingKeywords.length > 0) { %>
+            <% missingKeywords.forEach(item => { %>
+              <li>⚠ <%= item %></li>
+            <% }) %>
+          <% } else { %>
+            <li style="color:#888888">No critical gaps identified.</li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,24 +1,13 @@
 const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
 
-/**
- * @description Security-focused logging helper.
- */
-function logSecurityEvent({ eventType, ip, details }) {
-    const timestamp = new Date().toISOString();
-    console.warn(`[SECURITY EVENT] [${timestamp}] [${eventType}] [IP: ${ip}] - ${details}`);
-}
+const { logSecurityEvent, logger } = require("../utils/securityLogger");
 
 async function authUser(req, res, next) {
     const token = req.cookies ? req.cookies.token : undefined
     const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress
 
     if (!token) {
-        logSecurityEvent({
-            eventType: "INVALID_JWT",
-            ip: clientIp,
-            details: "JWT token not provided."
-        });
         return res.status(401).json({
             message: "Token not provided."
         })
@@ -59,72 +48,13 @@ async function authUser(req, res, next) {
     }
 }
 
-/**
- * @description Stateless CSRF Protection for browser cookie authenticated mutate operations.
- */
-const csrfProtection = (req, res, next) => {
-    const mutatingMethods = ["POST", "PUT", "DELETE", "PATCH"];
-    if (!mutatingMethods.includes(req.method)) {
-        return next();
-    }
+const csrfProtection = require("./security/csrf.middleware");
 
-    const origin = req.headers.origin;
-    const referer = req.headers.referer;
-    const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-
-    const allowedOrigins = [
-        "http://localhost:5173",
-        "https://careerprep-platform.vercel.app",
-        process.env.FRONTEND_URL
-    ].map(o => o && o.replace(/\/$/, "")).filter(Boolean);
-
-    let isAllowed = false;
-
-    if (origin) {
-        const normalizedOrigin = origin.replace(/\/$/, "");
-        if (allowedOrigins.includes(normalizedOrigin)) {
-            isAllowed = true;
-        }
-    } else if (referer) {
-        try {
-            const refererUrl = new URL(referer);
-            const normalizedRefererOrigin = refererUrl.origin.replace(/\/$/, "");
-            if (allowedOrigins.includes(normalizedRefererOrigin)) {
-                isAllowed = true;
-            }
-        } catch (e) {
-            // invalid URL structure in referer
-        }
-    } else {
-        // Enforce CSRF header check only if JWT token cookies are present
-        if (req.cookies && req.cookies.token) {
-            isAllowed = false;
-        } else {
-            isAllowed = true;
-        }
-    }
-
-    if (!isAllowed) {
-        logSecurityEvent({
-            eventType: "CSRF_VIOLATION",
-            ip: clientIp,
-            details: `Mutating request rejected. Origin: ${origin || "none"}, Referer: ${referer || "none"}`
-        });
-
-        return res.status(403).json({
-            success: false,
-            message: "Cross-Site Request Forgery validation failed."
-        });
-    }
-
-    next();
-};
-
-const rateLimit = require("express-rate-limit");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: process.env.NODE_ENV === "production" ? 10 : 100,
     message: "Too many authentication attempts. Please try again in 15 minutes.",
     standardHeaders: true,
     legacyHeaders: false,
@@ -133,6 +63,25 @@ const authLimiter = rateLimit({
             eventType: "RATE_LIMIT_VIOLATION",
             ip: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress,
             details: `Auth rate limit exceeded on path: ${req.originalUrl}`
+        });
+        return res.status(options.statusCode).json({
+            success: false,
+            message: options.message
+        });
+    }
+});
+
+const forgotPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: "Too many password reset attempts. Please try again in 15 minutes.",
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logSecurityEvent({
+            eventType: "RATE_LIMIT_VIOLATION",
+            ip: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+            details: `Forgot password rate limit exceeded on path: ${req.originalUrl}`
         });
         return res.status(options.statusCode).json({
             success: false,
@@ -160,4 +109,32 @@ const aiLimiter = rateLimit({
     }
 });
 
-module.exports = { authUser, csrfProtection, logSecurityEvent, authLimiter, aiLimiter }
+// Code execution rate limiter — stricter than aiLimiter to prevent sandbox abuse.
+// 15 executions per user per minute (applies to both /submit and /run).
+const executionLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,  // 1 minute window
+    max: parseInt(process.env.PISTON_EXECUTION_LIMIT_MIN || "15", 10),
+    message: "Too many code execution attempts. Please wait a moment before trying again.",
+    standardHeaders: true,
+    legacyHeaders: false,
+    // Rate-limit by authenticated user ID when available; fall back to IP via
+    // ipKeyGenerator (required by express-rate-limit v8 for IPv6 correctness).
+    keyGenerator: (req) => {
+        if (req.user?.id) return `user:${req.user.id}`;
+        return ipKeyGenerator(req);
+    },
+    handler: (req, res, next, options) => {
+        logSecurityEvent({
+            eventType: "RATE_LIMIT_VIOLATION",
+            ip: req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+            details: `Execution rate limit exceeded on path: ${req.originalUrl} by user: ${req.user?.id || "unknown"}`
+        });
+        return res.status(options.statusCode).json({
+            success: false,
+            message: options.message,
+            error: { code: "EXECUTION_RATE_LIMIT" }
+        });
+    }
+});
+
+module.exports = { authUser, csrfProtection, logSecurityEvent, logger, authLimiter, forgotPasswordLimiter, aiLimiter, executionLimiter }

@@ -6,7 +6,8 @@ const {
     submitRepositoryAnswerController,
     completeRepositoryInterviewController,
     getRepositoryDashboardDataController,
-    getRepositoryInterviewByIdController
+    getRepositoryInterviewByIdController,
+    getRepositoryProgressStatsController
 } = require("../controllers/repositoryInterview.controller");
 
 const router = express.Router();
@@ -45,6 +46,13 @@ router.post("/interview/:sessionId/complete", authMiddleware.authUser, authMiddl
  * @access private
  */
 router.get("/dashboard", authMiddleware.authUser, getRepositoryDashboardDataController);
+
+/**
+ * @route GET /api/github-defense/progress
+ * @description Retrieve user's historical progress and aggregated stats.
+ * @access private
+ */
+router.get("/progress", authMiddleware.authUser, getRepositoryProgressStatsController);
 
 /**
  * @route GET /api/github-defense/session/:sessionId

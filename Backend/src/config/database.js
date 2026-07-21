@@ -2,15 +2,15 @@ const mongoose = require("mongoose")
 
 
 
-async function connectToDB() {
+const { logger } = require("../utils/securityLogger")
 
+async function connectToDB() {
     try {
         await mongoose.connect(process.env.MONGO_URI)
-
-        console.log("Connected to Database")
+        logger.info("Connected to Database ✅")
     }
     catch (err) {
-        console.log(err)
+        logger.error("Database connection failure", err)
     }
 }
 

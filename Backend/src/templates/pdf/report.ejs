@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="template-version" content="1.0.0">
+  <title>CareerPrep Unified Performance Report</title>
+  <%- include('partials/styles') %>
+</head>
+<body>
+
+  <!-- PAGE 1: EXECUTIVE SUMMARY -->
+  <div class="page">
+    <%- include('partials/header', { title: 'CareerPrep Performance Report' }) %>
+    
+    <div class="candidate-info">
+      <div class="section-title">Candidate Evaluation Metadata</div>
+      <table>
+        <tr>
+          <td class="label">Candidate Name:</td>
+          <td><%= username %></td>
+          <td class="label">Job Title:</td>
+          <td><%= jobTitle %></td>
+        </tr>
+        <tr>
+          <td class="label">Evaluation Date:</td>
+          <td><%= date %></td>
+          <td class="label">Resume ATS Match:</td>
+          <td><%= resumeMatchScore %>%</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="section-title">Executive Score Summary</div>
+    <div class="score-cards-container">
+      <div class="score-card">
+        <h3>Readiness Score</h3>
+        <div class="score"><%= readinessScore %><span>%</span></div>
+        <div class="status"><%= readinessStatus %></div>
+      </div>
+      <div class="score-card">
+        <h3>ATS Match Score</h3>
+        <div class="score"><%= atsScore %><span>%</span></div>
+        <div class="status"><%= atsStatus %></div>
+      </div>
+    </div>
+    
+    <div class="section-title">Overview Assessment</div>
+    <div class="summary-text">
+      This document summarizes the comprehensive assessment of the candidate relative to the <strong><%= jobTitle %></strong> position. The evaluation incorporates automated ATS parser analyses measuring keyword alignment, combined with interactive mock interview simulations mapping conceptual accuracy and explanation qualities across core technical and behavioral dimensions.
+    </div>
+  </div>
+
+  <!-- PAGE 2: TOPIC BREAKDOWNS & HEATMAP -->
+  <div class="page">
+    <%- include('partials/header', { title: 'CareerPrep Performance Report' }) %>
+    
+    <div class="section-title">Topic Performance Breakdown</div>
+    <div class="topic-list">
+      <%- topicProgressBars %>
+    </div>
+    
+    <div class="section-title">Weakness Heatmap Analysis</div>
+    <div class="heatmap-summary">
+      <div class="heatmap-column">
+        <h4>✓ Strong Areas (Score &ge; 60%)</h4>
+        <ul class="heatmap-list strong">
+          <%- strongAreaItems %>
+        </ul>
+      </div>
+      <div class="heatmap-column">
+        <h4>⚠ Needs Review (Score &lt; 60%)</h4>
+        <ul class="heatmap-list needs-improvement">
+          <%- weakAreaItems %>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 3: AI FEEDBACK & ROADMAP -->
+  <div class="page">
+    <%- include('partials/header', { title: 'CareerPrep Performance Report' }) %>
+    
+    <div class="section-title">AI Performance Review</div>
+    <h4 style="margin: 0 0 10px 0; color: #27ae60; font-size: 13px;">Key Strengths</h4>
+    <ul class="bullet-list" style="margin-bottom: 25px;">
+      <%- strengthItems %>
+    </ul>
+    
+    <h4 style="margin: 0 0 10px 0; color: #c0392b; font-size: 13px;">Gaps & Focus Areas</h4>
+    <ul class="bullet-list" style="margin-bottom: 25px;">
+      <%- weaknessItems %>
+    </ul>
+    
+    <div class="section-title">Personalized Optimization Roadmap</div>
+    <div style="font-size: 13px; font-weight: 700; margin-bottom: 15px;">
+      Current Score: <span style="color: #d20d3b;"><%= readinessScore %>%</span> &rarr; Target Readiness: <span style="color: #27ae60;">90%</span>
+    </div>
+    <div class="roadmap-steps">
+      <%- roadmapSteps %>
+    </div>
+  </div>
+
+  <!-- PAGE 4: CODING TRIAL (Optional) -->
+  <% if (hasCodingStats) { %>
+    <div class="page">
+      <%- include('partials/header', { title: 'CareerPrep Performance Report' }) %>
+      
+      <div class="section-title">Coding Performance Summary</div>
+      <p class="summary-text" style="margin-bottom: 30px;">
+        Below is the comprehensive evaluation of the candidate's coding interview preparation. Scores are compiled from code challenges completed using the Monaco editor workspace across various technical topics.
+      </p>
+
+      <div class="score-cards-container" style="margin-bottom: 40px;">
+        <div class="score-card">
+          <h3>Coding Readiness Score</h3>
+          <div class="score" style="color: #27ae60;"><%= codingReadinessScore %><span>%</span></div>
+          <div class="status" style="color: #27ae60;">
+            <%= codingReadinessScore >= 80 ? "EXCELLENT READY STATUS" : codingReadinessScore >= 60 ? "MODERATE PRACTICE STATUS" : "UNPREPARED STATUS" %>
+          </div>
+        </div>
+        <div class="score-card">
+          <h3>Top Programming Languages</h3>
+          <div style="font-size: 20px; font-weight: 700; color: #111111; margin-top: 15px; text-transform: uppercase;">
+            <%= topLanguagesStr %>
+          </div>
+          <div class="status">Prepped Languages</div>
+        </div>
+      </div>
+
+      <div class="section-title">Coding Topic Competency Analysis</div>
+      <div class="heatmap-summary">
+        <div class="heatmap-column">
+          <h4 style="color: #27ae60; font-size: 13px; text-transform: uppercase;">✓ Strong Topics (Score &ge; 75%)</h4>
+          <p style="font-size: 13px; color: #555555; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #27ae60;">
+            <%= strongTopicsStr %>
+          </p>
+        </div>
+        <div class="heatmap-column">
+          <h4 style="color: #d35400; font-size: 13px; text-transform: uppercase;">⚠ Needs Review (Score &lt; 75%)</h4>
+          <p style="font-size: 13px; color: #555555; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #d35400;">
+            <%= weakTopicsStr %>
+          </p>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- PAGE 5: GITHUB PROJECT DEFENSE (Optional) -->
+  <% if (repoResult) { %>
+    <div class="page">
+      <%- include('partials/header', { title: 'CareerPrep Project Mastery Report' }) %>
+      
+      <div class="section-title">GitHub Project Defense Performance</div>
+      <p class="summary-text" style="margin-bottom: 30px;">
+        Below is the architectural defense evaluation for your repository: <strong><%= repoResult.repoName %></strong>.
+      </p>
+
+      <div class="score-cards-container" style="margin-bottom: 40px; gap: 20px;">
+        <div class="score-card">
+          <h3>Project Mastery Score</h3>
+          <div class="score" style="color: #27ae60;"><%= repoResult.scores.overallMasteryScore %><span>%</span></div>
+          <div class="status" style="color: #27ae60;">
+            <%= repoResult.scores.overallMasteryScore >= 80 ? "EXCELLENT MASTERY" : repoResult.scores.overallMasteryScore >= 60 ? "MODERATE MASTERY" : "BASIC UNDERSTANDING" %>
+          </div>
+        </div>
+        <div class="score-card">
+          <h3>Repository Name</h3>
+          <div style="font-size: 18px; font-weight: 700; color: #111111; margin-top: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <%= repoResult.repoName %>
+          </div>
+          <div class="status">Analyzed Project</div>
+        </div>
+      </div>
+
+      <div class="section-title">Project Defense Scores</div>
+      <div class="topic-list">
+        <div class="topic-item">
+          <div class="topic-name">
+            <span>Architecture Score</span>
+            <span><%= repoResult.scores.architectureScore %>%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: <%= repoResult.scores.architectureScore %>%;"></div>
+          </div>
+        </div>
+        <div class="topic-item">
+          <div class="topic-name">
+            <span>Security Score</span>
+            <span><%= repoResult.scores.securityScore %>%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: <%= repoResult.scores.securityScore %>%;"></div>
+          </div>
+        </div>
+        <div class="topic-item">
+          <div class="topic-name">
+            <span>Database Score</span>
+            <span><%= repoResult.scores.databaseScore %>%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: <%= repoResult.scores.databaseScore %>%;"></div>
+          </div>
+        </div>
+        <div class="topic-item">
+          <div class="topic-name">
+            <span>API Design Score</span>
+            <span><%= repoResult.scores.apiDesignScore %>%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: <%= repoResult.scores.apiDesignScore %>%;"></div>
+          </div>
+        </div>
+        <div class="topic-item">
+          <div class="topic-name">
+            <span>Deployment Score</span>
+            <span><%= repoResult.scores.deploymentScore %>%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: <%= repoResult.scores.deploymentScore %>%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Mastery Feedback</div>
+      <div class="heatmap-summary">
+        <div class="heatmap-column">
+          <h4 style="color: #27ae60; font-size: 13px; text-transform: uppercase;">✓ Strengths</h4>
+          <ul class="heatmap-list strong">
+            <% repoResult.feedback.strengths.slice(0, 3).forEach(s => { %>
+              <li>✓ <%= s %></li>
+            <% }) %>
+          </ul>
+        </div>
+        <div class="heatmap-column">
+          <h4 style="color: #d35400; font-size: 13px; text-transform: uppercase;">⚠ Recommendations</h4>
+          <ul class="heatmap-list needs-improvement">
+            <% repoResult.feedback.recommendations.slice(0, 3).forEach(r => { %>
+              <li>⚠ <%= r %></li>
+            <% }) %>
+          </ul>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+</body>
+</html>

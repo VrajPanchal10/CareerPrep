@@ -1,6 +1,7 @@
 const interviewSessionModel = require("../models/interviewSession.model");
 const interviewReportModel = require("../models/interviewReport.model");
 const { evaluateUserAnswer } = require("../services/ai.service");
+const { logger } = require("../utils/securityLogger");
 
 /**
  * @description Start a new interview session.
@@ -36,7 +37,7 @@ async function startSessionController(req, res, next) {
             session
         });
     } catch (error) {
-        console.error("Error in startSessionController:", error);
+        logger.error("Error in startSessionController:", error);
         next(error);
     }
 }
@@ -104,7 +105,7 @@ async function evaluateAnswerController(req, res, next) {
                 userAnswer
             });
         } catch (aiErr) {
-            console.error("Error evaluating answer with Gemini:", aiErr);
+            logger.error("Error evaluating answer with Gemini:", aiErr);
             return res.status(502).json({
                 success: false,
                 message: "AI service failed to evaluate answer. Please try again."
@@ -141,7 +142,7 @@ async function evaluateAnswerController(req, res, next) {
             session
         });
     } catch (error) {
-        console.error("Error in evaluateAnswerController:", error);
+        logger.error("Error in evaluateAnswerController:", error);
         next(error);
     }
 }
@@ -264,7 +265,7 @@ async function completeSessionController(req, res, next) {
             session
         });
     } catch (error) {
-        console.error("Error in completeSessionController:", error);
+        logger.error("Error in completeSessionController:", error);
         next(error);
     }
 }
@@ -289,7 +290,7 @@ async function getHeatmapController(req, res, next) {
             heatmapData: session.heatmapData || []
         });
     } catch (error) {
-        console.error("Error in getHeatmapController:", error);
+        logger.error("Error in getHeatmapController:", error);
         next(error);
     }
 }
@@ -315,7 +316,7 @@ async function getTopicBreakdownController(req, res, next) {
             overallScore: session.overallScore || 0
         });
     } catch (error) {
-        console.error("Error in getTopicBreakdownController:", error);
+        logger.error("Error in getTopicBreakdownController:", error);
         next(error);
     }
 }
@@ -340,7 +341,7 @@ async function getStudyPlanController(req, res, next) {
             studyPlan: session.studyPlan || {}
         });
     } catch (error) {
-        console.error("Error in getStudyPlanController:", error);
+        logger.error("Error in getStudyPlanController:", error);
         next(error);
     }
 }
@@ -369,7 +370,7 @@ async function getProgressController(req, res, next) {
             progress
         });
     } catch (error) {
-        console.error("Error in getProgressController:", error);
+        logger.error("Error in getProgressController:", error);
         next(error);
     }
 }
@@ -394,7 +395,7 @@ async function getSessionByIdController(req, res, next) {
             session
         });
     } catch (error) {
-        console.error("Error in getSessionByIdController:", error);
+        logger.error("Error in getSessionByIdController:", error);
         next(error);
     }
 }
@@ -413,7 +414,7 @@ async function getAllSessionsController(req, res, next) {
             sessions
         });
     } catch (error) {
-        console.error("Error in getAllSessionsController:", error);
+        logger.error("Error in getAllSessionsController:", error);
         next(error);
     }
 }

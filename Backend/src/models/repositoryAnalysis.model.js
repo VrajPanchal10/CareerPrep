@@ -62,6 +62,21 @@ const repositoryAnalysisSchema = new mongoose.Schema({
         deploymentOverview: String,
         improvementOpportunities: [String]
     },
+    // Cache invalidation key — set to the repo's latest commit SHA at analysis time
+    commitSha: {
+        type: String,
+        default: null
+    },
+    // Repository size in KB at analysis time
+    sizeKb: {
+        type: Number,
+        default: 0
+    },
+    // Incremental analysis support — bump when analysis logic changes
+    analysisVersion: {
+        type: Number,
+        default: 1
+    },
     createdAt: {
         type: Date,
         default: Date.now

@@ -1,8 +1,10 @@
 import axios from "axios";
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === "production" ? "" : "http://localhost:3000");
+
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
+    baseURL: BASE_URL,
     withCredentials: true,
 });
 
@@ -69,7 +71,7 @@ apiClient.interceptors.response.use(
             try {
                 // Perform a quick GET request to bootstrap fresh CSRF cookie from backend
                 await axios.get(
-                    `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/auth/get-me`,
+                    `${BASE_URL}/api/auth/get-me`,
                     { withCredentials: true }
                 );
                 const freshCsrfToken = getCsrfTokenFromCookie();
@@ -101,7 +103,7 @@ apiClient.interceptors.response.use(
 
             try {
                 await axios.post(
-                    `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/auth/refresh`,
+                    `${BASE_URL}/api/auth/refresh`,
                     {},
                     { withCredentials: true }
                 );

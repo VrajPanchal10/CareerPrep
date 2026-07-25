@@ -39,16 +39,16 @@ const TOPICS = [
 ];
 
 const LANGUAGES = [
-    { value: "javascript", label: "JavaScript" },
-    { value: "typescript", label: "TypeScript" },
-    { value: "python",     label: "Python" },
-    { value: "java",       label: "Java" },
-    { value: "cpp",        label: "C++" },
-    { value: "c",          label: "C" },
-    { value: "go",         label: "Go" },
-    { value: "rust",       label: "Rust" },
-    { value: "kotlin",     label: "Kotlin" },
-    { value: "csharp",     label: "C#" }
+    { value: "javascript", label: "🟨 JavaScript" },
+    { value: "typescript", label: "🟦 TypeScript" },
+    { value: "python",     label: "🐍 Python" },
+    { value: "java",       label: "☕ Java" },
+    { value: "cpp",        label: "⚙️ C++" },
+    { value: "c",          label: "⚙️ C" },
+    { value: "go",         label: "🐹 Go" },
+    { value: "rust",       label: "🦀 Rust" },
+    { value: "kotlin",     label: "🟣 Kotlin" },
+    { value: "csharp",     label: "🟩 C#" }
 ];
 
 const CodeWorkspace = () => {
@@ -61,6 +61,7 @@ const CodeWorkspace = () => {
     const { theme: activeTheme } = useTheme();
     const theme = activeTheme === "light" ? "vs" : "vs-dark";
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
@@ -394,19 +395,17 @@ const CodeWorkspace = () => {
                 <header className="coding-header">
                     <div className="header-left">
                         <h1>Coding Assessment Engine</h1>
-                        <p>
-                            Write your solution · Run custom cases · Submit for evaluation
-                            {engineStatus !== null && (
-                                <span
-                                    className={`engine-status-badge ${engineStatus.healthy ? "engine-status--online" : "engine-status--offline"}`}
-                                    title={engineStatus.healthy ? `Execution engine online (${engineStatus.latencyMs}ms)` : "Execution engine offline"}
-                                >
-                                    {engineStatus.healthy ? "● Online" : "● Offline"}
-                                </span>
-                            )}
-                        </p>
+                        <p>Write your solution • Run custom cases • Submit for evaluation</p>
                     </div>
                     <div className="header-right">
+                        {engineStatus !== null && (
+                            <span
+                                className={`engine-status-badge ${engineStatus.healthy ? "engine-status--online" : "engine-status--offline"}`}
+                                title={engineStatus.healthy ? `Execution engine online (${engineStatus.latencyMs}ms)` : "Execution engine offline"}
+                            >
+                                {engineStatus.healthy ? "🟢 Online" : "🔴 Offline"}
+                            </span>
+                        )}
                         <Link to="/code/dashboard" className="dash-link-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
                             Coding Analytics
@@ -442,7 +441,7 @@ const CodeWorkspace = () => {
                                 </div>
                                 <div className="question-panel__body">
                                     <h3 style={{ margin: "0 0 1rem 0", fontSize: "1rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                        {selectedTopic} Challenges
+                                        {selectedTopic} • {questions.length} Questions
                                     </h3>
                                     {isLoadingQuestions ? (
                                         <p style={{ color: "rgba(255,255,255,0.4)" }}>Loading coding questions…</p>
@@ -453,13 +452,11 @@ const CodeWorkspace = () => {
                                             {questions.map(q => (
                                                 <button key={q._id} onClick={() => setActiveQuestion(q)} className="question-item-btn" id={`q-item-${q._id}`}>
                                                     <div>
-                                                        <div style={{ fontWeight: "700" }}>{q.title}</div>
-                                                        <div className="q-meta">
+                                                        <div style={{ fontWeight: "700", fontSize: "0.95rem", marginBottom: "0.5rem", color: "#fff" }}>{q.title}</div>
+                                                        <div className="q-meta" style={{ display: "flex", alignItems: "center", gap: "1rem", color: "rgba(255,255,255,0.6)", fontSize: "0.85rem" }}>
                                                             <span className={`badge-diff ${getDifficultyClass(q.difficulty)}`}>{q.difficulty}</span>
-                                                            <span className="badge-topic">{q.topic}</span>
-                                                            {q.testCases?.filter(tc => !tc.isHidden).length > 0 && (
-                                                                <span className="badge-tests">{q.testCases.filter(tc => !tc.isHidden).length} tests</span>
-                                                            )}
+                                                            <span>•</span>
+                                                            <span style={{ fontWeight: 600 }}>{q.topic}</span>
                                                         </div>
                                                     </div>
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -609,23 +606,16 @@ const CodeWorkspace = () => {
                     </section>
 
                     {/* ── Right Panel: IDE Layout ── */}
-                    <section className={`ide-panel ${isFullscreen ? "fullscreen" : ""}`} id="idePanel">
+                    <section className={`ide-panel editor-panel ${isFullscreen ? "fullscreen" : ""}`} id="idePanel">
                         {/* Toolbar */}
-                        <div className="ide-panel__toolbar">
+                        <div className="ide-panel__toolbar editor-panel__toolbar">
                             <div className="tools-left">
                                 <select value={language} onChange={e => setLanguage(e.target.value)} id="languageSelect">
                                     {availableLanguages.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                                 </select>
                             </div>
                             <div className="tools-right">
-                                <button onClick={handleCopyCode} className="tool-btn" title="Copy to Clipboard">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                    Copy
-                                </button>
-                                <button onClick={handleResetCode} className="tool-btn" title="Reset Template">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                                    Reset
-                                </button>
+                                {/* Always Visible Primary Actions */}
                                 <button
                                     onClick={() => handleRunCode()}
                                     disabled={!activeQuestion || isRunning}
@@ -643,9 +633,47 @@ const CodeWorkspace = () => {
                                 {(isRunning || isSubmitting) && (
                                     <button onClick={handleStopExecution} className="tool-btn" style={{color: "#ff4757", borderColor: "#ff4757"}}>Stop</button>
                                 )}
-                                <button onClick={() => setIsFullscreen(f => !f)} className="tool-btn">
-                                    {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-                                </button>
+
+                                {/* Desktop Inline Secondary Actions */}
+                                <div className="desktop-tools">
+                                    <button onClick={handleCopyCode} className="tool-btn" title="Copy to Clipboard">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        Copy
+                                    </button>
+                                    <button onClick={handleResetCode} className="tool-btn" title="Reset Template">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                        Reset
+                                    </button>
+                                    <button onClick={() => setIsFullscreen(f => !f)} className="tool-btn">
+                                        {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                                    </button>
+                                </div>
+
+                                {/* Mobile ⋮ More Overflow Dropdown Menu */}
+                                <div className="mobile-more-wrapper">
+                                    <button 
+                                        onClick={() => setIsMoreMenuOpen(prev => !prev)} 
+                                        className="tool-btn more-btn"
+                                        title="More Actions"
+                                    >
+                                        ⋮ More
+                                    </button>
+                                    {isMoreMenuOpen && (
+                                        <div className="more-dropdown-menu">
+                                            <button onClick={() => { handleCopyCode(); setIsMoreMenuOpen(false); }}>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                                Copy Code
+                                            </button>
+                                            <button onClick={() => { handleResetCode(); setIsMoreMenuOpen(false); }}>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                                Reset Code
+                                            </button>
+                                            <button onClick={() => { setIsFullscreen(f => !f); setIsMoreMenuOpen(false); }}>
+                                                {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

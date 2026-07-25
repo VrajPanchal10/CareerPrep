@@ -19,6 +19,7 @@ import GitHubStatusBar from "../components/GitHubStatusBar";
 import GitHubConnectPanel from "../components/GitHubConnectPanel";
 import RepositoryPicker from "../components/RepositoryPicker";
 import DevLogger from "../../../utils/devLogger";
+import { Shield, CheckCircle, ArrowLeft } from "lucide-react";
 
 const GithubDashboard = () => {
     const navigate = useNavigate();
@@ -292,16 +293,25 @@ const GithubDashboard = () => {
 
     return (
         <ErrorBoundary>
-            <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
+            <div style={{ minHeight: "100%", background: "transparent" }}>
                 <Navbar />
                 
                 <main className="git-dashboard-page">
                     <header className="git-header">
-                        <h1>🛡️ GitHub <span className="highlight">Project Defense</span></h1>
-                        <p>Audit repository structures and defend architectural decisions in tough technical mock simulations.</p>
+                        <div className="header-left">
+                            <h1><Shield className="highlight" size={28} strokeWidth={2.5} style={{ verticalAlign: "middle", marginRight: "0.4rem" }} /> GitHub <span className="highlight">Project Defense</span></h1>
+                            <p>Audit repository structures and defend architectural decisions in tough technical mock simulations.</p>
+                        </div>
+                        <div className="header-right">
+                            <button className="back-btn-ghost" onClick={() => navigate('/')} id="exitGithubDefenseBtn">
+                                <ArrowLeft size={16} strokeWidth={2.5} />
+                                <span className="btn-text-full">Exit GitHub Defense</span>
+                                <span className="btn-text-short">Exit</span>
+                            </button>
+                        </div>
                     </header>
 
-                    <div style={{ padding: "0 2rem", marginBottom: "1.5rem" }}>
+                    <div style={{ marginBottom: "1.25rem" }}>
                         <AnalyticsFilters onFilterChange={setFilters} />
                     </div>
 
@@ -321,7 +331,7 @@ const GithubDashboard = () => {
 
                     <div className="git-grid">
                         {/* Left Sidebar: GitHub OAuth + Repository Picker + History */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
                             {/* GitHub Status Bar — shown when connected */}
                             {isConnected && githubUser && (
@@ -426,7 +436,7 @@ const GithubDashboard = () => {
                             )}
 
                         {/* Analysis History Card */}
-                        <div className="git-card micro-interactive-card">
+                        <div className="git-card micro-interactive-card" style={{ flex: 1, minHeight: 0 }}>
                             <h2>My Repositories</h2>
                             <RepositoryHistory 
                                 analyses={filteredAnalyses}
@@ -457,7 +467,7 @@ const GithubDashboard = () => {
                                     {currentDashboard ? (
                                         <div className="mastery-score-dial">
                                             <div className="dial-svg">
-                                                <svg width="150" height="150" viewBox="0 0 100 100">
+                                                <svg width="180" height="180" viewBox="0 0 100 100">
                                                     <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
                                                     <circle 
                                                         cx="50" 
@@ -473,14 +483,14 @@ const GithubDashboard = () => {
                                                 </svg>
                                                 <div className="dial-score-text">
                                                     <span className="num">{currentDashboard.projectMasteryScore}%</span>
-                                                    <span className="label">Mastery</span>
+                                                    <span className="label">Overall Score</span>
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="mastery-score-dial">
                                             <div className="dial-svg">
-                                                <svg width="150" height="150" viewBox="0 0 100 100">
+                                                <svg width="180" height="180" viewBox="0 0 100 100">
                                                     <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
                                                 </svg>
                                                 <div className="dial-score-text">
@@ -498,9 +508,9 @@ const GithubDashboard = () => {
                                         </a>
                                         <p>{selectedAnalysis.summary}</p>
                                         
-                                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1.2rem", marginTop: "1rem" }}>
+                                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "1rem", marginTop: "1rem" }}>
                                             <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                                                <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", fontWeight: 700, uppercase: true }}>Defense Depth</span>
+                                                <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Defense Depth</span>
                                                 <select 
                                                     value={interviewLength} 
                                                     onChange={(e) => setInterviewLength(e.target.value)}
@@ -520,8 +530,8 @@ const GithubDashboard = () => {
                                                 </select>
                                             </div>
 
-                                            <button className="cta-btn" onClick={handleStartInterview} disabled={loading} style={{ alignSelf: "flex-end" }}>
-                                                🛡️ Start Defense Mock
+                                            <button className="cta-btn" onClick={handleStartInterview} disabled={loading} style={{ background: "linear-gradient(135deg, #4f46e5, #3b82f6)", border: "none" }}>
+                                                <Shield size={16} /> Start Defense Mock
                                             </button>
                                         </div>
                                     </div>
@@ -604,26 +614,41 @@ const GithubDashboard = () => {
 
                                     {/* Tab 1: Project Snapshot */}
                                     {activeTab === 'snapshot' && (
-                                        <div className="audit-tab-panel">
-                                            <p><strong>Overview:</strong> {selectedAnalysis.projectSnapshot?.projectSummary}</p>
-                                            <p><strong>Architecture Pattern:</strong> {selectedAnalysis.projectSnapshot?.architectureOverview}</p>
-                                            <p><strong>Security Protocols:</strong> {selectedAnalysis.projectSnapshot?.securityOverview}</p>
-                                            <p><strong>Deployment Stack:</strong> {selectedAnalysis.projectSnapshot?.deploymentOverview}</p>
+                                        <div className="audit-tab-panel doc-style-panel">
+                                            <div className="doc-section">
+                                                <h4>Overview</h4>
+                                                <p>{selectedAnalysis.projectSnapshot?.projectSummary}</p>
+                                            </div>
+                                            <hr />
+                                            <div className="doc-section">
+                                                <h4>Architecture Pattern</h4>
+                                                <p>{selectedAnalysis.projectSnapshot?.architectureOverview}</p>
+                                            </div>
+                                            <hr />
+                                            <div className="doc-section">
+                                                <h4>Security Protocols</h4>
+                                                <p>{selectedAnalysis.projectSnapshot?.securityOverview}</p>
+                                            </div>
+                                            <hr />
+                                            <div className="doc-section">
+                                                <h4>Deployment Stack</h4>
+                                                <p>{selectedAnalysis.projectSnapshot?.deploymentOverview}</p>
+                                            </div>
                                             
-                                            <div style={{ marginTop: "1rem" }}>
+                                            <div style={{ marginTop: "1.5rem" }}>
                                                 <strong>Core Technologies:</strong>
-                                                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+                                                <div className="tech-chips">
                                                     {selectedAnalysis.projectSnapshot?.techStack?.map((t, idx) => (
-                                                        <span key={idx} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", fontSize: "0.78rem", padding: "0.25rem 0.6rem", borderRadius: "4px" }}>{t}</span>
+                                                        <span key={idx}>{t}</span>
                                                     ))}
                                                 </div>
                                             </div>
 
-                                            <div style={{ marginTop: "1.2rem" }}>
+                                            <div style={{ marginTop: "1.5rem" }}>
                                                 <strong>Core Features:</strong>
-                                                <ul style={{ marginTop: "0.4rem" }}>
+                                                <ul className="core-features">
                                                     {selectedAnalysis.projectSnapshot?.mainFeatures?.map((f, idx) => (
-                                                        <li key={idx}>✓ {f}</li>
+                                                        <li key={idx}><CheckCircle size={16} /> {f}</li>
                                                     ))}
                                                 </ul>
                                             </div>
@@ -632,33 +657,33 @@ const GithubDashboard = () => {
 
                                     {/* Tab 2: Health Report */}
                                     {activeTab === 'health' && (
-                                        <div className="audit-tab-panel" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                                            <div className="health-item strength">
-                                                <h4>✓ Architectural Strengths</h4>
+                                        <div className="audit-tab-panel doc-style-panel" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                            <div className="health-item strength doc-section">
+                                                <h4 style={{ color: "#2ecc71" }}>✓ Architectural Strengths</h4>
                                                 <ul>
                                                     {selectedAnalysis.healthReport?.architectureStrengths?.map((item, idx) => (
                                                         <li key={idx}>{item}</li>
                                                     ))}
                                                 </ul>
                                             </div>
-                                            <div className="health-item weakness">
-                                                <h4>⚠ Architectural Weaknesses</h4>
+                                            <div className="health-item weakness doc-section">
+                                                <h4 style={{ color: "#e67e22" }}>⚠ Architectural Weaknesses</h4>
                                                 <ul>
                                                     {selectedAnalysis.healthReport?.architectureWeaknesses?.map((item, idx) => (
                                                         <li key={idx}>{item}</li>
                                                     ))}
                                                 </ul>
                                             </div>
-                                            <div className="health-item security">
-                                                <h4>🛑 Security Gaps</h4>
+                                            <div className="health-item security doc-section">
+                                                <h4 style={{ color: "#e74c3c" }}>🔒 Security Vulnerabilities</h4>
                                                 <ul>
                                                     {selectedAnalysis.healthReport?.securityConcerns?.map((item, idx) => (
                                                         <li key={idx}>{item}</li>
                                                     ))}
                                                 </ul>
                                             </div>
-                                            <div className="health-item scalability">
-                                                <h4>⚡ Scalability Gaps</h4>
+                                            <div className="health-item scalability doc-section">
+                                                <h4 style={{ color: "#3498db" }}>📈 Scalability Bottlenecks</h4>
                                                 <ul>
                                                     {selectedAnalysis.healthReport?.scalabilityConcerns?.map((item, idx) => (
                                                         <li key={idx}>{item}</li>
@@ -670,7 +695,7 @@ const GithubDashboard = () => {
 
                                     {/* Tab 3: Structure / Knowledge Graph */}
                                     {activeTab === 'structure' && (
-                                        <div className="audit-tab-panel">
+                                        <div className="audit-tab-panel doc-style-panel" style={{ maxHeight: "500px", overflowY: "auto" }}>
                                             <p><strong>Frontend stack:</strong> {selectedAnalysis.knowledgeGraph?.frontendStack?.join(", ") || "N/A"}</p>
                                             <p><strong>Backend stack:</strong> {selectedAnalysis.knowledgeGraph?.backendStack?.join(", ") || "N/A"}</p>
                                             <p><strong>Databases:</strong> {selectedAnalysis.knowledgeGraph?.database?.join(", ") || "N/A"}</p>
@@ -697,7 +722,7 @@ const GithubDashboard = () => {
 
                                     {/* Tab 4: Mastery Feedback (Strengths/Weaknesses/Recs) */}
                                     {activeTab === 'trends' && currentDashboard && (
-                                        <div className="audit-tab-panel" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                        <div className="audit-tab-panel doc-style-panel" style={{ display: "flex", flexDirection: "column", gap: "1rem", maxHeight: "500px", overflowY: "auto" }}>
                                             <div className="health-item strength">
                                                 <h4>✓ Defense Strengths</h4>
                                                 <ul>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./RepositoryHistory.scss";
+import { Folder, Star, Clock, RefreshCw, Trash2, GitBranch } from "lucide-react";
 
 const RepositoryHistory = ({ analyses = [], selectedAnalysisId, onSelect, onReanalyze, onDelete }) => {
     const [pinnedIds, setPinnedIds] = useState(() => {
@@ -52,29 +53,14 @@ const RepositoryHistory = ({ analyses = [], selectedAnalysisId, onSelect, onRean
                                 }}
                             >
                                 <div className="history-item__header">
-                                    <div className="item-title-row">
-                                        <button 
-                                            className={`pin-btn ${isPinned ? "pinned" : ""}`} 
-                                            onClick={(e) => handlePinToggle(item._id, e)}
-                                            title={isPinned ? "Unpin from top" : "Pin repository to top"}
-                                            aria-label={isPinned ? "Unpin repository" : "Pin repository"}
-                                        >
-                                            ★
-                                        </button>
-                                        <h4 className="repo-name">{item.repoName}</h4>
+                                    <div className="item-title-row" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                        <Folder size={16} style={{ color: "#3b82f6", flexShrink: 0 }} />
+                                        <h4 className="repo-name" style={{ margin: 0 }}>{item.repoName}</h4>
                                     </div>
-                                    <span className="repo-owner">by {item.owner}</span>
-                                </div>
-
-                                <div className="history-item__meta">
-                                    <span className="date">
-                                        🗓️ {new Date(item.createdAt).toLocaleDateString()}
+                                    <span className="repo-owner" style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "rgba(255,255,255,0.6)", fontSize: "0.75rem", marginTop: "0.4rem" }}>
+                                        <span style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}><Star size={12} /> Public</span>
+                                        <span style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}><Clock size={12} /> Updated {new Date(item.createdAt).toLocaleDateString()}</span>
                                     </span>
-                                    {item.branch && (
-                                        <span className="branch">
-                                            🌿 {item.branch}
-                                        </span>
-                                    )}
                                 </div>
 
                                 {/* Hover action controls overlay */}
@@ -83,15 +69,17 @@ const RepositoryHistory = ({ analyses = [], selectedAnalysisId, onSelect, onRean
                                         className="act-btn act-btn--reanalyze"
                                         onClick={() => onReanalyze({ repoUrl: `https://github.com/${item.owner}/${item.repoName}` })}
                                         title="Trigger fresh AI repository re-audit"
+                                        style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}
                                     >
-                                        🔄 Re-Audit
+                                        <RefreshCw size={14} /> Re-Audit
                                     </button>
                                     <button 
                                         className="act-btn act-btn--delete"
                                         onClick={() => onDelete(item._id)}
                                         title="Delete repository analysis history log"
+                                        style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}
                                     >
-                                        🗑️ Delete
+                                        <Trash2 size={14} /> Delete
                                     </button>
                                 </div>
                             </li>

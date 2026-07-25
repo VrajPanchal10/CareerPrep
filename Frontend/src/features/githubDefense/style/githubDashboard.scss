@@ -1,65 +1,124 @@
 /* GitHub Repository-Based Interviewing SCSS styling */
-$bg-page: var(--bg-page, #0d1117);
-$bg-card: var(--bg-card, rgba(255, 255, 255, 0.03));
-$border-color: var(--border-color, rgba(255, 255, 255, 0.08));
+$bg-page: transparent;
+$bg-card: var(--theme-card, #121a2d);
+$border-color: var(--theme-border, #233147);
 $text-primary: var(--text-primary, #ffffff);
 $text-muted: var(--text-muted, rgba(255, 255, 255, 0.6));
 $input-bg: var(--theme-input-bg, rgba(10, 10, 10, 0.4));
 $input-border: var(--theme-input-border, rgba(255, 255, 255, 0.1));
 
 .git-dashboard-page {
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
-    padding: 2rem 1.5rem;
+    padding: 0 0 2.5rem;
     color: $text-primary;
     font-family: 'Inter', sans-serif;
 
     .git-header {
-        text-align: center;
-        margin-bottom: 3rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.25rem;
+        padding: 0.25rem 0 1rem;
+        border-bottom: 1px solid var(--theme-border, #233147);
+        gap: 1rem;
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
+        .header-left {
+            flex: 1;
+            min-width: 0;
 
-            .highlight {
-                background: linear-gradient(135deg, #d20d3b, #8a2be2);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
+            h1 {
+                font-size: clamp(1.25rem, 4vw, 1.6rem);
+                font-weight: 800;
+                margin: 0;
+                color: #f8fafc;
+                text-align: left;
+                line-height: 1.25;
+
+                .highlight {
+                    color: #3b82f6;
+                }
+            }
+
+            p {
+                font-size: clamp(0.82rem, 2vw, 0.9rem);
+                color: $text-muted;
+                margin: 0.35rem 0 0 0;
+                text-align: left;
+                line-height: 1.45;
             }
         }
 
-        p {
-            font-size: 1.05rem;
-            color: $text-muted;
+        .header-right {
+            flex-shrink: 0;
+
+            .back-btn-ghost {
+                height: 40px;
+                padding: 0 1rem;
+                border-radius: 12px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                white-space: nowrap;
+
+                .btn-text-short {
+                    display: none;
+                }
+
+                @media (max-width: 640px) {
+                    height: 36px;
+                    padding: 0 0.75rem;
+                    font-size: 0.78rem;
+                    border-radius: 8px;
+
+                    .btn-text-full {
+                        display: none;
+                    }
+                    .btn-text-short {
+                        display: inline;
+                    }
+                }
+            }
         }
     }
 
     .git-grid {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 2rem;
+        gap: 1.25rem;
 
-        @media (min-width: 992px) {
+        @media (min-width: 1024px) {
+            grid-template-columns: 320px 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 1440px) {
             grid-template-columns: 350px 1fr;
+            gap: 1.5rem;
         }
     }
 
     .git-card {
-        background: $bg-card;
-        border: 1px solid $border-color;
-        border-radius: 12px;
+        background: var(--theme-card, #121a2d);
+        border: 1px solid var(--theme-border, #233147);
+        border-radius: var(--theme-radius-card, 18px);
         padding: 1.5rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        backdrop-filter: blur(10px);
-        transition: transform 0.2s ease, border-color 0.2s ease;
+        box-shadow: var(--theme-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.4));
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+
+        @media (max-width: 640px) {
+            padding: 1.15rem 1rem;
+        }
 
         h2 {
-            font-size: 1.25rem;
+            font-size: clamp(1.05rem, 3vw, 1.25rem);
             font-weight: 700;
             margin-top: 0;
-            margin-bottom: 1.2rem;
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -73,7 +132,7 @@ $input-border: var(--theme-input-border, rgba(255, 255, 255, 0.1));
     .analyze-section {
         display: flex;
         flex-direction: column;
-        gap: 1.2rem;
+        gap: 1.5rem;
 
         .form-group {
             display: flex;
@@ -103,7 +162,7 @@ $input-border: var(--theme-input-border, rgba(255, 255, 255, 0.1));
         }
 
         .submit-btn {
-            background: linear-gradient(135deg, #d20d3b, #ab0a30);
+            background: linear-gradient(135deg, #4f46e5, #3b82f6);
             border: none;
             color: #ffffff;
             padding: 0.8rem;
@@ -128,6 +187,18 @@ $input-border: var(--theme-input-border, rgba(255, 255, 255, 0.1));
                 opacity: 0.5;
                 cursor: not-allowed;
             }
+
+            @media (max-width: 768px) {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    }
+
+    .cta-btn {
+        @media (max-width: 768px) {
+            width: 100%;
+            justify-content: center;
         }
     }
 
@@ -183,6 +254,7 @@ $input-border: var(--theme-input-border, rgba(255, 255, 255, 0.1));
         display: flex;
         flex-direction: column;
         gap: 2rem;
+        flex: 1;
     }
 
     .mastery-overview-card {
@@ -358,7 +430,7 @@ $input-border: var(--theme-input-border, rgba(255, 255, 255, 0.1));
             }
 
             &--active {
-                color: #d20d3b;
+                color: #ffffff;
 
                 &::after {
                     content: "";
@@ -367,7 +439,7 @@ $input-border: var(--theme-input-border, rgba(255, 255, 255, 0.1));
                     left: 0;
                     width: 100%;
                     height: 2px;
-                    background: #d20d3b;
+                    background: #3b82f6;
                 }
             }
         }
@@ -377,8 +449,71 @@ $input-border: var(--theme-input-border, rgba(255, 255, 255, 0.1));
         font-size: 0.92rem;
         color: rgba(255, 255, 255, 0.8);
         line-height: 1.6;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        white-space: normal;
 
-        ul {
+        &.doc-style-panel {
+            max-width: 800px;
+            max-height: 65vh;
+            overflow-y: auto;
+            padding-right: 0.8rem;
+            
+            .doc-section {
+                h4 {
+                    color: #ffffff;
+                    font-size: 1rem;
+                    margin: 0 0 0.5rem 0;
+                }
+                p {
+                    margin: 0;
+                    color: rgba(255,255,255,0.7);
+                }
+            }
+            
+            hr {
+                border: 0;
+                border-top: 1px solid rgba(255,255,255,0.08);
+                margin: 1.2rem 0;
+            }
+            
+            .tech-chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                margin-top: 0.5rem;
+                
+                span {
+                    background: rgba(255,255,255,0.06);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    font-size: 0.8rem;
+                    padding: 0.25rem 0.6rem;
+                    border-radius: 4px;
+                }
+            }
+            
+            .core-features {
+                list-style: none;
+                padding: 0;
+                margin: 0.5rem 0 0 0;
+                
+                li {
+                    margin-bottom: 0.5rem;
+                    color: rgba(255,255,255,0.8);
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 0.5rem;
+                    
+                    svg {
+                        color: #3b82f6;
+                        flex-shrink: 0;
+                        margin-top: 3px;
+                    }
+                }
+            }
+        }
+
+        ul:not(.core-features) {
             padding-left: 1.2rem;
             margin: 0;
 

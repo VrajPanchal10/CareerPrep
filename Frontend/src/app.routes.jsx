@@ -3,6 +3,7 @@ import React, { useEffect, lazy, Suspense } from "react";
 import Protected from "./features/auth/components/Protected";
 import { ErrorBoundaryPage, ThemeToggle, DeveloperLogs } from "./components/ui";
 import SessionExpiredModal from "./components/ui/SessionExpiredModal/SessionExpiredModal";
+import DashboardLayout from "./components/layout/DashboardLayout";
 
 // ── Lazy Loaded Pages ──────────────────────────────────────────────────────────
 const Login = lazy(() => import("./features/auth/pages/Login"));
@@ -61,12 +62,15 @@ const LayoutWrapper = () => {
         window.scrollTo(0, 0);
     }, [pathname]);
 
+    const noSidebarRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
+    const showSidebar = !noSidebarRoutes.some(route => pathname.startsWith(route));
+
     return (
         <>
             <Suspense fallback={<PageLoadingFallback />}>
-                <Outlet />
+                {showSidebar ? <DashboardLayout /> : <Outlet />}
             </Suspense>
-            <div style={{ position: "fixed", top: "15px", right: "120px", zIndex: 1200 }}>
+            <div style={{ position: "fixed", top: "18px", right: showSidebar ? "170px" : "120px", zIndex: 1200 }}>
                 <ThemeToggle />
             </div>
             <DeveloperLogs />

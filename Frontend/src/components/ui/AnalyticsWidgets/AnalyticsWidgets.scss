@@ -10,7 +10,7 @@
     background: var(--theme-card, #1e1e1e);
     border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.08));
     border-radius: 12px;
-    padding: 1.25rem;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -27,7 +27,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
     }
 
     &__title {
@@ -50,7 +50,7 @@
     }
 
     &__value {
-        font-size: 1.85rem;
+        font-size: 2rem;
         font-weight: 700;
         color: var(--theme-text, #ffffff);
     }
@@ -270,6 +270,9 @@
                 list-style-type: none;
                 padding-left: 0;
                 margin: 0;
+                max-height: 180px;
+                overflow-y: auto;
+                padding-right: 0.5rem;
 
                 li {
                     font-size: 0.8rem;

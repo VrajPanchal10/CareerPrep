@@ -96,7 +96,7 @@ const GlobalAnalytics = () => {
                             <button 
                                 onClick={handleExportCsv} 
                                 className="button primary-button" 
-                                style={{ margin: 0, padding: "0.6rem 1.25rem", borderRadius: "8px", background: "#10b981", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}
+                                style={{ margin: 0, padding: "0.6rem 1.25rem", borderRadius: "8px", background: "#10b981", color: "#ffffff", border: "none", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", transition: "all 0.2s" }}
                                 title="Download spreadsheet of metrics"
                             >
                                 <svg height={"0.9rem"} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">

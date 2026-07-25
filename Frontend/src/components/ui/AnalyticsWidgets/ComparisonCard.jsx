@@ -7,13 +7,16 @@ import { compareAttempts } from "../../../features/analytics/analyticsComparison
 const ComparisonCard = ({ attempts = [], title = "Assessment Run Comparison" }) => {
     if (!attempts || attempts.length < 2) {
         return (
-            <div className="comparison-card empty-comparison">
-                <h3>{title}</h3>
-                <p style={{ color: "rgba(255,255,255,0.4)", margin: "1rem 0" }}>
+            <div className="comparison-card empty-comparison" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                <h3 className="comparison-card__title">{title}</h3>
+                <p style={{ color: "rgba(255,255,255,0.4)", margin: "0 0 1rem 0", fontSize: "0.85rem" }}>
                     Compare two or more sessions to highlight score progress, strengths gained, and weaknesses resolved.
                 </p>
-                <div className="badge badge--warning" style={{ display: "inline-block" }}>
-                    Requires at least 2 completed sessions
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", opacity: 0.5, padding: "2rem 0" }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <div style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        Requires at least 2 completed sessions
+                    </div>
                 </div>
             </div>
         );

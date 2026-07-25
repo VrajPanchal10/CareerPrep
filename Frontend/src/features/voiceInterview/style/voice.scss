@@ -10,7 +10,16 @@ $border-color: var(--border-color, rgba(255, 255, 255, 0.08));
 $text-light: var(--text-light, #ffffff);
 $text-muted: var(--text-muted-subtle, rgba(255, 255, 255, 0.6));
 
-.voice-dashboard-container, .voice-room-container {
+.voice-dashboard-container {
+    min-height: 100%;
+    background-color: transparent;
+    color: var(--theme-text, #ffffff);
+    font-family: 'Inter', sans-serif;
+    padding-bottom: 2.5rem;
+    box-sizing: border-box;
+}
+
+.voice-room-container {
     min-height: 100vh;
     background-color: $bg-dark;
     color: #ffffff;
@@ -20,98 +29,127 @@ $text-muted: var(--text-muted-subtle, rgba(255, 255, 255, 0.6));
 }
 
 .voice-header {
-    background: var(--bg-page, rgba(11, 11, 13, 0.8));
-    border-bottom: 1px solid $border-color;
-    padding: 1.2rem 2rem;
+    background: transparent;
+    border-bottom: 1px solid var(--theme-border, #233147);
+    padding: 0.25rem 0 1rem;
+    max-width: 1440px;
+    margin: 0 auto 1.25rem;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    backdrop-filter: blur(10px);
+    align-items: flex-start;
+    gap: 1rem;
 
     .header-left {
+        flex: 1;
+        min-width: 0;
+
         h1 {
-            font-size: 1.5rem;
+            font-size: clamp(1.25rem, 4vw, 1.6rem);
             font-weight: 800;
             margin: 0;
-            background: linear-gradient(135deg, var(--text-light, #ffffff), var(--text-muted-subtle, rgba(255,255,255,0.75)));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #f8fafc;
+            line-height: 1.25;
         }
 
         p {
-            margin: 0.2rem 0 0 0;
-            font-size: 0.85rem;
-            color: $text-muted;
+            margin: 0.35rem 0 0 0;
+            font-size: clamp(0.82rem, 2vw, 0.9rem);
+            color: var(--theme-subtext, #94a3b8);
+            line-height: 1.45;
         }
     }
 
     .header-right {
-        .back-btn {
-            background: var(--theme-button-bg, rgba(255, 255, 255, 0.05));
-            border: 1px solid var(--theme-button-border, rgba(255, 255, 255, 0.1));
-            color: var(--theme-text, #fff);
-            padding: 0.5rem 1.2rem;
-            border-radius: 6px;
-            font-size: 0.88rem;
+        flex-shrink: 0;
+
+        .back-btn-ghost {
+            height: 40px;
+            padding: 0 1rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
             font-weight: 600;
-            text-decoration: none;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            transition: all 0.2s;
+            white-space: nowrap;
 
-            &:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: rgba(255, 255, 255, 0.2);
+            .btn-text-short {
+                display: none;
+            }
+
+            @media (max-width: 640px) {
+                height: 36px;
+                padding: 0 0.75rem;
+                font-size: 0.78rem;
+                border-radius: 8px;
+
+                .btn-text-full {
+                    display: none;
+                }
+                .btn-text-short {
+                    display: inline;
+                }
             }
         }
     }
 }
 
+.voice-filter-wrapper {
+    max-width: 1440px;
+    margin: 0 auto 1.25rem;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 /* Dashboard Layout */
 .voice-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1.2fr;
-    gap: 1.5rem;
-    max-width: 1400px;
-    margin: 2rem auto 0;
-    padding: 0 1.5rem;
+    grid-template-columns: minmax(0, 35fr) minmax(0, 65fr);
+    gap: 1.25rem;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0;
     box-sizing: border-box;
 
     @media (max-width: 1024px) {
         grid-template-columns: 100%;
+        gap: 1.25rem;
     }
 }
 
 .voice-card {
-    background: var(--bg-card, rgba(20, 20, 25, 0.6));
-    border: 1px solid $border-color;
-    border-radius: 12px;
+    background: var(--theme-card, #121a2d);
+    border: 1px solid var(--theme-border, #233147);
+    border-radius: var(--theme-radius-card, 18px);
     padding: 1.5rem;
-    backdrop-filter: blur(10px);
+    box-shadow: var(--theme-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.4));
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    box-sizing: border-box;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+    @media (max-width: 640px) {
+        padding: 1.15rem 1rem;
+    }
 
     &--span-2 {
-        grid-column: span 2;
-        @media (max-width: 1024px) {
-            grid-column: span 1;
-        }
+        grid-column: span 1;
     }
 
     &--span-3 {
-        grid-column: span 3;
-        @media (max-width: 1024px) {
-            grid-column: span 1;
-        }
+        grid-column: span 1;
     }
 
     h2 {
-        font-size: 1.15rem;
-        font-weight: 700;
-        margin: 0 0 1.2rem 0;
+        font-size: clamp(0.98rem, 2.5vw, 1.05rem);
+        font-weight: 800;
+        margin: 0 0 1rem 0;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border-bottom: 1px solid $border-color;
-        padding-bottom: 0.5rem;
+        color: #f8fafc;
+        border-bottom: 1px solid var(--theme-border, #233147);
+        padding-bottom: 0.55rem;
     }
 }
 
@@ -119,7 +157,8 @@ $text-muted: var(--text-muted-subtle, rgba(255, 255, 255, 0.6));
 .setup-form {
     display: flex;
     flex-direction: column;
-    gap: 1.2rem;
+    gap: 1.4rem;
+    flex: 1;
 
     .form-group {
         display: flex;
@@ -172,7 +211,7 @@ $text-muted: var(--text-muted-subtle, rgba(255, 255, 255, 0.6));
     }
 
     .start-session-btn {
-        background: linear-gradient(135deg, $accent-purple, $accent-red);
+        background: linear-gradient(135deg, #4f46e5, #3b82f6);
         border: none;
         color: #fff;
         padding: 0.8rem;
@@ -201,19 +240,20 @@ $text-muted: var(--text-muted-subtle, rgba(255, 255, 255, 0.6));
 .gauges-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    height: 100%;
+    gap: 1.25rem;
+    height: auto;
 
-    @media (max-width: 600px) {
+    @media (max-width: 480px) {
         grid-template-columns: 100%;
+        gap: 1rem;
     }
 }
 
 .gauge-item {
     background: rgba(255,255,255,0.02);
     border: 1px solid $border-color;
-    border-radius: 10px;
-    padding: 1.5rem;
+    border-radius: 12px;
+    padding: 1.25rem 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -222,7 +262,8 @@ $text-muted: var(--text-muted-subtle, rgba(255, 255, 255, 0.6));
 
     &.readiness {
         grid-column: span 2;
-        @media (max-width: 600px) {
+        margin-bottom: 0.25rem;
+        @media (max-width: 480px) {
             grid-column: span 1;
         }
     }
@@ -237,8 +278,8 @@ $text-muted: var(--text-muted-subtle, rgba(255, 255, 255, 0.6));
 
     .radial-container {
         position: relative;
-        width: 120px;
-        height: 120px;
+        width: 132px;
+        height: 132px;
 
         svg {
             transform: rotate(-90deg);
@@ -284,10 +325,11 @@ $text-muted: var(--text-muted-subtle, rgba(255, 255, 255, 0.6));
 .trend-timeline {
     display: flex;
     flex-direction: column;
-    gap: 1.2rem;
+    gap: 1.4rem;
     max-height: 380px;
     overflow-y: auto;
     padding-right: 0.5rem;
+    flex: 1;
 
     .trend-row {
         background: rgba(255,255,255,0.02);

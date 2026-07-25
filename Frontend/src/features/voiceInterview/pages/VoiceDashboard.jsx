@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import { ArrowLeft } from "lucide-react";
 import Navbar from "../../ats/components/Navbar";
 import { getAllInterviewReports } from "../../interview/services/interview.api";
 import { startVoiceSession, fetchVoiceProgress } from "../services/voice.api";
@@ -130,14 +131,15 @@ const VoiceDashboard = () => {
                     <p>Practice speaking answers aloud in a simulation room and receive real-time clarity and delivery metrics.</p>
                 </div>
                 <div className="header-right">
-                    <Link to="/" className="back-btn" id="backToCoachBtn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                        Exit Voice Coach
-                    </Link>
+                    <button className="back-btn-ghost" onClick={() => navigate('/')} id="backToCoachBtn">
+                        <ArrowLeft size={16} strokeWidth={2.5} />
+                        <span className="btn-text-full">Exit Voice Coach</span>
+                        <span className="btn-text-short">Exit</span>
+                    </button>
                 </div>
             </header>
 
-            <div style={{ padding: "0 2rem" }}>
+            <div className="voice-filter-wrapper">
                 <AnalyticsFilters onFilterChange={setFilters} />
             </div>
 
@@ -212,17 +214,20 @@ const VoiceDashboard = () => {
                         >
                             🎙️ Start Verbal Mock Session
                         </LoadingButton>
+                        <p style={{ margin: "-0.5rem 0 0 0", fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
+                            Estimated duration: 10-15 mins • Powered by Advanced Voice AI
+                        </p>
                     </form>
                 </div>
 
                 {/* 2. Stats and Gauges Card */}
-                <div className="voice-card voice-card--span-2 micro-interactive-card hover-card">
+                <div className="voice-card micro-interactive-card hover-card">
                     <h2>Verbal mock metrics</h2>
                     <div className="gauges-row">
                         <div className="gauge-item readiness" id="voiceReadinessGauge">
                             <h3>Voice Readiness Score</h3>
                             <div className="radial-container" style={{ display: "flex", justifyContent: "center", margin: "1rem 0" }}>
-                                <RadialScoreMeter score={safeStats.voiceReadinessScore} size={120} strokeWidth={8} />
+                                <RadialScoreMeter score={safeStats.voiceReadinessScore} size={132} strokeWidth={8} />
                             </div>
                             <div className="badge-sub">
                                 {safeStats.voiceReadinessScore >= 80 ? "EXCELLENT READY" : safeStats.voiceReadinessScore >= 60 ? "PRACTICED" : "PRACTICE REQUIRED"}
@@ -232,15 +237,15 @@ const VoiceDashboard = () => {
                         <div className="gauge-item" id="voiceCommGauge">
                             <h3>Avg Communication</h3>
                             <div className="radial-container">
-                                <svg width="120" height="120">
-                                    <circle className="track" cx="60" cy="60" r="55" />
+                                <svg width="132" height="132">
+                                    <circle className="track" cx="66" cy="66" r="60" />
                                     <circle 
                                         className="fill" 
-                                        cx="60" 
-                                        cy="60" 
-                                        r="55" 
-                                        strokeDashoffset={345 - (345 * safeStats.averageCommunicationScore) / 100}
-                                        style={{ stroke: "#f1c40f" }}
+                                        cx="66" 
+                                        cy="66" 
+                                        r="60" 
+                                        strokeDashoffset={377 - (377 * safeStats.averageCommunicationScore) / 100}
+                                        style={{ stroke: "#f1c40f", strokeDasharray: "377" }}
                                     />
                                 </svg>
                                 <div className="value-text">{safeStats.averageCommunicationScore}%</div>
@@ -251,15 +256,15 @@ const VoiceDashboard = () => {
                         <div className="gauge-item" id="voiceTechGauge">
                             <h3>Avg Technical</h3>
                             <div className="radial-container">
-                                <svg width="120" height="120">
-                                    <circle className="track" cx="60" cy="60" r="55" />
+                                <svg width="132" height="132">
+                                    <circle className="track" cx="66" cy="66" r="60" />
                                     <circle 
                                         className="fill" 
-                                        cx="60" 
-                                        cy="60" 
-                                        r="55" 
-                                        strokeDashoffset={345 - (345 * safeStats.averageTechnicalScore) / 100}
-                                        style={{ stroke: "#2ecc71" }}
+                                        cx="66" 
+                                        cy="66" 
+                                        r="60" 
+                                        strokeDashoffset={377 - (377 * safeStats.averageTechnicalScore) / 100}
+                                        style={{ stroke: "#2ecc71", strokeDasharray: "377" }}
                                     />
                                 </svg>
                                 <div className="value-text">{safeStats.averageTechnicalScore}%</div>
@@ -278,7 +283,7 @@ const VoiceDashboard = () => {
                                 Complete verbal sessions to trace historical trends.
                             </p>
                         ) : (
-                            safeStats.trends.map((t, idx) => (
+                            safeStats.trends.slice(0, 3).map((t, idx) => (
                                 <div key={idx} className="trend-row">
                                     <div className="row-header">
                                         <h4>Verbal Mock Session #{t.sessionNumber}</h4>
@@ -305,58 +310,56 @@ const VoiceDashboard = () => {
                 </div>
 
                 {/* 4. Recent Session Attempts List */}
-                <div className="voice-card voice-card--span-2 micro-interactive-card">
+                <div className="voice-card micro-interactive-card">
                     <h2>Recent Sessions Logs</h2>
-                    <div style={{ overflowX: "auto" }} id="recentVoiceSessionsTableContainer">
-                        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }} id="recentVoiceSessionsTable">
-                            <thead>
-                                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                    <th style={{ padding: "0.8rem" }}>Plan Title</th>
-                                    <th style={{ padding: "0.8rem" }}>Difficulty</th>
-                                    <th style={{ padding: "0.8rem" }}>Date</th>
-                                    <th style={{ padding: "0.8rem" }}>Response Time</th>
-                                    <th style={{ padding: "0.8rem", textAlign: "right" }}>Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredSessions.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="5" style={{ padding: "1.5rem" }}>
-                                            <EmptyState
-                                                icon="🎙️"
-                                                title="No Voice Session Logs"
-                                                description="Begin a voice-to-voice interview setup. Once completed, your average communication flow and accuracy will be analyzed here."
-                                                primaryAction={{
-                                                    label: "Begin Interview Setup",
-                                                    onClick: () => {
-                                                        document.getElementById("reportSelect")?.focus();
-                                                    }
-                                                }}
-                                            />
-                                        </td>
+                    {filteredSessions.length === 0 ? (
+                        <div style={{ padding: "0.5rem 0" }}>
+                            <EmptyState
+                                icon="🎙️"
+                                title="No Voice Session Logs"
+                                description="Begin a voice-to-voice interview setup. Once completed, your average communication flow and accuracy will be analyzed here."
+                                primaryAction={{
+                                    label: "Begin Interview Setup",
+                                    onClick: () => {
+                                        document.getElementById("reportSelect")?.focus();
+                                    }
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <div style={{ overflowX: "auto" }} id="recentVoiceSessionsTableContainer">
+                            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }} id="recentVoiceSessionsTable">
+                                <thead>
+                                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                        <th style={{ padding: "0.8rem" }}>Plan Title</th>
+                                        <th style={{ padding: "0.8rem" }}>Difficulty</th>
+                                        <th style={{ padding: "0.8rem" }}>Date</th>
+                                        <th style={{ padding: "0.8rem" }}>Response Time</th>
+                                        <th style={{ padding: "0.8rem", textAlign: "right" }}>Score</th>
                                     </tr>
-                                 ) : (
-                                    filteredSessions.map(session => (
+                                </thead>
+                                <tbody>
+                                    {filteredSessions.map(session => (
                                         <tr key={session.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: "0.88rem" }}>
-                                            <td style={{ padding: "0.9rem 0.8rem", fontWeight: "600" }}>{session.reportTitle}</td>
-                                            <td style={{ padding: "0.9rem 0.8rem" }}>
+                                            <td style={{ padding: "1.1rem 0.8rem", fontWeight: "600" }}>{session.reportTitle}</td>
+                                            <td style={{ padding: "1.1rem 0.8rem" }}>
                                                 <span className={`badge-diff ${session.difficulty.toLowerCase() === "easy" ? "badge-diff--easy" : session.difficulty.toLowerCase() === "medium" ? "badge-diff--medium" : "badge-diff--hard"}`}>
                                                     {session.difficulty}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: "0.9rem 0.8rem", color: "rgba(255,255,255,0.5)" }}>
+                                            <td style={{ padding: "1.1rem 0.8rem", color: "rgba(255,255,255,0.5)" }}>
                                                 {new Date(session.completedAt).toLocaleDateString()}
                                             </td>
-                                            <td style={{ padding: "0.9rem 0.8rem" }}>{session.averageResponseTime}s / q</td>
-                                            <td style={{ padding: "0.9rem 0.8rem", textAlign: "right", fontWeight: "700", color: session.overallScore >= 75 ? "#2ecc71" : session.overallScore >= 60 ? "#f1c40f" : "#e74c3c" }}>
+                                            <td style={{ padding: "1.1rem 0.8rem" }}>{session.averageResponseTime}s / q</td>
+                                            <td style={{ padding: "1.1rem 0.8rem", textAlign: "right", fontWeight: "700", color: session.overallScore >= 75 ? "#2ecc71" : session.overallScore >= 60 ? "#f1c40f" : "#e74c3c" }}>
                                                 {session.overallScore}%
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             </main>
             <ScrollToTop />

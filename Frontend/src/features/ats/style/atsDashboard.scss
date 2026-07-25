@@ -5,9 +5,9 @@ $text-primary: var(--text-primary, #ffffff);
 $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 
 .ats-dashboard-page {
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
-    padding: 2rem 1.5rem 4rem 1.5rem;
+    padding: 1rem 2rem 2.5rem;
 }
 
 .back-btn {
@@ -17,28 +17,28 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
     font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     transition: color 0.2s ease;
     display: flex;
     align-items: center;
 
     &:hover {
-        color: #d20d3b;
+        color: #6366f1;
     }
 }
 
 .dashboard-header-ats {
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
 
     h1 {
-        font-size: 2.2rem;
+        font-size: 2rem;
         font-weight: 800;
         color: $text-primary;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.35rem;
     }
 
     .subtitle {
-        font-size: 1rem;
+        font-size: 0.95rem;
         color: $text-muted;
     }
 }
@@ -55,20 +55,54 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 }
 
 .ats-metric-card {
-    background: $bg-card;
-    border: 1px solid $border-color;
-    border-radius: 12px;
+    background: var(--theme-card, #121a2d);
+    border: 1px solid var(--theme-border, #233147);
+    border-radius: var(--theme-radius-card, 18px);
     padding: 1.8rem;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--theme-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.4));
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
     h2 {
         font-size: 1.25rem;
         font-weight: 700;
         color: $text-primary;
         margin-bottom: 1.5rem;
-        border-left: 3px solid #d20d3b;
+        border-left: 3px solid #6366f1;
         padding-left: 0.75rem;
+    }
+}
+
+.score-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    .score-ring-container {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        margin-bottom: 1rem;
+    }
+
+    .score-ring {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+
+        &__bg {
+            fill: none;
+            stroke: var(--theme-divider, rgba(255, 255, 255, 0.05));
+            stroke-width: 8;
+        }
+
+        &__fill {
+            fill: none;
+            stroke: #6366f1;
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
     }
 }
 
@@ -178,7 +212,7 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 
             .progress-bar-fill {
                 height: 100%;
-                background: #d20d3b;
+                background: linear-gradient(90deg, #4f46e5, #6366f1);
                 border-radius: 3px;
                 transition: width 0.6s ease;
             }
@@ -277,7 +311,7 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
                 }
 
                 &.active {
-                    background: #d20d3b;
+                    background: #6366f1;
                     color: #ffffff;
                 }
             }
@@ -405,8 +439,8 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
                 }
 
                 &.active {
-                    background: rgba(210, 13, 59, 0.15);
-                    border-color: #d20d3b;
+                    background: rgba(99, 102, 241, 0.15);
+                    border-color: #6366f1;
                     color: #ffffff;
                 }
             }

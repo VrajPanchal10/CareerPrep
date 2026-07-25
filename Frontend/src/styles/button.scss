@@ -18,3 +18,27 @@
         transform: scale(0.9);
     }
 }
+
+.back-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--theme-text, #f8fafc);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(99, 102, 241, 0.4);
+        color: #ffffff;
+        transform: translateX(-2px);
+    }
+}

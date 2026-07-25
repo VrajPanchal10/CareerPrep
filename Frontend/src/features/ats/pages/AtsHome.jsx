@@ -188,8 +188,8 @@ const AtsHome = () => {
                                     onDragLeave={handleDragLeave}
                                     onDrop={handleDrop}
                                     style={{
-                                        border: isDragging ? "2px dashed #d20d3b" : "1px dashed rgba(255,255,255,0.1)",
-                                        background: isDragging ? "rgba(210, 13, 59, 0.04)" : "rgba(255,255,255,0.01)",
+                                        border: isDragging ? "2px dashed #6366f1" : "1px dashed rgba(255,255,255,0.1)",
+                                        background: isDragging ? "rgba(99, 102, 241, 0.06)" : "rgba(255,255,255,0.01)",
                                         borderRadius: "12px",
                                         padding: "1.25rem",
                                         transition: "all 0.2s ease"
@@ -261,6 +261,23 @@ const AtsHome = () => {
                                         className='report-card-ats'
                                         onClick={() => navigate(`/ats/${report._id}`)}
                                     >
+                                        <button
+                                            type="button"
+                                            className='delete-card-btn'
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (window.confirm("Are you sure you want to delete this historical ATS match scan?")) {
+                                                    const updated = reports.filter(r => r._id !== report._id);
+                                                    if (typeof setReports === 'function') {
+                                                        setReports(updated);
+                                                    }
+                                                    addToast("ATS Match Scan deleted.", "info");
+                                                }
+                                            }}
+                                            title="Delete ATS Scan History"
+                                        >
+                                            ✕
+                                        </button>
                                         <div className='report-card-ats__score-badge'>
                                             <span className={`score-label ${report.atsScore >= 80 ? 'high' : report.atsScore >= 60 ? 'mid' : 'low'}`}>
                                                 {report.atsScore}%

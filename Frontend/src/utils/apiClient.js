@@ -16,12 +16,16 @@ function getCsrfTokenFromCookie() {
     const match = document.cookie
         .split("; ")
         .find((row) => row.startsWith("csrfToken="));
-    return match ? match.split("=")[1] : null;
+    if (!match) return null;
+    const value = match.split("=")[1];
+    try {
+        return decodeURIComponent(value);
+    } catch {
+        return value;
+    }
 }
 
 // ─── Request Interceptor: Inject CSRF Token ───────────────────────────────────
-// CSRF protection only applies to mutating methods. GET/HEAD are read-only
-// and do not require a CSRF token per the backend middleware spec.
 const CSRF_METHODS = ["post", "put", "delete", "patch"];
 
 apiClient.interceptors.request.use((config) => {
@@ -34,16 +38,16 @@ apiClient.interceptors.request.use((config) => {
     return config;
 });
 
-// ─── Response Interceptor: Token Refresh + Error Normalization ────────────────
+// ─── Response Interceptor: Token Refresh + CSRF Auto-Recovery + Error Normalization ────────────────
 let isRefreshing = false;
 let failedQueue = [];
 
-const processQueue = (error) => {
+const processQueue = (error, token = null) => {
     failedQueue.forEach((prom) => {
         if (error) {
             prom.reject(error);
         } else {
-            prom.resolve();
+            prom.resolve(token);
         }
     });
     failedQueue = [];
@@ -54,24 +58,33 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // ── 401 Handling: Token Refresh ──────────────────────────────────────
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            // Avoid refresh loops on auth-specific endpoints
-            if (
-                originalRequest.url &&
-                (
-                    originalRequest.url.includes("/api/auth/login") ||
-                    originalRequest.url.includes("/api/auth/register") ||
-                    originalRequest.url.includes("/api/auth/get-me") ||
-                    originalRequest.url.includes("/api/auth/refresh")
-                )
-            ) {
-                return Promise.reject(error);
+        // ── Auto-recovery for CSRF Token Mismatch ────────────────────────────────
+        if (
+            error.response?.status === 403 &&
+            typeof error.response?.data?.message === "string" &&
+            error.response.data.message.includes("CSRF") &&
+            !originalRequest._csrfRetry
+        ) {
+            originalRequest._csrfRetry = true;
+            try {
+                // Perform a quick GET request to bootstrap fresh CSRF cookie from backend
+                await axios.get(
+                    `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/auth/get-me`,
+                    { withCredentials: true }
+                );
+                const freshCsrfToken = getCsrfTokenFromCookie();
+                if (freshCsrfToken && CSRF_METHODS.includes(originalRequest.method?.toLowerCase())) {
+                    originalRequest.headers["X-CSRF-Token"] = freshCsrfToken;
+                }
+                return apiClient(originalRequest);
+            } catch (csrfErr) {
+                // If GET fails, fall through to normal error handling
             }
+        }
 
-            // Omit token refresh if on login or register pages
-            const path = window.location.pathname;
-            if (path === "/login" || path === "/register") {
+        // ── 401 Unauthorized: Attempt Refresh ─────────────────────────────────
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (originalRequest.url?.includes("/api/auth/login") || originalRequest.url?.includes("/api/auth/refresh")) {
                 return Promise.reject(error);
             }
 
@@ -112,9 +125,6 @@ apiClient.interceptors.response.use(
         }
 
         // ── Error Normalization: Attach userMessage ───────────────────────────
-        // Provides a consistent, human-readable error message on every Axios error.
-        // Hooks can use `err.userMessage` instead of repeating `err.response?.data?.message`.
-        // The original error shape is preserved for backward compatibility.
         error.userMessage =
             error.response?.data?.message ||
             error.response?.data?.error?.message ||

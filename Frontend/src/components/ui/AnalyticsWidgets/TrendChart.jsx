@@ -27,7 +27,7 @@ const TrendChart = ({ data }) => {
                 <p className="subtitle">Chronological progression of evaluation scores over time.</p>
             </div>
             
-            <div className="chart-container" style={{ width: "100%", height: 300 }}>
+            <div className="chart-container" style={{ width: "100%", height: 330 }}>
                 <ResponsiveContainer>
                     <LineChart
                         data={chartData}

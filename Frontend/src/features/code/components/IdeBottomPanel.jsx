@@ -114,6 +114,13 @@ const IdeBottomPanel = ({ terminalLogs, evaluationResult, onRunWithInput, isRunn
                 {/* ── TERMINAL TAB ── */}
                 <div style={{ display: activeTab === "terminal" ? "block" : "none", height: "100%" }}>
                     <div className="ide-terminal">
+                        <div className="terminal-header-art" style={{ paddingBottom: "1rem", marginBottom: "1rem", borderBottom: "1px solid rgba(255,255,255,0.1)", color: "#a5b1c2", fontFamily: "monospace" }}>
+                            <div>Terminal</div>
+                            <div style={{ color: "rgba(255,255,255,0.2)" }}>────────────────────</div>
+                            <div style={{ color: "#6366f1", fontWeight: "bold", marginTop: "0.5rem" }}>CareerPrep IDE v1.0</div>
+                            <div style={{ color: "#2ecc71" }}>&gt; Initializing...</div>
+                        </div>
+
                         {terminalLogs.length === 0 && !showInputPrompt && (
                             <div className="terminal-empty">Run your code to see output...</div>
                         )}

@@ -2,50 +2,71 @@
 @use "./styles/animations.scss";
 
 :root {
-    --bg-color: #161616;
-    --text-color: #f5f5f5;
-    --card-bg: #1e1e1e;
+    --bg-color: #090d16;
+    --text-color: #f8fafc;
+    --card-bg: #121a2d;
     --border-color: rgba(255, 255, 255, 0.08);
 
     // Dynamic SASS to CSS variable mirror map keys
-    --bg-page: #0d1117;
-    --bg-card: #161b22;
-    --bg-panel: #1c2230;
-    --bg-input: #1e2535;
-    --text-primary: #e6edf3;
-    --text-muted: #7d8590;
-    --border-hover: #3a4560;
-    --text-muted-light: #9ea7b3;
+    --bg-page: #090d16;
+    --bg-card: #121a2d;
+    --bg-panel: #162035;
+    --bg-input: #0f1627;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-hover: #2e3d59;
+    --text-muted-light: #cbd5e1;
 
-    --bg-dark: #121212;
+    --bg-dark: #070a12;
     --card-bg-subtle: rgba(255, 255, 255, 0.03);
     --text-light: #ffffff;
     --text-muted-subtle: rgba(255, 255, 255, 0.6);
 
-    // Unified Design Tokens (Dark Theme Defaults)
-    --theme-bg: #161616;
-    --theme-surface: #1e1e1e;
-    --theme-card: #1e1e1e;
-    --theme-border: rgba(255, 255, 255, 0.08);
-    --theme-divider: rgba(255, 255, 255, 0.05);
-    --theme-primary: #d20d3b;
-    --theme-secondary: #8a2be2;
-    --theme-muted: rgba(255, 255, 255, 0.4);
-    --theme-text: #f5f5f5;
-    --theme-subtext: rgba(255, 255, 255, 0.65);
-    --theme-input-bg: rgba(0, 0, 0, 0.2);
-    --theme-input-border: rgba(255, 255, 255, 0.12);
+    // Enterprise SaaS Design Tokens (Dark Theme Defaults - Stitch/Linear Palette)
+    --theme-bg: #090d16;
+    --theme-surface: #0d1322;
+    --theme-card: #121a2d;
+    --theme-card-hover: #18223a;
+    --theme-border: #233147;
+    --theme-border-subtle: rgba(255, 255, 255, 0.08);
+    --theme-divider: rgba(255, 255, 255, 0.06);
+    --theme-primary: #6366f1;
+    --theme-primary-hover: #4f46e5;
+    --theme-secondary: #8b5cf6;
+    --theme-muted: #64748b;
+    --theme-text: #f8fafc;
+    --theme-subtext: #94a3b8;
+    --theme-input-bg: #0f1627;
+    --theme-input-border: #233147;
     --theme-button-bg: rgba(255, 255, 255, 0.05);
     --theme-button-border: rgba(255, 255, 255, 0.12);
-    --theme-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    --theme-hover-bg: rgba(255, 255, 255, 0.05);
-    --theme-focus-ring: 0 0 0 2px #d20d3b;
-    --theme-navbar-bg: rgba(22, 22, 22, 0.85);
-    --theme-sidebar-bg: #161b22;
-    --theme-modal-bg: #151a24;
-    --theme-toast-bg: #1e1e1e;
-    --theme-tooltip-bg: #1c2230;
-    --theme-dropdown-bg: #1c1c1c;
+    --theme-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
+    --theme-shadow-md: 0 12px 32px rgba(0, 0, 0, 0.4);
+    --theme-shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.55);
+    --theme-shadow-glow: 0 0 25px rgba(99, 102, 241, 0.2);
+    --theme-hover-bg: rgba(255, 255, 255, 0.06);
+    --theme-focus-ring: 0 0 0 2px rgba(99, 102, 241, 0.5);
+    --theme-navbar-bg: #0d1322;
+    --theme-sidebar-bg: #0d1322;
+    --theme-modal-bg: #121a2d;
+    --theme-toast-bg: #121a2d;
+    --theme-tooltip-bg: #0d1322;
+    --theme-dropdown-bg: #121a2d;
+    --theme-radius-card: 18px;
+    --theme-radius-btn: 10px;
+    --theme-radius-input: 10px;
+    
+    // Semantic mappings
+    --background: var(--theme-bg);
+    --surface: var(--theme-surface);
+    --card: var(--theme-card);
+    --border: var(--theme-border);
+    --primary: var(--theme-primary);
+    --text-primary: var(--theme-text);
+    --text-secondary: var(--theme-subtext);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
 }
 
 .light-theme {
@@ -68,29 +89,29 @@
     --text-light: #212529;
     --text-muted-subtle: rgba(0, 0, 0, 0.6);
 
-    // Unified Design Tokens (Light Theme Values)
-    --theme-bg: #f8f9fa;
+    // Unified Design Tokens (Light Theme Values - Refined Pro Dashboard)
+    --theme-bg: #f3f4f6;
     --theme-surface: #ffffff;
     --theme-card: #ffffff;
-    --theme-border: rgba(0, 0, 0, 0.08);
+    --theme-border: #e5e7eb;
     --theme-divider: rgba(0, 0, 0, 0.06);
-    --theme-primary: #d20d3b;
-    --theme-secondary: #8a2be2;
+    --theme-primary: #4f46e5;
+    --theme-secondary: #7c3aed;
     --theme-muted: rgba(0, 0, 0, 0.4);
-    --theme-text: #212529;
-    --theme-subtext: rgba(0, 0, 0, 0.65);
+    --theme-text: #111827;
+    --theme-subtext: #4b5563;
     --theme-input-bg: #ffffff;
-    --theme-input-border: rgba(0, 0, 0, 0.12);
-    --theme-button-bg: rgba(0, 0, 0, 0.03);
-    --theme-button-border: rgba(0, 0, 0, 0.08);
-    --theme-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    --theme-hover-bg: rgba(0, 0, 0, 0.04);
-    --theme-focus-ring: 0 0 0 2px #d20d3b;
-    --theme-navbar-bg: rgba(248, 249, 250, 0.85);
+    --theme-input-border: #d1d5db;
+    --theme-button-bg: #f9fafb;
+    --theme-button-border: #e5e7eb;
+    --theme-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --theme-hover-bg: #f3f4f6;
+    --theme-focus-ring: 0 0 0 2px #4f46e5;
+    --theme-navbar-bg: #ffffff;
     --theme-sidebar-bg: #ffffff;
     --theme-modal-bg: #ffffff;
     --theme-toast-bg: #ffffff;
-    --theme-tooltip-bg: #f1f3f5;
+    --theme-tooltip-bg: #f9fafb;
     --theme-dropdown-bg: #ffffff;
 
     // Dynamic light mode selector overrides
@@ -236,8 +257,8 @@
 }
 
 * {
-    margin: 0%;
-    padding: 0%;
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
 }
 
@@ -245,15 +266,50 @@ html,
 body,
 #root {
     width: 100%;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-color: var(--theme-bg, #090d16);
+    color: var(--theme-text, #f8fafc);
     transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
                 color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Custom Sleek Scrollbar System */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    &:hover {
+        background: rgba(99, 102, 241, 0.5);
+    }
+}
+
+/* Global Responsive Utilities */
+.responsive-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    margin-bottom: 0.5rem;
+}
+
+.responsive-grid-autofit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: clamp(1rem, 2vw, 1.5rem);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .highlight {
-    color: #d20d3b;
+    color: var(--theme-primary, #6366f1);
 }
 
 // FEATURE 5 — Card micro hover animation utility
@@ -263,8 +319,8 @@ body,
                 border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     
     &:hover, &:focus-within {
-        transform: translateY(-2px) scale(1.008);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
-        border-color: rgba(210, 13, 59, 0.3) !important;
+        transform: translateY(-2px);
+        box-shadow: var(--theme-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.4)) !important;
+        border-color: rgba(99, 102, 241, 0.4) !important;
     }
 }

@@ -1,4 +1,4 @@
-import api from "../../../utils/apiClient";
+import api, { getApiBaseUrl } from "../../../utils/apiClient";
 
 /**
  * Fetches the GitHub connection status for the current user.
@@ -15,7 +15,7 @@ export const getGithubStatus = async () => {
  */
 export const initiateGithubConnect = () => {
     // Full page redirect — the backend handles GitHub OAuth redirect
-    window.location.href = `${import.meta.env.VITE_API_URL || ""}/api/github-oauth/connect`;
+    window.location.href = `${getApiBaseUrl()}/api/github-oauth/connect`;
 };
 
 /**

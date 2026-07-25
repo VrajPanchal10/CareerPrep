@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../../features/auth/hooks/useAuth';
-import axios from 'axios';
+import api from '../../../utils/apiClient';
 import { useToast } from '../../../context/ToastContext';
 import "./sessionExpiredModal.scss";
 
@@ -65,11 +65,7 @@ const SessionExpiredModal = () => {
 
         try {
             // Call refresh endpoint to extend sliding session token
-            await axios.post(
-                `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/auth/refresh`,
-                {},
-                { withCredentials: true }
-            );
+            await api.post("/api/auth/refresh", {});
             addToast("Session extended successfully.", "success");
             // Reset idle timer
             resetIdleTimer();

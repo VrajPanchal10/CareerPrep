@@ -12,7 +12,7 @@ import {
     DeveloperPanel, 
     useToast 
 } from '../../../components/ui'
-import api from '../../../utils/apiClient'
+import api, { getApiBaseUrl } from '../../../utils/apiClient'
 import DevLogger from '../../../utils/devLogger'
 
 const AtsDashboard = () => {
@@ -73,7 +73,7 @@ const AtsDashboard = () => {
     const scoreColorClass = atsScore >= 80 ? 'high' : atsScore >= 60 ? 'mid' : 'low'
     
     // Resolve abstract pdf retrieval URL
-    const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"
+    const BASE_URL = getApiBaseUrl()
     const pdfUrl = `${BASE_URL}/api/ats/report/${atsId}/resume`
 
     // Multi-Signal page lookup navigation synchronizer

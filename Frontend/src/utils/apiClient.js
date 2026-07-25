@@ -1,7 +1,14 @@
 import axios from "axios";
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === "production" ? "" : "http://localhost:3000");
+export const getApiBaseUrl = () => {
+    if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+        return "";
+    }
+    return import.meta.env.VITE_API_URL || "http://localhost:3000";
+};
+
+const BASE_URL = getApiBaseUrl();
 
 const apiClient = axios.create({
     baseURL: BASE_URL,

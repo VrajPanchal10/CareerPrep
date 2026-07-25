@@ -161,7 +161,7 @@ const Home = () => {
         if (window.confirm("Are you sure you want to remove this interview plan?")) {
             try {
                 // Remove locally from context reports
-                const updated = reports.filter(r => r._id !== reportId);
+                const updated = (reports || []).filter(r => r && r._id !== reportId);
                 if (typeof setReports === 'function') {
                     setReports(updated);
                 } else {
@@ -337,14 +337,15 @@ const Home = () => {
                     {/* Bottom Grid: Recent Plans */}
                     <div className="recent-plans-section">
                         <h3>Recent Plans</h3>
-                        {reports.length > 0 ? (
+                        {(reports || []).length > 0 ? (
                             <div className="plans-grid">
-                                {reports.map(report => {
+                                {(reports || []).map(report => {
+                                    if (!report) return null;
                                     const statusCfg = getStatusConfig(report);
-                                    const formattedDate = new Date(report.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                    const formattedDate = report.createdAt ? new Date(report.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
                                     
                                     return (
-                                        <div key={report._id} className="plan-card" onClick={() => navigate(`/interview/${report._id}`)}>
+                                        <div key={report._id || Math.random()} className="plan-card" onClick={() => navigate(`/interview/${report._id}`)}>
                                             {/* Action Delete Button */}
                                             <button 
                                                 className="card-delete-btn"

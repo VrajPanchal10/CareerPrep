@@ -41,6 +41,7 @@ export const useInterview = () => {
             response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile, resumeText, onUploadProgress })
             if (response && response.interviewReport) {
                 setReport(response.interviewReport)
+                setReports(prev => [response.interviewReport, ...(Array.isArray(prev) ? prev : [])])
             }
         } catch (error) {
             console.error("Error in useInterview generateReport:", error)
@@ -57,7 +58,9 @@ export const useInterview = () => {
         let response = null
         try {
             response = await getInterviewReportById(id)
-            setReport(response.interviewReport)
+            if (response?.interviewReport) {
+                setReport(response.interviewReport)
+            }
         } catch (error) {
             console.error("Error in useInterview getReportById:", error)
         } finally {
@@ -71,14 +74,15 @@ export const useInterview = () => {
         let response = null
         try {
             response = await getAllInterviewReports()
-            setReports(response.interviewReports)
+            setReports(Array.isArray(response?.interviewReports) ? response.interviewReports : [])
         } catch (error) {
             console.error("Error in useInterview getReports:", error)
+            setReports([])
         } finally {
             setLoading(false)
         }
 
-        return response?.interviewReports || []
+        return Array.isArray(response?.interviewReports) ? response.interviewReports : []
     }
 
     const getResumePdf = async (interviewReportId) => {

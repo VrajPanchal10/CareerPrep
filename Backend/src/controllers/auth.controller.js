@@ -192,7 +192,8 @@ async function loginUserController(req, res) {
             id: user._id,
             username: user.username,
             email: user.email
-        }
+        },
+        csrfToken: csrfToken
     })
 }
 
@@ -226,6 +227,10 @@ async function logoutUserController(req, res) {
 
     res.clearCookie("token", {
         httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+    })
+    res.clearCookie("csrfToken", {
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
     })
@@ -269,7 +274,8 @@ async function getMeController(req, res) {
             email: user.email,
             mfaEnabled: user.mfaEnabled,
             sessionMetadata: user.sessionMetadata
-        }
+        },
+        csrfToken: req.cookies.csrfToken
     })
 }
 
@@ -360,7 +366,8 @@ async function refreshTokenController(req, res) {
                 id: user._id,
                 username: user.username,
                 email: user.email
-            }
+            },
+            csrfToken: csrfToken
         })
     } catch (err) {
         logger.error("Error refreshing token:", err)
@@ -760,7 +767,8 @@ async function verifyMfaController(req, res) {
                 id: user._id,
                 username: user.username,
                 email: user.email
-            }
+            },
+            csrfToken: csrfToken
         });
     } catch (err) {
         logger.error("MFA Verify code handler error:", err);

@@ -119,24 +119,6 @@ function csrfMiddleware(req, res, next) {
         const headerToken = req.headers["x-csrf-token"];
         const cookieToken = req.cookies.csrfToken;
 
-        logSecurityEvent({
-            eventType: "CSRF_DEBUG_LOG",
-            ip: clientIp,
-            correlationId,
-            details: {
-                _skipRedaction: true,
-                method: req.method,
-                path: req.path,
-                headerToken: headerToken,
-                cookieToken: cookieToken,
-                isEqual: headerToken === cookieToken,
-                headerTokenType: typeof headerToken,
-                cookieTokenType: typeof cookieToken,
-                headerTokenLength: headerToken ? headerToken.length : 0,
-                cookieTokenLength: cookieToken ? cookieToken.length : 0
-            }
-        });
-
         if (!headerToken || headerToken !== cookieToken) {
             logSecurityEvent({
                 eventType: "CSRF_VIOLATION_TOKEN_MISMATCH",

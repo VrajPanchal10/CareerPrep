@@ -37,6 +37,8 @@ const CSRF_METHODS = ["post", "put", "delete", "patch"];
 apiClient.interceptors.request.use((config) => {
     if (CSRF_METHODS.includes(config.method?.toLowerCase())) {
         const csrfToken = getCsrfTokenFromCookie();
+        console.log("document.cookie =", document.cookie);
+        console.log("csrfToken =", csrfToken);
         if (csrfToken) {
             config.headers.set("X-CSRF-Token", csrfToken);
         }

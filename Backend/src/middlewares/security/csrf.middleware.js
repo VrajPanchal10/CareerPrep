@@ -119,6 +119,9 @@ function csrfMiddleware(req, res, next) {
         const headerToken = req.headers["x-csrf-token"];
         const cookieToken = req.cookies.csrfToken;
 
+        console.log("req.headers['x-csrf-token'] =", headerToken);
+        console.log("req.cookies.csrfToken =", cookieToken);
+
         if (!headerToken || headerToken !== cookieToken) {
             logSecurityEvent({
                 eventType: "CSRF_VIOLATION_TOKEN_MISMATCH",

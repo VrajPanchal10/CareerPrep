@@ -155,11 +155,21 @@ apiClient.interceptors.response.use(
         }
 
         // ── Error Normalization: Attach userMessage ───────────────────────────
-        error.userMessage =
-            error.response?.data?.message ||
-            error.response?.data?.error?.message ||
-            error.message ||
-            "An unexpected error occurred. Please try again.";
+        if (error.response?.data instanceof Blob && error.response.data.type === 'application/json') {
+            try {
+                const text = await error.response.data.text();
+                const json = JSON.parse(text);
+                error.userMessage = json.message || json.error?.message || error.message || "An unexpected error occurred.";
+            } catch (e) {
+                error.userMessage = error.message || "An unexpected error occurred.";
+            }
+        } else {
+            error.userMessage =
+                error.response?.data?.message ||
+                error.response?.data?.error?.message ||
+                error.message ||
+                "An unexpected error occurred. Please try again.";
+        }
 
         return Promise.reject(error);
     }

@@ -119,8 +119,13 @@ function csrfMiddleware(req, res, next) {
         const headerToken = req.headers["x-csrf-token"];
         const cookieToken = req.cookies.csrfToken;
 
-        console.log("req.headers['x-csrf-token'] =", headerToken);
-        console.log("req.cookies.csrfToken =", cookieToken);
+        console.log("=== CSRF MIDDLEWARE DEBUG ===");
+        console.log("1. req.headers['x-csrf-token']:", headerToken);
+        console.log("2. req.cookies.csrfToken:", cookieToken);
+        console.log("3. Is Equal?:", headerToken === cookieToken);
+        console.log("4. Complete req.headers:", JSON.stringify(req.headers, null, 2));
+        console.log("5. Complete req.cookies:", JSON.stringify(req.cookies, null, 2));
+        console.log("===============================");
 
         if (!headerToken || headerToken !== cookieToken) {
             logSecurityEvent({

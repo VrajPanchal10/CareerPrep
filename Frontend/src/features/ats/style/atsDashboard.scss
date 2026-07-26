@@ -6,9 +6,9 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 
 .ats-dashboard-page {
     width: 100%;
-    max-width: 100%;
+    max-width: 1440px;
     margin: 0 auto;
-    padding: clamp(0.75rem, 1.5vw, 1.5rem);
+    padding: 0 0 2rem;
     box-sizing: border-box;
 }
 
@@ -565,60 +565,10 @@ $bp-md: 768px;
     overflow-y: visible;
 }
 
-// ULTRA-WIDE DESKTOP (≥ 2200px) — ~68% / 32% fluid split
-@media (min-width: 2200px) {
+// ULTRA-WIDE DESKTOP (≥ 1600px) — 2-column layout, sticky PDF & score panel
+@media (min-width: 1600px) {
     .ats-dashboard-layout {
-        grid-template-columns: minmax(0, 2.12fr) minmax(0, 1fr);
-    }
-
-    .ats-pdf-panel {
-        position: sticky;
-        top: 20px;
-        height: 80vh;
-
-        &:has(.pdf-viewer-error) {
-            height: auto;
-        }
-    }
-
-    .score-panel {
-        position: sticky;
-        top: 20px;
-        z-index: 10;
-        background: var(--theme-card, #121a2d);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-    }
-}
-
-// LARGE DESKTOP (1800px - 2199px) — ~66% / 34% fluid split
-@media (min-width: 1800px) and (max-width: 2199px) {
-    .ats-dashboard-layout {
-        grid-template-columns: minmax(0, 1.94fr) minmax(0, 1fr);
-    }
-
-    .ats-pdf-panel {
-        position: sticky;
-        top: 20px;
-        height: 78vh;
-
-        &:has(.pdf-viewer-error) {
-            height: auto;
-        }
-    }
-
-    .score-panel {
-        position: sticky;
-        top: 20px;
-        z-index: 10;
-        background: var(--theme-card, #121a2d);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-    }
-}
-
-// DESKTOP (1600px - 1799px) — ~65% / 35% fluid split
-@media (min-width: 1600px) and (max-width: 1799px) {
-    .ats-dashboard-layout {
-        grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
     }
 
     .ats-pdf-panel {
@@ -626,6 +576,7 @@ $bp-md: 768px;
         top: 20px;
         height: 75vh;
 
+        // Shrink height gracefully if there's an error
         &:has(.pdf-viewer-error) {
             height: auto;
         }
@@ -640,33 +591,8 @@ $bp-md: 768px;
     }
 }
 
-// SMALL DESKTOP (1400px - 1599px) — ~64% / 36% fluid split
-@media (min-width: 1400px) and (max-width: 1599px) {
-    .ats-dashboard-layout {
-        grid-template-columns: minmax(0, 1.78fr) minmax(0, 1fr);
-    }
-
-    .ats-pdf-panel {
-        position: sticky;
-        top: 20px;
-        height: 72vh;
-
-        &:has(.pdf-viewer-error) {
-            height: auto;
-        }
-    }
-
-    .score-panel {
-        position: sticky;
-        top: 20px;
-        z-index: 10;
-        background: var(--theme-card, #121a2d);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-    }
-}
-
-// LAPTOP & BELOW (< 1400px) — Single-column stacked layout
-@media (max-width: 1399px) {
+// LAPTOP & TABLET (< 1600px) — Single-column stacked layout (Vercel/Stripe pattern)
+@media (max-width: 1599px) {
     .ats-dashboard-layout {
         grid-template-columns: 100%;
     }
@@ -676,7 +602,7 @@ $bp-md: 768px;
     }
 }
 
-// TABLET & BELOW (< 1200px)
+// TABLET / IPAD (< 1200px)
 @media (max-width: 1199px) {
     .ats-pdf-panel {
         height: 50vh;

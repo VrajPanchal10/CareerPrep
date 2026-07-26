@@ -28,7 +28,8 @@ $severity-low: #3fb950;
     color: $text-primary;
     font-family: $font-stack;
     display: flex;
-    align-items: stretch;
+    flex-direction: column;
+    align-items: center;
     padding: 1.5rem;
     box-sizing: border-box;
 }
@@ -484,13 +485,15 @@ $severity-low: #3fb950;
 
 .practice-mode-banner {
     display: flex;
+    width: 100%;
+    max-width: 1280px;
     justify-content: space-between;
     align-items: center;
     background: rgba(210, 13, 59, 0.08);
     border: 1px solid rgba(210, 13, 59, 0.25);
     border-radius: 8px;
     padding: 1.25rem 2rem;
-    margin: 1.5rem 2rem 0 2rem;
+    margin: 0 0 1.5rem 0;
     gap: 1.5rem;
 
     .banner-info {
@@ -508,20 +511,58 @@ $severity-low: #3fb950;
     }
 
     .start-practice-btn {
-        background: #d20d3b;
-        color: white;
-        border: none;
-        padding: 0.65rem 1.4rem;
-        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 230px;
+        height: 38px;
+        padding: 0 0.75rem;
+        border-radius: 100px;
         font-weight: 600;
+        font-size: 13.5px;
         cursor: pointer;
-        transition: all 0.25s ease;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         white-space: nowrap;
+        border: none;
+        
+        .btn-icon {
+            opacity: 0.9;
+            flex-shrink: 0;
+        }
+        
+        &--primary {
+            background: #E11D48;
+            color: #FFFFFF;
+            box-shadow: 0 4px 15px rgba(225, 29, 72, 0.25);
 
-        &:hover {
-            background: #e81748;
-            box-shadow: 0 0 12px rgba(210, 13, 59, 0.4);
-            transform: translateY(-1px);
+            &:hover {
+                box-shadow: 0 6px 20px rgba(225, 29, 72, 0.4);
+                transform: translateY(-2px);
+                background: lighten(#E11D48, 5%);
+            }
+            
+            &:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 8px rgba(225, 29, 72, 0.2);
+            }
+        }
+
+        &--secondary {
+            background: #10B981;
+            color: #FFFFFF;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+
+            &:hover {
+                box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+                transform: translateY(-2px);
+                background: lighten(#10B981, 5%);
+            }
+            
+            &:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+            }
         }
     }
 }
@@ -959,6 +1000,262 @@ $severity-low: #3fb950;
                 color: rgba(255, 255, 255, 0.4);
                 font-weight: 400;
             }
+        }
+    }
+}
+
+// ==========================================================================
+// Responsive Breakpoints
+// ==========================================================================
+
+$bp-xl: 1440px;
+$bp-lg: 1024px;
+$bp-md: 768px;
+$bp-sm: 480px;
+
+// --- Additional Component Classes for Responsiveness ---
+.nav-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.nav-action-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.banner-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+// --- Media Queries ---
+
+@media (max-width: $bp-lg) {
+    .interview-page {
+        padding: 1rem;
+    }
+    
+    .practice-mode-banner {
+        margin: 0 0 1rem 0;
+        padding: 1.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        
+        .banner-actions {
+            width: 100%;
+            button {
+                flex: 1;
+                min-width: 200px;
+                text-align: center;
+                justify-content: center;
+            }
+        }
+    }
+
+    // Flatten the layout so we can reorder components
+    .interview-layout {
+        display: contents;
+    }
+    .interview-nav {
+        display: contents;
+    }
+    .interview-divider {
+        display: none;
+    }
+
+    // Reorder children visually via CSS order
+    .practice-mode-banner { order: 1; }
+    
+    .interview-sidebar {
+        order: 2;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        width: 100%;
+        background-color: $bg-card;
+        border: 1px solid $border-color;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        gap: 1.5rem;
+        align-items: flex-start;
+        
+        .sidebar-divider { display: none; }
+        
+        .match-score, .skill-gaps {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .sidebar-history-snapshots {
+            width: 100%;
+            .snapshots-list {
+                flex-direction: row;
+                flex-wrap: wrap;
+                .snapshot-item { flex: 1; min-width: 200px; }
+            }
+        }
+    }
+    
+    .nav-content {
+        order: 3;
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        background-color: $bg-card;
+        border: 1px solid $border-color;
+        border-radius: 1rem;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        gap: 0.5rem;
+        width: 100%;
+        
+        // Hide "Sections" label to save space
+        .interview-nav__label { display: none; }
+        
+        .interview-nav__item {
+            flex: 1;
+            min-width: max-content;
+            justify-content: center;
+        }
+    }
+    
+    .interview-content {
+        order: 4;
+        width: 100%;
+        background-color: $bg-card;
+        border: 1px solid $border-color;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        max-height: none;
+    }
+    
+    .nav-actions {
+        order: 5;
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        gap: 1rem;
+        
+        button {
+            flex: 1;
+        }
+    }
+}
+
+@media (max-width: $bp-md) {
+    .interview-page { padding: 0.5rem; }
+    
+    .practice-mode-banner {
+        padding: 1.25rem;
+        .banner-actions button { width: 100%; min-width: auto; }
+    }
+    
+    .interview-sidebar {
+        flex-direction: column;
+        padding: 1.25rem;
+        .match-score, .skill-gaps { width: 100%; }
+        .sidebar-history-snapshots .snapshots-list { flex-direction: column; }
+    }
+    
+    .nav-content {
+        padding: 0.5rem;
+        flex-wrap: nowrap;
+    }
+    
+    .interview-content { padding: 1.25rem; }
+    
+    .nav-actions {
+        flex-direction: column;
+    }
+    
+    // Session Wizard Resizing
+    .session-wizard-card {
+        padding: 1.5rem 1rem;
+        
+        .wizard-progress-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+            
+            .exit-session-btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .progress-bar-container {
+                width: 100%;
+                max-width: none;
+            }
+        }
+        
+        .wizard-question-panel {
+            .q-badge-row {
+                .q-index-badge {
+                    margin-left: 0;
+                }
+            }
+            
+            .session-question-text {
+                font-size: 1.25rem;
+            }
+            
+            .wizard-actions .eval-btn {
+                width: 100%;
+            }
+        }
+        
+        .wizard-navigation-footer {
+            flex-direction: column;
+            gap: 0.75rem;
+            
+            button {
+                width: 100%;
+            }
+        }
+        
+        .evaluation-feedback-box {
+            padding: 1rem;
+            
+            .eval-scores-grid {
+                grid-template-columns: repeat(2, 1fr);
+                
+                .eval-score-item:first-child {
+                    grid-column: span 2;
+                }
+            }
+            
+            .feedback-bullets-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    }
+}
+
+@media (max-width: $bp-sm) {
+    .q-card__header {
+        flex-wrap: wrap;
+        
+        .q-card__index {
+            margin-bottom: 0.5rem;
+        }
+        
+        .q-card__question {
+            width: 100%;
+            order: 3;
+            margin-top: 0.25rem;
+        }
+        
+        .q-card__chevron {
+            margin-left: auto;
         }
     }
 }

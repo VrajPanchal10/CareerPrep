@@ -5,9 +5,10 @@ $text-primary: var(--text-primary, #ffffff);
 $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 
 .ats-dashboard-page {
-    max-width: 1440px;
+    width: 100%;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 1rem 2rem 2.5rem;
+    padding: clamp(1rem, 3vw, 2rem);
 }
 
 .back-btn {
@@ -31,26 +32,25 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
     margin-bottom: 1.5rem;
 
     h1 {
-        font-size: 2rem;
+        font-size: clamp(1.75rem, 3.5vw, 2.5rem);
         font-weight: 800;
         color: $text-primary;
         margin-bottom: 0.35rem;
     }
 
     .subtitle {
-        font-size: 0.95rem;
+        font-size: clamp(0.9rem, 1.5vw, 1.05rem);
         color: $text-muted;
     }
 }
 
 .dashboard-grid-main {
     display: grid;
-    grid-template-columns: 1fr 1.7fr;
-    gap: 1.8rem;
-    margin-bottom: 1.8rem;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(1rem, 2vw, 1.5rem);
 
-    @media (max-width: 992px) {
-        grid-template-columns: 1fr;
+    @media (max-width: 1023px) {
+        grid-template-columns: 100% !important; // Override any potential inline styles on smaller screens
     }
 }
 
@@ -63,7 +63,7 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
     h2 {
-        font-size: 1.25rem;
+        font-size: clamp(1.15rem, 2vw, 1.35rem);
         font-weight: 700;
         color: $text-primary;
         margin-bottom: 1.5rem;
@@ -72,39 +72,7 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
     }
 }
 
-.score-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-
-    .score-ring-container {
-        position: relative;
-        width: 140px;
-        height: 140px;
-        margin-bottom: 1rem;
-    }
-
-    .score-ring {
-        width: 100%;
-        height: 100%;
-        transform: rotate(-90deg);
-
-        &__bg {
-            fill: none;
-            stroke: var(--theme-divider, rgba(255, 255, 255, 0.05));
-            stroke-width: 8;
-        }
-
-        &__fill {
-            fill: none;
-            stroke: #6366f1;
-            stroke-width: 8;
-            stroke-linecap: round;
-            transition: stroke-dashoffset 1s ease;
-        }
-    }
-}
+// Removing duplicated block
 
 .score-panel {
     display: flex;
@@ -116,7 +84,9 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
         position: relative;
         width: 140px;
         height: 140px;
-        margin-bottom: 1rem;
+        margin: 1rem 0;
+        display: flex;
+        justify-content: center;
     }
 
     .score-ring {
@@ -322,6 +292,7 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
         display: flex;
         flex-wrap: wrap;
         gap: 0.8rem;
+        padding: 1rem 0;
         min-height: 80px;
 
         .heatmap-item {
@@ -507,17 +478,32 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
     }
 }
 
+// ==========================================================================
+// RESPONSIVE LAYOUT SYSTEM (CSS GRID)
+// ==========================================================================
+
+$bp-xl: 1440px;
+$bp-lg: 1024px;
+$bp-md: 768px;
+
+// --- Component Grid Areas ---
+.ats-pdf-panel { grid-area: pdf; }
+.score-panel { grid-area: score; }
+.recommendations-panel { grid-area: recs; }
+.heatmap-card { grid-area: heatmap; }
+.dashboard-grid-main { grid-area: strengths; }
+.comparison-card { grid-area: comparison; }
+
 .ats-dashboard-layout {
     display: grid;
-    grid-template-columns: 48% 52%;
-    gap: 1.5rem;
+    gap: clamp(1rem, 2vw, 1.5rem);
     align-items: start;
-    margin-top: 1.5rem;
+    margin-top: clamp(1rem, 2vw, 1.5rem);
     margin-bottom: 2rem;
-
-    @media (max-width: 1024px) {
-        grid-template-columns: 100%;
-    }
+    
+    // LARGE DESKTOP (>= 1440px)
+    grid-template-columns: minmax(500px, 1.2fr) minmax(400px, 1fr);
+    grid-template-areas: "pdf results";
 }
 
 .ats-pdf-panel {
@@ -526,38 +512,115 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
     gap: 1.5rem;
     position: sticky;
     top: 20px;
-    height: calc(100vh - 160px);
+    height: calc(100vh - 40px);
     overflow: hidden;
+    z-index: 5;
+}
 
-    @media (max-width: 1024px) {
+.ats-results-panel {
+    grid-area: results;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 2vw, 1.5rem);
+    
+    // Let the page scroll naturally on desktop, don't trap scroll in the panel
+    height: auto;
+    overflow-y: visible;
+}
+
+// Sticky ATS Score on Large Desktop
+@media (min-width: 1440px) {
+    .score-panel {
+        position: sticky;
+        top: 20px;
+        z-index: 10;
+        // Background and shadow to ensure content sliding under it isn't messy
+        background: var(--theme-card, #121a2d);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+    }
+}
+
+// LAPTOP (1024px - 1439px)
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .ats-dashboard-layout {
+        // Prioritize PDF viewer width, ATS score sits next to it.
+        grid-template-columns: 1.4fr 1fr;
+        grid-template-areas: 
+            "pdf score"
+            "recs recs"
+            "heatmap heatmap"
+            "strengths strengths"
+            "comparison comparison";
+    }
+    
+    .ats-results-panel {
+        display: contents; // Break out children to participate in parent grid
+    }
+    
+    .ats-pdf-panel {
+        position: sticky;
+        top: 20px;
+        height: 700px;
+    }
+}
+
+// TABLET & MOBILE (< 1024px)
+@media (max-width: 1023px) {
+    .ats-dashboard-layout {
+        grid-template-columns: 100%;
+        grid-template-areas: 
+            "pdf"
+            "score"
+            "recs"
+            "heatmap"
+            "strengths"
+            "comparison";
+    }
+    
+    .ats-results-panel {
+        display: contents; // Break out children
+    }
+    
+    .ats-pdf-panel {
         position: static;
         height: 600px;
     }
 }
 
-.ats-results-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    height: calc(100vh - 160px);
-    overflow-y: auto;
-    padding-right: 0.5rem;
-
-    @media (max-width: 1024px) {
-        height: auto;
-        overflow-y: visible;
-        padding-right: 0;
+// MOBILE (< 768px)
+@media (max-width: 767px) {
+    .ats-pdf-panel {
+        height: 450px;
+    }
+    
+    .ats-metric-card {
+        padding: 1.25rem; // Tighter padding for mobile
+        border-radius: 12px;
     }
 
-    &::-webkit-scrollbar {
-        width: 6px;
+    // Horizontal Scroll for Comparison Tabs
+    .comparison-card .comparison-header .tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        
+        &::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        button {
+            flex-shrink: 0;
+            min-height: 44px; // Touch friendly
+        }
     }
-    &::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    &::-webkit-scrollbar-thumb {
-        background: var(--theme-border, rgba(255, 255, 255, 0.08));
-        border-radius: 3px;
+    
+    // Keyword chips natural wrap
+    .heatmap-grid {
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 }
 

@@ -166,7 +166,7 @@ const AtsDashboard = () => {
                             {/* Score & Category Breakdown Card */}
                             <div className="ats-metric-card score-panel">
                                 <h2>Overall ATS Score</h2>
-                                <div className="score-ring-container" style={{ display: "flex", justifyContent: "center", margin: "1rem 0" }}>
+                                <div className="score-ring-container">
                                     <RadialScoreMeter score={atsScore} size={120} strokeWidth={8} />
                                 </div>
                                 <p className="score-status-text">
@@ -277,7 +277,7 @@ const AtsDashboard = () => {
                                     </div>
                                 </div>
 
-                                <div className="heatmap-grid" style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", padding: "1rem 0" }}>
+                                <div className="heatmap-grid">
                                     {filteredHeatmap.length > 0 ? (
                                         filteredHeatmap.map((item, idx) => (
                                             <KeywordBadge 
@@ -295,8 +295,8 @@ const AtsDashboard = () => {
                             </div>
 
                             {/* Strengths vs. Weaknesses */}
-                            <div className="dashboard-grid-main" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", margin: 0 }}>
-                                <div className="ats-metric-card strengths-card" style={{ margin: 0 }}>
+                            <div className="dashboard-grid-main">
+                                <div className="ats-metric-card strengths-card">
                                     <h2>Strength Areas</h2>
                                     <ul className="points-list checkmark">
                                         {strengths.map((str, idx) => (
@@ -305,7 +305,7 @@ const AtsDashboard = () => {
                                     </ul>
                                 </div>
 
-                                <div className="ats-metric-card weaknesses-card" style={{ margin: 0 }}>
+                                <div className="ats-metric-card weaknesses-card">
                                     <h2>Weakness / Gap Areas</h2>
                                     <ul className="points-list warning">
                                         {weaknesses.map((weak, idx) => (

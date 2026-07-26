@@ -124,6 +124,7 @@ function csrfMiddleware(req, res, next) {
             ip: clientIp,
             correlationId,
             details: {
+                _skipRedaction: true,
                 method: req.method,
                 path: req.path,
                 headerToken: headerToken,

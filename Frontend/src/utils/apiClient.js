@@ -12,35 +12,30 @@ const apiClient = axios.create({
     withCredentials: true,
 });
 
-// ─── CSRF Helper ──────────────────────────────────────────────────────────────
-/**
- * Reads the csrfToken value from document cookies.
- * The backend sets this cookie on every authenticated response.
- * The CSRF middleware validates it against the X-CSRF-Token header.
- */
-function getCsrfTokenFromCookie() {
-    const match = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("csrfToken="));
-    if (!match) return null;
-    const value = match.split("=")[1];
-    try {
-        return decodeURIComponent(value);
-    } catch {
-        return value;
-    }
-}
+// ─── CSRF In-Memory Store ─────────────────────────────────────────────────────
+let memoryCsrfToken = null;
+let hasBootstrappedCsrf = false;
 
 // ─── Request Interceptor: Inject CSRF Token ───────────────────────────────────
 const CSRF_METHODS = ["post", "put", "delete", "patch"];
 
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use(async (config) => {
     if (CSRF_METHODS.includes(config.method?.toLowerCase())) {
-        const csrfToken = getCsrfTokenFromCookie();
-        console.log("document.cookie =", document.cookie);
-        console.log("csrfToken =", csrfToken);
-        if (csrfToken) {
-            config.headers.set("X-CSRF-Token", csrfToken);
+        // Single attempt to bootstrap from the backend if missing
+        if (!memoryCsrfToken && !hasBootstrappedCsrf) {
+            hasBootstrappedCsrf = true;
+            try {
+                const response = await axios.get(`${BASE_URL}/api/auth/get-me`, { withCredentials: true });
+                if (response.data && response.data.csrfToken) {
+                    memoryCsrfToken = response.data.csrfToken;
+                }
+            } catch (err) {
+                // Fail silently; request will proceed and fail natively with 403
+            }
+        }
+
+        if (memoryCsrfToken) {
+            config.headers.set("X-CSRF-Token", memoryCsrfToken);
         }
     }
     return config;
@@ -62,7 +57,25 @@ const processQueue = (error, token = null) => {
 };
 
 apiClient.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        const url = response.config.url || "";
+        
+        // Target specifically the endpoints that issue a new token
+        if (url.includes("/login") || url.includes("/refresh") || url.includes("/verify-mfa") || url.includes("/get-me")) {
+            if (response.data && response.data.csrfToken) {
+                memoryCsrfToken = response.data.csrfToken;
+                hasBootstrappedCsrf = true;
+            }
+        }
+        
+        // Destroy orphaned memory token strictly on logout
+        if (url.includes("/logout")) {
+            memoryCsrfToken = null;
+            hasBootstrappedCsrf = false;
+        }
+        
+        return response;
+    },
     async (error) => {
         const originalRequest = error.config;
 
@@ -76,13 +89,18 @@ apiClient.interceptors.response.use(
             originalRequest._csrfRetry = true;
             try {
                 // Perform a quick GET request to bootstrap fresh CSRF cookie from backend
-                await axios.get(
+                const response = await axios.get(
                     `${BASE_URL}/api/auth/get-me`,
                     { withCredentials: true }
                 );
-                const freshCsrfToken = getCsrfTokenFromCookie();
-                if (freshCsrfToken && CSRF_METHODS.includes(originalRequest.method?.toLowerCase())) {
-                    originalRequest.headers["X-CSRF-Token"] = freshCsrfToken;
+                
+                if (response.data && response.data.csrfToken) {
+                    memoryCsrfToken = response.data.csrfToken;
+                    hasBootstrappedCsrf = true;
+                }
+                
+                if (memoryCsrfToken && CSRF_METHODS.includes(originalRequest.method?.toLowerCase())) {
+                    originalRequest.headers.set("X-CSRF-Token", memoryCsrfToken);
                 }
                 return apiClient(originalRequest);
             } catch (csrfErr) {
@@ -108,19 +126,23 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                await axios.post(
+                const refreshResponse = await axios.post(
                     `${BASE_URL}/api/auth/refresh`,
                     {},
                     { withCredentials: true }
                 );
 
+                if (refreshResponse.data && refreshResponse.data.csrfToken) {
+                    memoryCsrfToken = refreshResponse.data.csrfToken;
+                    hasBootstrappedCsrf = true;
+                }
+
                 processQueue(null);
                 isRefreshing = false;
 
                 // Retry original request — re-attach the refreshed CSRF token
-                const refreshedCsrfToken = getCsrfTokenFromCookie();
-                if (refreshedCsrfToken && CSRF_METHODS.includes(originalRequest.method?.toLowerCase())) {
-                    originalRequest.headers["X-CSRF-Token"] = refreshedCsrfToken;
+                if (memoryCsrfToken && CSRF_METHODS.includes(originalRequest.method?.toLowerCase())) {
+                    originalRequest.headers.set("X-CSRF-Token", memoryCsrfToken);
                 }
 
                 return apiClient(originalRequest);

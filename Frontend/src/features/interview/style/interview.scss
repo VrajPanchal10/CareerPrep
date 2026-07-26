@@ -539,7 +539,7 @@ $severity-low: #3fb950;
             &:hover {
                 box-shadow: 0 6px 20px rgba(225, 29, 72, 0.4);
                 transform: translateY(-2px);
-                background: lighten(#E11D48, 5%);
+                background: color-mix(in srgb, #E11D48, white 15%);
             }
             
             &:active {
@@ -556,7 +556,7 @@ $severity-low: #3fb950;
             &:hover {
                 box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
                 transform: translateY(-2px);
-                background: lighten(#10B981, 5%);
+                background: color-mix(in srgb, #10B981, white 15%);
             }
             
             &:active {

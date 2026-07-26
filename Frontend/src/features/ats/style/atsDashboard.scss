@@ -6,36 +6,49 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 
 .ats-dashboard-page {
     width: 100%;
-    max-width: 1600px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: clamp(1rem, 3vw, 2rem);
-}
-
-.back-btn {
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    margin-bottom: 1rem;
-    transition: color 0.2s ease;
-    display: flex;
-    align-items: center;
-
-    &:hover {
-        color: #6366f1;
-    }
+    padding: clamp(0.75rem, 1.5vw, 1.5rem);
+    box-sizing: border-box;
 }
 
 .dashboard-header-ats {
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
+
+    .header-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.35rem;
+        flex-wrap: wrap;
+    }
 
     h1 {
         font-size: clamp(1.75rem, 3.5vw, 2.5rem);
         font-weight: 800;
         color: $text-primary;
-        margin-bottom: 0.35rem;
+        margin-bottom: 0;
+    }
+
+    .back-btn-pill {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+        padding: 0.5rem 1.25rem;
+        border-radius: 100px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
     }
 
     .subtitle {
@@ -46,45 +59,63 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 
 .dashboard-grid-main {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(1rem, 2vw, 1.5rem);
+    grid-template-columns: 100%; // Stack by default
+    gap: 1rem;
+    margin-top: 0;
 
-    @media (max-width: 1023px) {
-        grid-template-columns: 100% !important; // Override any potential inline styles on smaller screens
+    // Only go side-by-side on large ultra-wide desktops where there's enough room
+    @media (min-width: 1600px) {
+        grid-template-columns: 1fr 1fr;
     }
 }
 
 .ats-metric-card {
     background: var(--theme-card, #121a2d);
     border: 1px solid var(--theme-border, #233147);
-    border-radius: var(--theme-radius-card, 18px);
-    padding: 1.8rem;
-    box-shadow: var(--theme-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.4));
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    box-sizing: border-box;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeInUp 0.4s ease-out forwards;
+    width: 100%;
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
     h2 {
-        font-size: clamp(1.15rem, 2vw, 1.35rem);
+        font-size: clamp(0.95rem, 1.4vw, 1.15rem);
         font-weight: 700;
         color: $text-primary;
-        margin-bottom: 1.5rem;
+        margin: 0;
         border-left: 3px solid #6366f1;
-        padding-left: 0.75rem;
+        padding-left: 0.6rem;
     }
 }
 
 // Removing duplicated block
 
 .score-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     text-align: center;
+
+    .details-content {
+        width: 100%;
+    }
 
     .score-ring-container {
         position: relative;
-        width: 140px;
-        height: 140px;
-        margin: 1rem 0;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 0.25rem auto;
         display: flex;
         justify-content: center;
     }
@@ -106,9 +137,17 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
             stroke-linecap: round;
             transition: stroke-dashoffset 0.6s ease;
 
-            &.high { stroke: #2ecc71; }
-            &.mid { stroke: #f1c40f; }
-            &.low { stroke: #e74c3c; }
+            &.high {
+                stroke: #2ecc71;
+            }
+
+            &.mid {
+                stroke: #f1c40f;
+            }
+
+            &.low {
+                stroke: #e74c3c;
+            }
         }
     }
 
@@ -135,17 +174,18 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
         font-weight: 600;
         font-size: 0.95rem;
         color: rgba(255, 255, 255, 0.8);
-        margin-bottom: 1rem;
+        margin-bottom: 0.25rem;
     }
 
     .potential-badge {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         background: rgba(46, 204, 113, 0.12);
         border: 1px solid rgba(46, 204, 113, 0.25);
         color: #2ecc71;
-        padding: 0.4rem 1rem;
+        padding: 0.2rem 0.6rem;
         border-radius: 20px;
-        margin-bottom: 2rem;
+        margin: 0 auto 0.75rem auto;
+        width: fit-content;
     }
 
     .breakdown-list {
@@ -153,23 +193,23 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
         text-align: left;
 
         h3 {
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.5);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 1.2rem;
+            margin-bottom: 0.25rem;
         }
 
         .progress-group {
-            margin-bottom: 1.1rem;
+            margin-bottom: 0.35rem;
 
             .progress-label {
                 display: flex;
                 justify-content: space-between;
-                font-size: 0.88rem;
+                font-size: 0.85rem;
                 font-weight: 500;
-                margin-bottom: 0.4rem;
+                margin-bottom: 0.2rem;
                 color: rgba(255, 255, 255, 0.8);
             }
 
@@ -193,19 +233,19 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 .recommendations-panel {
     display: flex;
     flex-direction: column;
-    gap: 1.2rem;
+    gap: 0.5rem;
 
     .improvement-card {
         background: rgba(255, 255, 255, 0.02);
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 8px;
-        padding: 1.2rem;
+        padding: 0.5rem 0.65rem;
 
         h3 {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: #ffffff;
-            margin-bottom: 0.8rem;
+            margin-bottom: 0.25rem;
             letter-spacing: 0.2px;
         }
 
@@ -214,10 +254,10 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
             list-style: none;
 
             li {
-                font-size: 0.88rem;
+                font-size: 0.9rem;
                 color: rgba(255, 255, 255, 0.7);
-                margin-bottom: 0.6rem;
-                line-height: 1.5;
+                margin-bottom: 0.2rem;
+                line-height: 1.4;
 
                 &:last-child {
                     margin-bottom: 0;
@@ -244,46 +284,48 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 }
 
 .heatmap-card {
-    margin-bottom: 1.8rem;
-
     .heatmap-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         flex-wrap: wrap;
         gap: 1rem;
 
         h2 {
             margin-bottom: 0;
         }
+    }
 
-        .heatmap-filters {
-            display: flex;
-            gap: 0.5rem;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 0.25rem;
-            border-radius: 6px;
+    .heatmap-filters {
+        display: flex;
+        gap: 0.5rem;
+        background: #1e293b;
+        padding: 0.35rem;
+        border-radius: 100px;
+        width: fit-content;
+        flex-wrap: wrap;
 
-            button {
-                background: transparent;
-                border: none;
-                color: rgba(255, 255, 255, 0.6);
-                padding: 0.4rem 0.8rem;
-                border-radius: 4px;
-                font-size: 0.85rem;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s ease;
+        button {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
 
-                &:hover {
-                    color: #ffffff;
-                }
+            &:hover {
+                color: #ffffff;
+                background: rgba(255, 255, 255, 0.05);
+            }
 
-                &.active {
-                    background: #6366f1;
-                    color: #ffffff;
-                }
+            &.active {
+                background: #6366f1;
+                color: #ffffff;
+                box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
             }
         }
     }
@@ -291,17 +333,17 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
     .heatmap-grid {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.8rem;
-        padding: 1rem 0;
+        gap: 8px;
+        padding: 1rem 0 0.5rem 0;
         min-height: 80px;
 
         .heatmap-item {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.45rem 0.9rem;
+            padding: 0.35rem 0.7rem;
             border-radius: 6px;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             font-weight: 600;
 
             .keyword-score {
@@ -371,15 +413,13 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 }
 
 .comparison-card {
-    margin-bottom: 2rem;
-
     .comparison-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        padding-bottom: 1rem;
-        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        margin-bottom: 1rem;
         flex-wrap: wrap;
         gap: 1rem;
 
@@ -388,32 +428,37 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
             border-left: none;
             padding-left: 0;
         }
+    }
 
-        .tabs {
-            display: flex;
-            gap: 0.5rem;
+    .tabs {
+        display: flex;
+        gap: 0.5rem;
+        background: #1e293b;
+        padding: 0.4rem;
+        border-radius: 100px;
+        width: fit-content;
+        flex-wrap: wrap;
 
-            button {
-                background: rgba(255, 255, 255, 0.02);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                color: rgba(255, 255, 255, 0.6);
-                padding: 0.5rem 1rem;
-                border-radius: 6px;
-                font-size: 0.88rem;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s ease;
+        button {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 0.5rem 1.2rem;
+            border-radius: 100px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
 
-                &:hover {
-                    color: #ffffff;
-                    border-color: rgba(255, 255, 255, 0.15);
-                }
+            &:hover {
+                color: #ffffff;
+                background: rgba(255, 255, 255, 0.05);
+            }
 
-                &.active {
-                    background: rgba(99, 102, 241, 0.15);
-                    border-color: #6366f1;
-                    color: #ffffff;
-                }
+            &.active {
+                background: #6366f1;
+                color: #ffffff;
+                box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
             }
         }
     }
@@ -427,8 +472,9 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
         border-collapse: collapse;
         text-align: left;
 
-        th, td {
-            padding: 1rem;
+        th,
+        td {
+            padding: 0.75rem 0.5rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             font-size: 0.9rem;
         }
@@ -482,120 +528,169 @@ $text-muted: var(--text-muted, rgba(255, 255, 255, 0.5));
 // RESPONSIVE LAYOUT SYSTEM (CSS GRID)
 // ==========================================================================
 
-$bp-xl: 1440px;
-$bp-lg: 1024px;
+$bp-xl: 1600px;
+$bp-lg: 1200px;
 $bp-md: 768px;
 
 // --- Component Grid Areas ---
-.ats-pdf-panel { grid-area: pdf; }
-.score-panel { grid-area: score; }
-.recommendations-panel { grid-area: recs; }
-.heatmap-card { grid-area: heatmap; }
-.dashboard-grid-main { grid-area: strengths; }
-.comparison-card { grid-area: comparison; }
+// ==========================================================================
+// RESPONSIVE LAYOUT SYSTEM (CSS GRID V2)
+// ==========================================================================
 
 .ats-dashboard-layout {
     display: grid;
-    gap: clamp(1rem, 2vw, 1.5rem);
+    gap: 1rem;
     align-items: start;
-    margin-top: clamp(1rem, 2vw, 1.5rem);
+    margin-top: 0.5rem;
     margin-bottom: 2rem;
-    
-    // LARGE DESKTOP (>= 1440px)
-    grid-template-columns: minmax(500px, 1.2fr) minmax(400px, 1fr);
-    grid-template-areas: "pdf results";
+    grid-template-columns: 100%; // Default (Mobile-first stack)
 }
 
 .ats-pdf-panel {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    position: sticky;
-    top: 20px;
-    height: calc(100vh - 40px);
+    gap: 1rem;
     overflow: hidden;
     z-index: 5;
+    width: 100%;
+    height: clamp(320px, 50vh, 400px); // Mobile height by default
 }
 
 .ats-results-panel {
-    grid-area: results;
     display: flex;
     flex-direction: column;
-    gap: clamp(1rem, 2vw, 1.5rem);
-    
-    // Let the page scroll naturally on desktop, don't trap scroll in the panel
+    gap: 1rem;
+    width: 100%;
     height: auto;
     overflow-y: visible;
 }
 
-// Sticky ATS Score on Large Desktop
-@media (min-width: 1440px) {
+// ULTRA-WIDE DESKTOP (≥ 2200px) — ~68% / 32% fluid split
+@media (min-width: 2200px) {
+    .ats-dashboard-layout {
+        grid-template-columns: minmax(0, 2.12fr) minmax(0, 1fr);
+    }
+
+    .ats-pdf-panel {
+        position: sticky;
+        top: 20px;
+        height: 80vh;
+
+        &:has(.pdf-viewer-error) {
+            height: auto;
+        }
+    }
+
     .score-panel {
         position: sticky;
         top: 20px;
         z-index: 10;
-        // Background and shadow to ensure content sliding under it isn't messy
         background: var(--theme-card, #121a2d);
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
     }
 }
 
-// LAPTOP (1024px - 1439px)
-@media (min-width: 1024px) and (max-width: 1439px) {
+// LARGE DESKTOP (1800px - 2199px) — ~66% / 34% fluid split
+@media (min-width: 1800px) and (max-width: 2199px) {
     .ats-dashboard-layout {
-        // Prioritize PDF viewer width, ATS score sits next to it.
-        grid-template-columns: 1.4fr 1fr;
-        grid-template-areas: 
-            "pdf score"
-            "recs recs"
-            "heatmap heatmap"
-            "strengths strengths"
-            "comparison comparison";
+        grid-template-columns: minmax(0, 1.94fr) minmax(0, 1fr);
     }
-    
-    .ats-results-panel {
-        display: contents; // Break out children to participate in parent grid
-    }
-    
+
     .ats-pdf-panel {
         position: sticky;
         top: 20px;
-        height: 700px;
+        height: 78vh;
+
+        &:has(.pdf-viewer-error) {
+            height: auto;
+        }
+    }
+
+    .score-panel {
+        position: sticky;
+        top: 20px;
+        z-index: 10;
+        background: var(--theme-card, #121a2d);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
     }
 }
 
-// TABLET & MOBILE (< 1024px)
-@media (max-width: 1023px) {
+// DESKTOP (1600px - 1799px) — ~65% / 35% fluid split
+@media (min-width: 1600px) and (max-width: 1799px) {
     .ats-dashboard-layout {
-        grid-template-columns: 100%;
-        grid-template-areas: 
-            "pdf"
-            "score"
-            "recs"
-            "heatmap"
-            "strengths"
-            "comparison";
+        grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
     }
-    
-    .ats-results-panel {
-        display: contents; // Break out children
-    }
-    
+
     .ats-pdf-panel {
-        position: static;
-        height: 600px;
+        position: sticky;
+        top: 20px;
+        height: 75vh;
+
+        &:has(.pdf-viewer-error) {
+            height: auto;
+        }
+    }
+
+    .score-panel {
+        position: sticky;
+        top: 20px;
+        z-index: 10;
+        background: var(--theme-card, #121a2d);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
     }
 }
+
+// SMALL DESKTOP (1400px - 1599px) — ~64% / 36% fluid split
+@media (min-width: 1400px) and (max-width: 1599px) {
+    .ats-dashboard-layout {
+        grid-template-columns: minmax(0, 1.78fr) minmax(0, 1fr);
+    }
+
+    .ats-pdf-panel {
+        position: sticky;
+        top: 20px;
+        height: 72vh;
+
+        &:has(.pdf-viewer-error) {
+            height: auto;
+        }
+    }
+
+    .score-panel {
+        position: sticky;
+        top: 20px;
+        z-index: 10;
+        background: var(--theme-card, #121a2d);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+    }
+}
+
+// LAPTOP & BELOW (< 1400px) — Single-column stacked layout
+@media (max-width: 1399px) {
+    .ats-dashboard-layout {
+        grid-template-columns: 100%;
+    }
+
+    .ats-pdf-panel {
+        height: 55vh;
+    }
+}
+
+// TABLET & BELOW (< 1200px)
+@media (max-width: 1199px) {
+    .ats-pdf-panel {
+        height: 50vh;
+    }
+}
+
+
+
 
 // MOBILE (< 768px)
 @media (max-width: 767px) {
-    .ats-pdf-panel {
-        height: 450px;
-    }
-    
     .ats-metric-card {
-        padding: 1.25rem; // Tighter padding for mobile
-        border-radius: 12px;
+        padding: 0.6rem 0.75rem;
+        border-radius: 10px;
     }
 
     // Horizontal Scroll for Comparison Tabs
@@ -606,21 +701,137 @@ $bp-md: 768px;
         padding-bottom: 0.5rem;
         -webkit-overflow-scrolling: touch;
         width: 100%;
-        
+
         &::-webkit-scrollbar {
             height: 4px;
         }
-        
+
         button {
             flex-shrink: 0;
-            min-height: 44px; // Touch friendly
+            min-height: 44px;
         }
     }
-    
-    // Keyword chips natural wrap
+
     .heatmap-grid {
         flex-wrap: wrap;
         gap: 0.5rem;
     }
+
+    // Convert Tables to Mobile Cards
+    .comparison-table {
+        thead {
+            display: none;
+        }
+
+        tbody,
+        tr,
+        td {
+            display: block;
+            width: 100%;
+        }
+
+        tr {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            padding: 1rem;
+        }
+
+        td {
+            border: none;
+            padding: 0.4rem 0;
+
+            &.bold {
+                font-size: 1.05rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                padding-bottom: 0.8rem;
+                margin-bottom: 0.8rem;
+            }
+        }
+    }
 }
 
+// --- OVERFLOW PREVENTION UTILITIES ---
+.table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--theme-border, rgba(255, 255, 255, 0.08));
+        border-radius: 3px;
+    }
+}
+
+.ats-metric-card {
+    min-width: 0;
+    word-break: break-word;
+
+    // Styling for HTML5 Details/Summary cards
+    &>summary {
+        cursor: pointer;
+        list-style: none;
+        outline: none;
+        margin: -0.75rem -1rem 0 -1rem;
+        padding: 0.6rem 1rem;
+        border-radius: 12px 12px 0 0;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+
+        // Custom chevron
+        &::-webkit-details-marker {
+            display: none;
+        }
+
+        // Convert summary H2 to block with flex
+        h2 {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            
+            &::after {
+                content: "▼";
+                font-size: 0.8rem;
+                color: rgba(255, 255, 255, 0.4);
+                transition: transform 0.2s ease;
+                flex-shrink: 0;
+            }
+        }
+    }
+
+    // When details is open, flip the arrow and restore bottom margin
+    &[open]>summary {
+        margin-bottom: 0.5rem;
+
+        h2::after {
+            transform: rotate(180deg);
+        }
+    }
+
+    // The inner content wrapper
+    .details-content {
+        animation: slideDown 0.3s ease-out;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

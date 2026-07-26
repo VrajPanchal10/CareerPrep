@@ -119,14 +119,14 @@ const AtsDashboard = () => {
             <div className="ats-app-container">
                 <Navbar />
                 <div className="ats-dashboard-page">
-                    {/* Back Link */}
-                    <button className="back-btn" onClick={() => navigate('/ats')}>
-                        ⬅ Back to Scans
-                    </button>
-
                     {/* Dashboard Header */}
                     <header className="dashboard-header-ats">
-                        <h1>ATS Match Analysis Dashboard</h1>
+                        <div className="header-title-row">
+                            <h1>ATS Match Analysis Dashboard</h1>
+                            <button className="back-btn-pill" onClick={() => navigate('/ats')}>
+                                ← Back
+                            </button>
+                        </div>
                         <p className="subtitle">Detailed evaluation of keyword matching density, project alignment, and AI-driven resume recommendations.</p>
                     </header>
 
@@ -164,10 +164,11 @@ const AtsDashboard = () => {
                         <div className="ats-results-panel">
                             
                             {/* Score & Category Breakdown Card */}
-                            <div className="ats-metric-card score-panel">
-                                <h2>Overall ATS Score</h2>
+                            <details open className="ats-metric-card score-panel">
+                                <summary><h2>Overall ATS Score</h2></summary>
+                                <div className="details-content">
                                 <div className="score-ring-container">
-                                    <RadialScoreMeter score={atsScore} size={120} strokeWidth={8} />
+                                    <RadialScoreMeter score={atsScore} size={100} strokeWidth={8} />
                                 </div>
                                 <p className="score-status-text">
                                     {atsScore >= 80 ? "Excellent Job Description Match!" : atsScore >= 60 ? "Moderate Match, Needs Optimization" : "Low Match, Significant Revision Required"}
@@ -231,11 +232,13 @@ const AtsDashboard = () => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                                </div>
+                            </details>
 
                             {/* Recommendations Panel */}
-                            <div className="ats-metric-card recommendations-panel">
-                                <h2>ATS Optimization Suggestions</h2>
+                            <details open className="ats-metric-card recommendations-panel">
+                                <summary><h2>ATS Optimization Suggestions</h2></summary>
+                                <div className="details-content">
                                 
                                 <div className="improvement-card">
                                     <h3>🚀 Priority Resume Optimizations</h3>
@@ -263,71 +266,80 @@ const AtsDashboard = () => {
                                         ))}
                                     </ul>
                                 </div>
-                            </div>
+                                </div>
+                            </details>
 
                             {/* Keyword Heatmap */}
-                            <div className="ats-metric-card heatmap-card">
-                                <div className="heatmap-header">
+                            <details className="ats-metric-card heatmap-card">
+                                <summary>
                                     <h2>Keyword Heatmap Analysis</h2>
+                                </summary>
+                                <div className="details-content">
                                     <div className="heatmap-filters">
                                         <button className={heatmapFilter === "all" ? "active" : ""} onClick={() => setHeatmapFilter("all")}>All ({heatmap.length})</button>
                                         <button className={heatmapFilter === "matched" ? "active" : ""} onClick={() => setHeatmapFilter("matched")}>Matched ({matchedKeywords.length})</button>
                                         <button className={heatmapFilter === "missing" ? "active" : ""} onClick={() => setHeatmapFilter("missing")}>Missing ({missingKeywords.length})</button>
                                         <button className={heatmapFilter === "extra" ? "active" : ""} onClick={() => setHeatmapFilter("extra")}>Extra ({extraKeywords.length})</button>
                                     </div>
-                                </div>
 
-                                <div className="heatmap-grid">
-                                    {filteredHeatmap.length > 0 ? (
-                                        filteredHeatmap.map((item, idx) => (
-                                            <KeywordBadge 
-                                                key={idx}
-                                                keyword={item.keyword}
-                                                score={item.score}
-                                                status={item.status}
-                                                onClick={item.status !== "missing" ? () => navigateToKeyword(item.keyword) : null}
-                                            />
-                                        ))
-                                    ) : (
-                                        <p className="no-keywords">No keywords found for the selected filter.</p>
-                                    )}
+                                    <div className="heatmap-grid">
+                                        {filteredHeatmap.length > 0 ? (
+                                            filteredHeatmap.map((item, idx) => (
+                                                <KeywordBadge 
+                                                    key={idx}
+                                                    keyword={item.keyword}
+                                                    score={item.score}
+                                                    status={item.status}
+                                                    onClick={item.status !== "missing" ? () => navigateToKeyword(item.keyword) : null}
+                                                />
+                                            ))
+                                        ) : (
+                                            <p className="no-keywords">No keywords found for the selected filter.</p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            </details>
 
                             {/* Strengths vs. Weaknesses */}
                             <div className="dashboard-grid-main">
-                                <div className="ats-metric-card strengths-card">
-                                    <h2>Strength Areas</h2>
+                                <details className="ats-metric-card strengths-card">
+                                    <summary><h2>Strength Areas</h2></summary>
+                                    <div className="details-content">
                                     <ul className="points-list checkmark">
                                         {strengths.map((str, idx) => (
                                             <li key={idx}>{str}</li>
                                         ))}
                                     </ul>
-                                </div>
+                                    </div>
+                                </details>
 
-                                <div className="ats-metric-card weaknesses-card">
-                                    <h2>Weakness / Gap Areas</h2>
+                                <details className="ats-metric-card weaknesses-card">
+                                    <summary><h2>Weakness / Gap Areas</h2></summary>
+                                    <div className="details-content">
                                     <ul className="points-list warning">
                                         {weaknesses.map((weak, idx) => (
                                             <li key={idx}>{weak}</li>
                                         ))}
                                     </ul>
-                                </div>
+                                    </div>
+                                </details>
                             </div>
 
                             {/* Comparison Matrices */}
-                            <div className="ats-metric-card comparison-card">
-                                <div className="comparison-header">
+                            <details className="ats-metric-card comparison-card">
+                                <summary>
                                     <h2>Resume vs. Job Description Match Gaps</h2>
-                                    <div className="tabs">
+                                </summary>
+                                <div className="details-content">
+                                    <div className="tabs" style={{ marginBottom: "1rem" }}>
                                         <button className={comparisonTab === "skills" ? "active" : ""} onClick={() => setComparisonTab("skills")}>Skills Comparisons</button>
                                         <button className={comparisonTab === "projects" ? "active" : ""} onClick={() => setComparisonTab("projects")}>Project Relevance</button>
                                         <button className={comparisonTab === "experience" ? "active" : ""} onClick={() => setComparisonTab("experience")}>Experience Match</button>
                                     </div>
-                                </div>
 
                                 <div className="comparison-content">
                                     {comparisonTab === "skills" && (
+                                        <div className="table-responsive-wrapper">
                                         <table className="comparison-table">
                                             <thead>
                                                 <tr>
@@ -353,9 +365,11 @@ const AtsDashboard = () => {
                                                 ))}
                                             </tbody>
                                         </table>
+                                        </div>
                                     )}
 
                                     {comparisonTab === "projects" && (
+                                        <div className="table-responsive-wrapper">
                                         <table className="comparison-table">
                                             <thead>
                                                 <tr>
@@ -379,9 +393,11 @@ const AtsDashboard = () => {
                                                 ))}
                                             </tbody>
                                         </table>
+                                        </div>
                                     )}
 
                                     {comparisonTab === "experience" && (
+                                        <div className="table-responsive-wrapper">
                                         <table className="comparison-table">
                                             <thead>
                                                 <tr>
@@ -405,9 +421,11 @@ const AtsDashboard = () => {
                                                 ))}
                                             </tbody>
                                         </table>
+                                        </div>
                                     )}
                                 </div>
-                            </div>
+                                </div>
+                            </details>
                         </div>
 
                     </div>

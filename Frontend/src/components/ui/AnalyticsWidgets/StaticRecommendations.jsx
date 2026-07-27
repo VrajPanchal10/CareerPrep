@@ -24,25 +24,42 @@ const getAdviceForWeakness = (weakness) => {
 };
 
 const StaticRecommendations = ({ topWeaknesses = [] }) => {
-    if (!topWeaknesses || topWeaknesses.length === 0) {
-        return null;
-    }
-
     return (
         <div className="static-recommendations-card">
-            <div className="recommendations-header">
-                <h3>💡 AI-Driven Recommendations</h3>
-                <p className="subtitle">Based purely on your historical performance trends.</p>
+            <div className="card-header-fixed">
+                <div className="recommendations-header">
+                    <h3>💡 AI-Driven Recommendations</h3>
+                    <p className="subtitle">Based purely on your historical performance trends.</p>
+                </div>
             </div>
             
-            <ul className="recommendations-list">
-                {topWeaknesses.map((weakness, idx) => (
-                    <li key={idx} className="recommendation-item">
-                        <span className="bullet-point"></span>
-                        <p>{getAdviceForWeakness(weakness)}</p>
-                    </li>
-                ))}
-            </ul>
+            <div className="card-body-scrollable">
+                {(!topWeaknesses || topWeaknesses.length === 0) ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "2rem 1rem", textAlign: "center", gap: "0.5rem" }}>
+                        <div style={{ fontSize: "1.75rem" }}>✨</div>
+                        <div style={{ fontWeight: "600", fontSize: "0.9rem", color: "#f8fafc" }}>
+                            No critical weaknesses detected
+                        </div>
+                        <p style={{ fontSize: "0.8rem", color: "#94a3b8", margin: 0 }}>
+                            Complete more mock assessments to generate personalized AI performance insights.
+                        </p>
+                    </div>
+                ) : (
+                    <ul className="recommendations-list">
+                        {topWeaknesses.map((weakness, idx) => (
+                            <li key={idx} className="recommendation-item">
+                                <span className="bullet-point"></span>
+                                <p>{getAdviceForWeakness(weakness)}</p>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
+            <div className="card-footer-fixed">
+                <span>Adaptive Insights</span>
+                <span style={{ color: '#10b981' }}>✓ Auto-Refreshed</span>
+            </div>
         </div>
     );
 };

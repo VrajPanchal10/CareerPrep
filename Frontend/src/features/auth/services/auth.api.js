@@ -71,39 +71,3 @@ export async function validateResetToken(token) {
         throw err;
     }
 }
-
-export async function enableMfa() {
-    try {
-        const response = await api.post("/api/auth/mfa/enable", {});
-        return response.data;
-    } catch (err) {
-        throw err;
-    }
-}
-
-export async function confirmMfa({ code }) {
-    try {
-        const response = await api.post("/api/auth/mfa/confirm", { code });
-        return response.data;
-    } catch (err) {
-        throw err;
-    }
-}
-
-export async function disableMfa() {
-    try {
-        const response = await api.post("/api/auth/mfa/disable", {});
-        return response.data;
-    } catch (err) {
-        throw err;
-    }
-}
-
-export async function verifyMfa({ mfaToken, code }) {
-    try {
-        const response = await api.post("/api/auth/mfa/verify", { mfaToken, code });
-        return response.data;
-    } catch (err) {
-        throw err;
-    }
-}

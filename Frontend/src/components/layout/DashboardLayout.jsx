@@ -82,8 +82,8 @@ const DashboardLayout = () => {
                 <div className="sidebar-footer">
                     {user && (
                         <div className="user-profile-widget">
-                            <div className="avatar">
-                                {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                            <div className="avatar" style={user.avatarUrl ? { background: `url(${user.avatarUrl}) center/cover` } : {}}>
+                                {!user.avatarUrl && (user.username ? user.username.charAt(0).toUpperCase() : 'U')}
                             </div>
                             <div className="user-info">
                                 <span className="username">{user.username || 'User'}</span>

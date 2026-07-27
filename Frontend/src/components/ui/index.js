@@ -38,6 +38,5 @@ export { default as ComparisonCard } from "./AnalyticsWidgets/ComparisonCard";
 export { default as TrendCard } from "./AnalyticsWidgets/TrendCard";
 export { default as AnalyticsSummary } from "./AnalyticsWidgets/AnalyticsSummary";
 export { default as EmptyAnalytics } from "./AnalyticsWidgets/EmptyAnalytics";
-export { default as TrendChart } from "./AnalyticsWidgets/TrendChart";
 export { default as ModuleBreakdown } from "./AnalyticsWidgets/ModuleBreakdown";
 export { default as StaticRecommendations } from "./AnalyticsWidgets/StaticRecommendations";

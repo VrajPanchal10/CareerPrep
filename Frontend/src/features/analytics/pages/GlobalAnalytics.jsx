@@ -8,7 +8,6 @@ import {
     AnalyticsSummary, 
     ComparisonCard, 
     EmptyAnalytics,
-    TrendChart,
     ModuleBreakdown,
     StaticRecommendations
 } from "../../../components/ui";
@@ -109,9 +108,7 @@ const GlobalAnalytics = () => {
                 </header>
 
                 {/* Filter Selector Panel */}
-                <div className="analytics-filter-bar">
-                    <AnalyticsFilters onFilterChange={updateFilters} />
-                </div>
+                <AnalyticsFilters onFilterChange={updateFilters} />
 
                 {attempts.length === 0 ? (
                     <ErrorBoundary>
@@ -129,61 +126,90 @@ const GlobalAnalytics = () => {
                             </ErrorBoundary>
                         </div>
                         
-                        {/* High-Level Overview Row */}
-                        <div className="analytics-details-grid" style={{ marginBottom: '2rem' }}>
+                        {/* Module Breakdown Full-Width Section */}
+                        <div className="grid-full-width">
                             <ErrorBoundary>
                                 <ModuleBreakdown counts={summary.moduleCounts || {}} averages={summary.moduleAverages || {}} />
                             </ErrorBoundary>
-                            <ErrorBoundary>
-                                <TrendChart data={attempts} />
-                            </ErrorBoundary>
                         </div>
 
-                        {/* Progression Analysis Column */}
-                        <div className="analytics-details-grid">
-                            {/* Left Side: Comparison Panels */}
-                            <div className="comparison-panels-stack">
+                        {/* Paired Row 1: ATS Resume Progression + AI Recommendations */}
+                        <div className="analytics-paired-row">
+                            <div className="paired-card-wrapper">
                                 <ErrorBoundary>
-                                    <ComparisonCard attempts={filteredAts} title="ATS Resume Version Progression" />
-                                </ErrorBoundary>
-                                <ErrorBoundary>
-                                    <ComparisonCard attempts={filteredInterviews} title="AI Coach Interview Progression" />
-                                </ErrorBoundary>
-                                <ErrorBoundary>
-                                    <ComparisonCard attempts={filteredCoding} title="Coding Challenges Performance progression" />
+                                    <ComparisonCard 
+                                        attempts={filteredAts} 
+                                        title="ATS Resume Version Progression" 
+                                        actionUrl="/ats"
+                                        actionText="Start ATS Analysis"
+                                    />
                                 </ErrorBoundary>
                             </div>
-
-                            {/* Right Side: Log timeline list */}
-                            <div className="right-panel-stack">
+                            <div className="paired-card-wrapper">
                                 <ErrorBoundary>
                                     <StaticRecommendations topWeaknesses={summary.topWeaknesses || []} />
                                 </ErrorBoundary>
-                                
+                            </div>
+                        </div>
+
+                        {/* Paired Row 2: AI Coach Interview Progression + Recent Evaluation Logs */}
+                        <div className="analytics-paired-row">
+                            <div className="paired-card-wrapper">
+                                <ErrorBoundary>
+                                    <ComparisonCard 
+                                        attempts={filteredInterviews} 
+                                        title="AI Coach Interview Progression" 
+                                        actionUrl="/mock-interview"
+                                        actionText="Start Mock Interview"
+                                    />
+                                </ErrorBoundary>
+                            </div>
+                            <div className="paired-card-wrapper">
                                 <div className="activity-timeline-card">
-                                <h2>Recent Evaluation Logs</h2>
-                                <div className="activity-list" role="list">
-                                    {attempts.map((item, idx) => (
-                                        <div key={item.id || idx} className="activity-item" role="listitem">
-                                            <div className="activity-info">
-                                                <span className={`activity-badge activity-badge--${item.type}`}>
-                                                    {item.type.toUpperCase()}
-                                                </span>
-                                                <div className="activity-texts">
-                                                    <h3>{item.title}</h3>
-                                                    <p>{item.role} • {new Date(item.date).toLocaleDateString()}</p>
+                                    <div className="card-header-fixed">
+                                        <h2>Recent Evaluation Logs</h2>
+                                    </div>
+                                    <div className="card-body-scrollable">
+                                        <div className="activity-list" role="list">
+                                            {attempts.map((item, idx) => (
+                                                <div key={item.id || idx} className="activity-item" role="listitem">
+                                                    <div className="activity-info">
+                                                        <span className={`activity-badge activity-badge--${item.type}`}>
+                                                            {item.type.toUpperCase()}
+                                                        </span>
+                                                        <div className="activity-texts">
+                                                            <h3>{item.title}</h3>
+                                                            <p>{item.role} • {new Date(item.date).toLocaleDateString()}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="activity-score">
+                                                        <span className={`pill score-status--${item.overallScore >= 80 ? 'high' : item.overallScore >= 60 ? 'mid' : 'low'}`}>
+                                                            {item.overallScore}%
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="activity-score">
-                                                <span className={`pill score-status--${item.overallScore >= 80 ? 'high' : item.overallScore >= 60 ? 'mid' : 'low'}`}>
-                                                    {item.overallScore}%
-                                                </span>
-                                            </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+
+                                    <div className="card-footer-fixed">
+                                        <span>Total Logs: {attempts.length}</span>
+                                        <span style={{ color: '#38bdf8' }}>✓ Realtime Stream</span>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Bottom Full-Width Row: Coding Challenges Progression */}
+                        <div className="grid-full-width">
+                            <ErrorBoundary>
+                                <ComparisonCard 
+                                    attempts={filteredCoding} 
+                                    title="Coding Challenges Performance Progression" 
+                                    actionUrl="/coding"
+                                    actionText="Start Coding Challenge"
+                                />
+                            </ErrorBoundary>
                         </div>
                     </div>
                 )}

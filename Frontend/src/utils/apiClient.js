@@ -61,7 +61,7 @@ apiClient.interceptors.response.use(
         const url = response.config.url || "";
         
         // Target specifically the endpoints that issue a new token
-        if (url.includes("/login") || url.includes("/refresh") || url.includes("/verify-mfa") || url.includes("/get-me")) {
+        if (url.includes("/login") || url.includes("/refresh") || url.includes("/get-me")) {
             if (response.data && response.data.csrfToken) {
                 memoryCsrfToken = response.data.csrfToken;
                 hasBootstrappedCsrf = true;

@@ -31,8 +31,38 @@ async function authUser(req, res, next) {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
-        req.user = decoded
+        // Session Revocation Check: Verify session is active in database
+        if (decoded && decoded.id && decoded.sessionId) {
+            const userModel = require("../models/user.model");
+            const user = await userModel.findById(decoded.id).select("refreshSessions");
 
+            if (!user) {
+                return res.status(401).json({ message: "User session is invalid." });
+            }
+
+            const activeSession = (user.refreshSessions || []).find(s => s.sessionId === decoded.sessionId);
+            if (!activeSession) {
+                res.clearCookie("token");
+                res.clearCookie("csrfToken");
+                logSecurityEvent({
+                    eventType: "REVOKED_SESSION_ATTEMPT",
+                    ip: clientIp,
+                    details: `Access attempt with revoked session ID: ${decoded.sessionId}`
+                });
+                return res.status(401).json({ message: "Session has been signed out or revoked." });
+            }
+
+            // Periodically update lastActivity on active session
+            const now = new Date();
+            if (!activeSession.lastActivity || (now - new Date(activeSession.lastActivity)) > 60000) {
+                await userModel.updateOne(
+                    { _id: decoded.id, "refreshSessions.sessionId": decoded.sessionId },
+                    { $set: { "refreshSessions.$.lastActivity": now } }
+                ).catch(() => {});
+            }
+        }
+
+        req.user = decoded
         next()
 
     } catch (err) {

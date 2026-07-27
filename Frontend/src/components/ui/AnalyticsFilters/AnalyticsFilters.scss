@@ -2,15 +2,16 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #151a24;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
+    background: var(--theme-card, #121a2d);
+    border: 1px solid var(--theme-border, #233147);
+    border-radius: var(--theme-radius-card, 18px);
+    padding: 0.75rem 1.25rem;
     width: 100%;
     box-sizing: border-box;
     gap: 1rem;
     flex-wrap: wrap;
     margin-bottom: 1rem;
+    box-shadow: var(--theme-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.4));
 
     &__title {
         font-size: 0.8rem;

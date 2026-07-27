@@ -3,9 +3,8 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
 const { logSecurityEvent, logger } = require("../utils/securityLogger")
+const { parseUserAgent } = require("../utils/deviceParser")
 const crypto = require("crypto")
-const otplib = require("otplib")
-const QRCode = require("qrcode")
 const { sendResetPasswordEmail, sendPasswordChangedEmail } = require("../services/auth/email.service")
 const { validatePasswordPolicy } = require("../services/auth/passwordReset.service")
 
@@ -34,23 +33,44 @@ async function registerUserController(req, res) {
     })
 
     if (isUserAlreadyExists) {
+        logSecurityEvent({
+            eventType: "REGISTRATION_FAILURE",
+            ip: req.ip || req.headers["x-forwarded-for"],
+            details: { username, email, message: "User already exists." }
+        });
         return res.status(400).json({
-            message: "Account already exists with this email address or username"
+            message: "User already exists with this username or email"
         })
     }
 
-    const hash = await bcrypt.hash(password, 10)
+    const validation = validatePasswordPolicy(password);
+    if (!validation.isValid) {
+        return res.status(400).json({
+            message: "Password fails security policy requirements.",
+            errors: validation.errors
+        });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
 
     const user = await userModel.create({
         username,
         email,
-        password: hash
+        password: hashedPassword
     })
 
     const sessionId = crypto.randomUUID();
+    const { os, browser, deviceType } = parseUserAgent(req.headers["user-agent"]);
+    const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+
     user.refreshSessions.push({
-        token: sessionId,
+        sessionId,
         deviceInfo: req.headers["user-agent"] || "Generic Web Client",
+        browser,
+        os,
+        deviceType,
+        ip: clientIp,
+        loginAt: new Date(),
         lastActivity: new Date()
     });
     user.sessionMetadata = {
@@ -60,7 +80,7 @@ async function registerUserController(req, res) {
     await user.save();
 
     const token = jwt.sign(
-        { id: user._id, username: user.username, sessionId },
+        { id: user._id, username: user.username, sessionId, rememberMe: false },
         process.env.JWT_SECRET,
         { expiresIn: "1d" }
     )
@@ -68,24 +88,28 @@ async function registerUserController(req, res) {
     res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 24 * 60 * 60 * 1000 // 1 day
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
     })
 
     const csrfToken = crypto.randomBytes(32).toString("hex");
     res.cookie("csrfToken", csrfToken, {
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 24 * 60 * 60 * 1000 // 1 day
+        maxAge: 24 * 60 * 60 * 1000
     })
+
+    logger.info("New user registered", { userId: user._id, username: user.username });
 
     res.status(201).json({
         message: "User registered successfully",
         user: {
             id: user._id,
             username: user.username,
-            email: user.email
-        }
+            email: user.email,
+            avatarUrl: user.avatarUrl || null,
+            createdAt: user.createdAt || null
+        },
+        csrfToken: csrfToken
     })
 }
 
@@ -104,7 +128,7 @@ async function loginUserController(req, res) {
     }
 
     const user = await userModel.findOne({ email })
-    const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress
+    const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1"
 
     if (!user) {
         logSecurityEvent({
@@ -129,25 +153,18 @@ async function loginUserController(req, res) {
         })
     }
 
-    // Intercept flow if MFA is active on account
-    if (user.mfaEnabled) {
-        const mfaToken = jwt.sign(
-            { id: user._id, type: "mfa", rememberMe: !!rememberMe },
-            process.env.JWT_SECRET,
-            { expiresIn: "5m" }
-        );
-        return res.status(200).json({
-            success: true,
-            mfaRequired: true,
-            mfaToken
-        });
-    }
-
-    // Generate unique session and sign JWT
+    // Generate unique session and store structured session record
     const sessionId = crypto.randomUUID();
+    const { os, browser, deviceType } = parseUserAgent(req.headers["user-agent"]);
+
     user.refreshSessions.push({
-        token: sessionId,
+        sessionId,
         deviceInfo: req.headers["user-agent"] || "Generic Web Client",
+        browser,
+        os,
+        deviceType,
+        ip: clientIp,
+        loginAt: new Date(),
         lastActivity: new Date()
     });
     user.sessionMetadata = {
@@ -191,7 +208,9 @@ async function loginUserController(req, res) {
         user: {
             id: user._id,
             username: user.username,
-            email: user.email
+            email: user.email,
+            avatarUrl: user.avatarUrl || null,
+            createdAt: user.createdAt || null
         },
         csrfToken: csrfToken
     })
@@ -272,6 +291,8 @@ async function getMeController(req, res) {
             id: user._id,
             username: user.username,
             email: user.email,
+            avatarUrl: user.avatarUrl || null,
+            createdAt: user.createdAt || null,
             mfaEnabled: user.mfaEnabled,
             sessionMetadata: user.sessionMetadata
         },
@@ -365,7 +386,9 @@ async function refreshTokenController(req, res) {
             user: {
                 id: user._id,
                 username: user.username,
-                email: user.email
+                email: user.email,
+                avatarUrl: user.avatarUrl || null,
+                createdAt: user.createdAt || null
             },
             csrfToken: csrfToken
         })

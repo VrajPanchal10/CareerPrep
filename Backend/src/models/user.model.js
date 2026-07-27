@@ -29,33 +29,16 @@ const userSchema = new mongoose.Schema({
         default: null
     },
 
-    // Security - TOTP Multi-Factor Authentication
-    mfaEnabled: {
-        type: Boolean,
-        default: false
-    },
-    mfaSecret: {
-        type: String,
-        default: null
-    },
-    mfaRecoveryCodes: {
-        type: [String],
-        default: []
-    },
-    mfaFailedAttempts: {
-        type: Number,
-        default: 0
-    },
-    mfaLockoutUntil: {
-        type: Date,
-        default: null
-    },
-
-    // Structured Session Store (Supports token rotation and multi-device sessions)
+    // Structured Session Store (Supports real multi-device session tracking and instant revocation)
     refreshSessions: [
         {
-            token: { type: String, required: true },
+            sessionId: { type: String, required: true },
             deviceInfo: { type: String, default: "Generic Web Client" },
+            browser: { type: String, default: "Unknown Browser" },
+            os: { type: String, default: "Unknown OS" },
+            deviceType: { type: String, default: "Desktop" },
+            ip: { type: String, default: "127.0.0.1" },
+            loginAt: { type: Date, default: Date.now },
             lastActivity: { type: Date, default: Date.now }
         }
     ],
@@ -105,7 +88,7 @@ const userSchema = new mongoose.Schema({
         ip: { type: String },
         date: { type: Date, default: Date.now }
     }]
-})
+}, { timestamps: true })
 
 const userModel = mongoose.model("users", userSchema)
 

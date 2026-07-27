@@ -1,9 +1,13 @@
 .module-breakdown-card {
-    background: #1e1e2d;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: var(--theme-card, #121a2d);
+    border: 1px solid var(--theme-border, #233147);
+    border-radius: var(--theme-radius-card, 18px);
+    padding: 1.25rem;
+    box-shadow: var(--theme-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.4));
     color: #e2e8f0;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
 
     h3 {
         margin: 0 0 0.5rem 0;

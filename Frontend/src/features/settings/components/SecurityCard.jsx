@@ -1,53 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { fetchSecurity, revokeDevice, revokeAllDevices, updatePassword } from '../services/settings.api';
-import { enableMfa, confirmMfa } from '../../auth/services/auth.api'; // reuse from auth
 import { useToast } from '../../../context/ToastContext';
-import { LoadingButton } from '../../../components/ui';
+import { LoadingButton, PasswordInput } from '../../../components/ui';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { useNavigate } from 'react-router';
 
-const parseDeviceInfo = (userAgent) => {
-    if (!userAgent) return { os: 'Unknown OS', browser: 'Unknown Browser' };
-    let os = 'Unknown OS';
-    if (userAgent.includes('Win')) os = 'Windows';
-    else if (userAgent.includes('Mac')) os = 'macOS';
-    else if (userAgent.includes('Linux')) os = 'Linux';
-    else if (userAgent.includes('Android')) os = 'Android';
-    else if (userAgent.includes('like Mac')) os = 'iOS';
+// Relative time calculation helper
+const getRelativeTimeString = (dateString) => {
+    if (!dateString) return 'Just now';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
 
-    let browser = 'Unknown Browser';
-    if (userAgent.includes('Chrome') && !userAgent.includes('Edg') && !userAgent.includes('OPR')) browser = 'Google Chrome';
-    else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) browser = 'Safari';
-    else if (userAgent.includes('Firefox')) browser = 'Mozilla Firefox';
-    else if (userAgent.includes('Edg')) browser = 'Microsoft Edge';
-    else if (userAgent.includes('OPR') || userAgent.includes('Opera')) browser = 'Opera';
-
-    return { os, browser };
+    if (diffInSeconds < 60) return 'Just now';
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
 };
 
 const SecurityCard = () => {
     const { addToast } = useToast();
+    const { setUser } = useAuth();
+    const navigate = useNavigate();
+
     const [loading, setLoading] = useState(true);
-    
     const [securityData, setSecurityData] = useState({
-        mfaEnabled: false,
-        recoveryCodesGenerated: false,
         devices: []
     });
 
     const [pwd, setPwd] = useState({ current: '', new: '', confirm: '' });
     const [pwdLoading, setPwdLoading] = useState(false);
-    
-    const [showPwd, setShowPwd] = useState({ current: false, new: false, confirm: false });
-
-    // MFA State
-    const [mfaSetupActive, setMfaSetupActive] = useState(false);
-    const [qrCode, setQrCode] = useState('');
-    const [mfaCode, setMfaCode] = useState('');
-    const [mfaActionLoading, setMfaActionLoading] = useState(false);
+    const [revokeLoading, setRevokeLoading] = useState({});
+    const [revokeAllLoading, setRevokeAllLoading] = useState(false);
 
     const load = async () => {
         try {
             const data = await fetchSecurity();
-            setSecurityData(data.security);
+            setSecurityData({
+                devices: data.security?.devices || []
+            });
         } catch (err) {
             addToast("Failed to load security info", "error");
         } finally {
@@ -60,6 +55,9 @@ const SecurityCard = () => {
     }, []);
 
     const handlePasswordUpdate = async () => {
+        if (!pwd.current || !pwd.new || !pwd.confirm) {
+            return addToast("Please complete all password fields.", "error");
+        }
         if (pwd.new !== pwd.confirm) {
             return addToast("New passwords do not match", "error");
         }
@@ -76,119 +74,77 @@ const SecurityCard = () => {
         }
     };
 
-    const handleEnableMFA = async () => {
-        setMfaActionLoading(true);
+    const handleRevoke = async (id, isCurrentDevice) => {
+        setRevokeLoading(prev => ({ ...prev, [id]: true }));
         try {
-            const data = await enableMfa();
-            setQrCode(data.qrCode);
-            setMfaSetupActive(true);
-        } catch (err) {
-            addToast("Failed to initiate MFA setup", "error");
-        } finally {
-            setMfaActionLoading(false);
-        }
-    };
-
-    const handleConfirmMFA = async () => {
-        setMfaActionLoading(true);
-        try {
-            await confirmMfa({ code: mfaCode });
-            addToast("MFA enabled successfully", "success");
-            setMfaSetupActive(false);
-            load();
-        } catch (err) {
-            addToast("Invalid code", "error");
-        } finally {
-            setMfaActionLoading(false);
-        }
-    };
-
-    const handleRevoke = async (id) => {
-        try {
-            await revokeDevice(id);
-            addToast("Device revoked successfully", "success");
-            load();
+            const res = await revokeDevice(id);
+            if (isCurrentDevice || res?.isCurrentDevice) {
+                addToast("Current session signed out.", "info");
+                setUser(null);
+                navigate("/login");
+                return;
+            }
+            addToast("Device signed out successfully", "success");
+            await load();
         } catch (err) {
             addToast("Failed to revoke device", "error");
+        } finally {
+            setRevokeLoading(prev => ({ ...prev, [id]: false }));
         }
     };
 
     const handleRevokeAll = async () => {
+        setRevokeAllLoading(true);
         try {
             await revokeAllDevices();
             addToast("All other devices have been signed out.", "success");
-            load();
+            await load();
         } catch (err) {
-            addToast("Failed to revoke devices", "error");
+            addToast("Failed to sign out other devices", "error");
+        } finally {
+            setRevokeAllLoading(false);
         }
-    };
-
-    const toggleShowPwd = (field) => {
-        setShowPwd(prev => ({ ...prev, [field]: !prev[field] }));
     };
 
     if (loading) return <div className="settings-card"><p>Loading security details...</p></div>;
 
     return (
         <>
+            {/* 1. Password Update Section */}
             <div className="settings-card">
                 <h2>1. Password Update</h2>
                 <div className="card-body">
-                    <div className="form-group" style={{ position: 'relative' }}>
-                        <label>Current Password</label>
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <input 
-                                type={showPwd.current ? "text" : "password"} 
-                                value={pwd.current} 
-                                onChange={(e) => setPwd({...pwd, current: e.target.value})} 
-                                style={{ width: '100%', paddingRight: '40px' }}
-                            />
-                            <button 
-                                type="button"
-                                onClick={() => toggleShowPwd('current')}
-                                style={{ position: 'absolute', right: '10px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}
-                            >
-                                {showPwd.current ? "👁️‍🗨️" : "👁️"}
-                            </button>
-                        </div>
+                    <div className="form-group">
+                        <label htmlFor="currentPassword">Current Password</label>
+                        <PasswordInput 
+                            id="currentPassword"
+                            name="currentPassword"
+                            placeholder="Enter current password"
+                            value={pwd.current} 
+                            onChange={(e) => setPwd({...pwd, current: e.target.value})} 
+                        />
                     </div>
-                    <div className="form-group" style={{ position: 'relative' }}>
-                        <label>New Password</label>
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <input 
-                                type={showPwd.new ? "text" : "password"} 
-                                value={pwd.new} 
-                                onChange={(e) => setPwd({...pwd, new: e.target.value})} 
-                                style={{ width: '100%', paddingRight: '40px' }}
-                            />
-                            <button 
-                                type="button"
-                                onClick={() => toggleShowPwd('new')}
-                                style={{ position: 'absolute', right: '10px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}
-                            >
-                                {showPwd.new ? "👁️‍🗨️" : "👁️"}
-                            </button>
-                        </div>
+                    <div className="form-group" style={{ marginTop: '1rem' }}>
+                        <label htmlFor="newPassword">New Password</label>
+                        <PasswordInput 
+                            id="newPassword"
+                            name="newPassword"
+                            placeholder="Enter new password"
+                            value={pwd.new} 
+                            onChange={(e) => setPwd({...pwd, new: e.target.value})} 
+                        />
                     </div>
-                    <div className="form-group" style={{ position: 'relative' }}>
-                        <label>Confirm Password</label>
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <input 
-                                type={showPwd.confirm ? "text" : "password"} 
-                                value={pwd.confirm} 
-                                onChange={(e) => setPwd({...pwd, confirm: e.target.value})} 
-                                style={{ width: '100%', paddingRight: '40px' }}
-                            />
-                            <button 
-                                type="button"
-                                onClick={() => toggleShowPwd('confirm')}
-                                style={{ position: 'absolute', right: '10px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}
-                            >
-                                {showPwd.confirm ? "👁️‍🗨️" : "👁️"}
-                            </button>
-                        </div>
+                    <div className="form-group" style={{ marginTop: '1rem' }}>
+                        <label htmlFor="confirmPassword">Confirm Password</label>
+                        <PasswordInput 
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            placeholder="Re-enter new password"
+                            value={pwd.confirm} 
+                            onChange={(e) => setPwd({...pwd, confirm: e.target.value})} 
+                        />
                     </div>
-                    <div style={{ marginTop: '0.5rem' }}>
+                    <div style={{ marginTop: '1.25rem' }}>
                         <LoadingButton onClick={handlePasswordUpdate} loading={pwdLoading} className="btn-primary">
                             Update Password
                         </LoadingButton>
@@ -196,75 +152,104 @@ const SecurityCard = () => {
                 </div>
             </div>
 
+            {/* 2. Logged-in Devices Section */}
             <div className="settings-card">
-                <h2>2. Multi-Factor Authentication (MFA)</h2>
-                <div className="card-body">
-                    <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                        <div>
-                            <span style={{color: securityData.mfaEnabled ? '#10b981' : '#94a3b8'}}>
-                                {securityData.mfaEnabled ? '✔ Authenticator App Enabled' : '❌ Authenticator App Disabled'}
-                            </span>
-                        </div>
-                        <div>
-                            <span style={{color: securityData.recoveryCodesGenerated ? '#10b981' : '#94a3b8'}}>
-                                {securityData.recoveryCodesGenerated ? '✔ Recovery Codes Generated' : '❌ Recovery Codes Not Generated'}
-                            </span>
-                        </div>
-                    </div>
-
-                    {!securityData.mfaEnabled && !mfaSetupActive && (
-                        <div style={{ marginTop: '1rem' }}>
-                            <LoadingButton onClick={handleEnableMFA} loading={mfaActionLoading} className="btn-primary">
-                                Set Up MFA
-                            </LoadingButton>
-                        </div>
-                    )}
-
-                    {mfaSetupActive && (
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', marginTop: '1rem' }}>
-                            <p>Scan this QR code with your authenticator app:</p>
-                            <img src={qrCode} alt="MFA QR" style={{ borderRadius: '8px', marginBottom: '1rem' }} />
-                            <div className="form-group">
-                                <label>Verification Code</label>
-                                <input type="text" value={mfaCode} onChange={e => setMfaCode(e.target.value)} />
-                            </div>
-                            <div style={{ marginTop: '1rem' }}>
-                                <LoadingButton onClick={handleConfirmMFA} loading={mfaActionLoading} className="btn-primary">
-                                    Verify & Enable
-                                </LoadingButton>
-                            </div>
-                        </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h2 style={{ border: 'none', margin: 0, padding: 0 }}>2. Logged-in Devices</h2>
+                    {securityData.devices.length > 1 && (
+                        <LoadingButton 
+                            onClick={handleRevokeAll} 
+                            loading={revokeAllLoading}
+                            style={{ 
+                                background: 'transparent', 
+                                border: '1px solid #ef4444', 
+                                color: '#ef4444', 
+                                padding: '0.4rem 0.9rem', 
+                                borderRadius: '6px', 
+                                cursor: 'pointer',
+                                fontSize: '0.85rem'
+                            }}
+                        >
+                            Sign Out All Other Devices
+                        </LoadingButton>
                     )}
                 </div>
-            </div>
-
-            <div className="settings-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2 style={{ border: 'none', margin: 0, padding: 0 }}>3. Logged-in Devices</h2>
-                    <button onClick={handleRevokeAll} style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer' }}>
-                        Sign Out All
-                    </button>
-                </div>
-                <div className="card-body">
+                <div className="card-body" style={{ marginTop: '1rem' }}>
                     {securityData.devices.map(dev => {
-                        const parsedInfo = parseDeviceInfo(dev.deviceInfo);
-                        const isRecent = new Date(dev.lastActivity).getTime() > Date.now() - 1000 * 60 * 60 * 24; // within 24h
+                        const isCurrent = dev.isCurrentDevice;
+                        const deviceId = dev.sessionId || dev._id;
                         return (
-                            <div key={dev._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
-                                <div>
-                                    <div style={{ fontWeight: '600' }}>{parsedInfo.os}</div>
-                                    <div style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>{parsedInfo.browser}</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-                                        Last Active: {isRecent ? "Recently" : new Date(dev.lastActivity).toLocaleDateString()}
+                            <div 
+                                key={deviceId} 
+                                style={{ 
+                                    display: 'flex', 
+                                    justify: 'space-between', 
+                                    alignItems: 'center', 
+                                    padding: '1.1rem 1.25rem', 
+                                    background: isCurrent ? 'rgba(56, 189, 248, 0.05)' : 'rgba(255,255,255,0.02)', 
+                                    border: isCurrent ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid rgba(255,255,255,0.06)',
+                                    borderRadius: '10px',
+                                    marginBottom: '0.85rem',
+                                    flexWrap: 'wrap',
+                                    gap: '1rem'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{
+                                        width: '42px',
+                                        height: '42px',
+                                        borderRadius: '10px',
+                                        background: isCurrent ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1.25rem'
+                                    }}>
+                                        {dev.deviceType === 'Mobile' ? '📱' : dev.deviceType === 'Tablet' ? '平板' : '💻'}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: '600', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                            {dev.os} • {dev.browser}
+                                            {isCurrent && (
+                                                <span style={{ 
+                                                    background: 'rgba(16, 185, 129, 0.15)', 
+                                                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                                                    color: '#10b981', 
+                                                    fontSize: '0.75rem', 
+                                                    padding: '0.15rem 0.55rem', 
+                                                    borderRadius: '12px',
+                                                    fontWeight: '600'
+                                                }}>
+                                                    ✓ Current Device
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div style={{ fontSize: '0.825rem', color: '#94a3b8', marginTop: '0.2rem' }}>
+                                            IP: {dev.ip} • Last Active: {getRelativeTimeString(dev.lastActivity)}
+                                        </div>
                                     </div>
                                 </div>
-                                <button onClick={() => handleRevoke(dev._id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.9rem', padding: '0.5rem 1rem', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px' }}>
+                                <LoadingButton 
+                                    onClick={() => handleRevoke(deviceId, isCurrent)} 
+                                    loading={revokeLoading[deviceId]}
+                                    style={{ 
+                                        background: 'transparent', 
+                                        color: '#ef4444', 
+                                        fontSize: '0.85rem', 
+                                        padding: '0.45rem 1rem', 
+                                        border: '1px solid rgba(239, 68, 68, 0.35)', 
+                                        borderRadius: '6px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
                                     Sign Out
-                                </button>
+                                </LoadingButton>
                             </div>
                         );
                     })}
-                    {securityData.devices.length === 0 && <p style={{color: '#94a3b8'}}>No active devices tracked.</p>}
+                    {securityData.devices.length === 0 && (
+                        <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No active sessions recorded.</p>
+                    )}
                 </div>
             </div>
         </>

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { fetchProfile, updateProfile, deleteAccount } from '../services/settings.api';
 import { useToast } from '../../../context/ToastContext';
-import { LoadingButton } from '../../../components/ui';
+import { LoadingButton, PasswordInput } from '../../../components/ui';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router';
 
 const ProfileCard = () => {
     const { addToast } = useToast();
-    const { setUser } = useAuth();
+    const { user, setUser } = useAuth();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(true);
@@ -50,14 +50,38 @@ const ProfileCard = () => {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await updateProfile({
+            const data = await updateProfile({
                 username: profile.username,
                 email: profile.email,
                 avatarUrl: profile.avatarUrl
             });
-            addToast("Profile updated successfully", "success");
+
+            if (data && data.profile) {
+                if (typeof setUser === 'function') {
+                    setUser(prev => ({
+                        ...prev,
+                        username: data.profile.username,
+                        email: data.profile.email,
+                        avatarUrl: data.profile.avatarUrl
+                    }));
+                }
+                setProfile(prev => ({
+                    ...prev,
+                    username: data.profile.username || '',
+                    email: data.profile.email || '',
+                    avatarUrl: data.profile.avatarUrl || '',
+                    createdAt: data.profile.createdAt || prev.createdAt
+                }));
+                addToast(data.message || "Profile updated successfully", "success");
+            } else {
+                addToast("Profile update failed.", "error");
+            }
         } catch (err) {
-            addToast("Failed to update profile", "error");
+            if (import.meta.env.DEV) {
+                console.error("[ProfileCard] Profile update error:", err);
+            }
+            const errorMessage = err?.response?.data?.message || err?.message || "Failed to update profile. Please try again.";
+            addToast(errorMessage, "error");
         } finally {
             setSaving(false);
         }
@@ -82,9 +106,10 @@ const ProfileCard = () => {
 
     if (loading) return <div className="settings-card"><p>Loading profile...</p></div>;
 
-    const memberSince = profile.createdAt 
-        ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-        : 'Unknown';
+    const memberSinceDate = profile.createdAt || user?.createdAt;
+    const memberSince = memberSinceDate 
+        ? new Date(memberSinceDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        : new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
     return (
         <>
@@ -175,12 +200,12 @@ const ProfileCard = () => {
                             <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Please enter your password to confirm permanent deletion.</p>
                             
                             <div className="form-group" style={{ marginBottom: '1rem' }}>
-                                <input 
-                                    type="password" 
+                                <PasswordInput 
                                     placeholder="Enter your password" 
                                     value={deletePassword} 
                                     onChange={(e) => setDeletePassword(e.target.value)} 
-                                    style={{ borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                                    id="deletePassword"
+                                    name="deletePassword"
                                 />
                             </div>
 

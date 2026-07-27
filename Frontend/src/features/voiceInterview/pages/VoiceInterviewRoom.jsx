@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
+import { ArrowLeft } from "lucide-react";
 import Navbar from "../../ats/components/Navbar";
 import { useToast, VolumeIndicator, HelpTooltip } from "../../../components/ui";
 import { useInterviewSession } from "../hooks/useInterviewSession";
@@ -240,12 +241,17 @@ const VoiceInterviewRoomContent = () => {
             <Navbar />
             <header className="voice-header">
                 <div className="header-left">
-                    <h1>AI Technical Interview</h1>
+                    <h1>
+                        <span className="title-full">AI Technical Interview</span>
+                        <span className="title-short">AI Interview</span>
+                    </h1>
                     <p>Voice-enabled interactive session. Answer verbally for the best experience.</p>
                 </div>
                 <div className="header-right">
-                    <button onClick={onComplete} className="back-btn" disabled={status === "PROCESSING"}>
-                        <i className="fi fi-rr-flag"></i> End Session
+                    <button className="back-btn-ghost" onClick={onComplete} disabled={status === "PROCESSING"} id="exitInterviewSessionBtn">
+                        <ArrowLeft size={16} strokeWidth={2.5} />
+                        <span className="btn-text-full">Exit Session</span>
+                        <span className="btn-text-short">Exit</span>
                     </button>
                 </div>
             </header>
@@ -282,19 +288,12 @@ const VoiceInterviewRoomContent = () => {
                             voiceSpeaker={voiceSpeaker}
                             setVoiceSpeaker={setVoiceSpeaker}
                         >
-                            <div style={{ 
-                                background: "rgba(0,0,0,0.4)", 
-                                border: "1px solid rgba(255,255,255,0.1)", 
-                                padding: "0.8rem 1rem", 
-                                borderRadius: "8px", 
-                                display: "flex", 
-                                flexDirection: "column",
-                                alignItems: "center", 
-                                gap: "0.5rem",
-                                width: "100%"
-                            }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "1rem", width: "100%", justifyContent: "center" }}>
-                                    <span style={{ fontSize: "0.75rem", textTransform: "uppercase", fontWeight: "bold", color: "rgba(255,255,255,0.5)" }}>Assistant Volume Slider:</span>
+                            <div className="assistant-volume-card">
+                                <div className="volume-control-header">
+                                    <span className="section-title">Assistant Volume</span>
+                                    <span className="volume-percent-badge">{Math.round(assistantVolume * 100)}%</span>
+                                </div>
+                                <div className="volume-slider-row">
                                     <input 
                                         type="range"
                                         min="0"
@@ -302,11 +301,10 @@ const VoiceInterviewRoomContent = () => {
                                         step="0.05"
                                         value={assistantVolume}
                                         onChange={(e) => setAssistantVolume(parseFloat(e.target.value))}
-                                        style={{ width: "100px", accentColor: "#d20d3b" }}
+                                        className="voice-slider-full"
                                     />
-                                    <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#fff" }}>{Math.round(assistantVolume * 100)}%</span>
                                 </div>
-                                <div style={{ display: "flex", alignItems: "center", gap: "1rem", width: "100%", justifyContent: "center" }}>
+                                <div className="volume-status-row">
                                     <VolumeIndicator 
                                         audio={currentAudio} 
                                         isSpeaking={status === "PLAYING"} 
@@ -341,57 +339,50 @@ const VoiceInterviewRoomContent = () => {
                         <EvaluationPanel evaluation={displayEvaluation} voiceLanguage={voiceLanguage} />
                     </div>
 
-                    <div className="action-row" style={{ marginTop: "2rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ display: "flex", gap: "1rem" }}>
-                            <button onClick={() => {}} className="btn btn--secondary" disabled={true} style={{ padding: "0.8rem 1.5rem" }}>
-                                <i className="fi fi-rr-arrow-left"></i> Prev
+                    <div className="action-row">
+                        <div className="action-left">
+                            <button onClick={() => {}} className="btn btn--secondary nav-btn" disabled={true}>
+                                <i className="fi fi-rr-arrow-left"></i> Previous
                             </button>
                         </div>
-                        
-                        <style>{`
-                            @keyframes inline-spin {
-                                0% { transform: rotate(0deg); }
-                                100% { transform: rotate(360deg); }
-                            }
-                        `}</style>
 
-                        {status === "PROCESSING" ? (
-                            <button 
-                                className="btn btn--primary"
-                                disabled={true}
-                                style={{ padding: "0.8rem 2rem", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", cursor: "not-allowed", display: "flex", alignItems: "center", gap: "0.5rem" }}
-                            >
-                                <span style={{
-                                    display: "inline-block",
-                                    width: "14px",
-                                    height: "14px",
-                                    border: "2px solid rgba(255,255,255,0.3)",
-                                    borderTop: "2px solid #fff",
-                                    borderRadius: "50%",
-                                    animation: "inline-spin 1s linear infinite"
-                                }} />
-                                Evaluating...
-                            </button>
-                        ) : status === "EVALUATED" ? (
-                            currentQIndex >= session.questions.length - 1 ? (
-                                <button onClick={onComplete} className="btn btn--primary" style={{ padding: "0.8rem 2rem", background: "#27ae60", color: "#fff" }}>
-                                    <i className="fi fi-rr-check"></i> Finish Interview
+                        <div className="action-right">
+                            {status === "PROCESSING" ? (
+                                <button 
+                                    className="btn btn--primary nav-btn"
+                                    disabled={true}
+                                >
+                                    <span style={{
+                                        display: "inline-block",
+                                        width: "14px",
+                                        height: "14px",
+                                        border: "2px solid rgba(255,255,255,0.3)",
+                                        borderTop: "2px solid #fff",
+                                        borderRadius: "50%",
+                                        animation: "inline-spin 1s linear infinite"
+                                    }} />
+                                    Evaluating...
                                 </button>
+                            ) : status === "EVALUATED" ? (
+                                currentQIndex >= session.questions.length - 1 ? (
+                                    <button onClick={onComplete} className="btn btn--primary nav-btn">
+                                        <i className="fi fi-rr-check"></i> Finish Interview
+                                    </button>
+                                ) : (
+                                    <button onClick={onNext} className="btn btn--primary nav-btn">
+                                        Next Question <i className="fi fi-rr-arrow-right"></i>
+                                    </button>
+                                )
                             ) : (
-                                <button onClick={onNext} className="btn btn--primary" style={{ padding: "0.8rem 2rem", background: "#2ecc71", color: "#fff" }}>
-                                    Next Question <i className="fi fi-rr-arrow-right"></i>
+                                <button 
+                                    onClick={onSubmit}
+                                    className="btn btn--primary nav-btn"
+                                    disabled={!transcript || transcript.trim() === ""}
+                                >
+                                    <i className="fi fi-rr-magic-wand"></i> Submit Answer
                                 </button>
-                            )
-                        ) : (
-                            <button 
-                                onClick={onSubmit}
-                                className="btn btn--primary"
-                                disabled={!transcript || transcript.trim() === ""}
-                                style={{ padding: "0.8rem 2rem", background: "#d20d3b", color: "#fff" }}
-                            >
-                                <i className="fi fi-rr-magic-wand"></i> Submit Answer
-                            </button>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
 

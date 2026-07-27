@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, Outlet } from 'react-router';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { ThemeToggle } from '../ui';
 import './DashboardLayout.scss';
 
 // SVG Icons
 const Icons = {
     Rocket: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-3.05 11a22.35 22.35 0 0 1-3.95 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-3.05 11a22.35 22.35 0 0 1-3.95 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
     ),
     Coach: () => (
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
@@ -52,7 +53,7 @@ const DashboardLayout = () => {
             <aside className={`dashboard-sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
                     <span className="logo-icon"><Icons.Rocket /></span>
-                    <span className="logo-text">Career<span className="highlight">Prep</span> <span className="pro-tag">Pro</span></span>
+                    <span className="logo-text">Career<span className="highlight">Prep</span></span>
                 </div>
 
                 <nav className="sidebar-nav">
@@ -86,7 +87,6 @@ const DashboardLayout = () => {
                             </div>
                             <div className="user-info">
                                 <span className="username">{user.username || 'User'}</span>
-                                <span className="badge">Pro Badge</span>
                             </div>
                             <button className="logout-btn" onClick={handleLogout} title="Logout">
                                 <Icons.Logout />
@@ -106,14 +106,18 @@ const DashboardLayout = () => {
                     
                     <div className="header-title">
                         <h2>{
-                            location.pathname === '/' ? 'Refined Pro Dashboard' : 
-                            location.pathname.includes('/voice') ? 'Voice-to-Voice AI Interview Simulator' :
-                            location.pathname.includes('/github') ? 'GitHub Project Defense Interview Simulator' :
+                            location.pathname.includes('/voice') ? (
+                                <>
+                                    <span className="title-full">Voice-to-Voice AI Interview Simulator</span>
+                                    <span className="title-short">Voice Interview</span>
+                                </>
+                            ) :
+                            location.pathname.includes('/github') ? 'GitHub Project Defense' :
                             location.pathname.includes('/ats') ? 'ATS Match & Heatmap' :
                             location.pathname.includes('/code') ? 'Coding Workspace' :
                             location.pathname.includes('/analytics') ? 'Performance Analytics' :
                             location.pathname.includes('/settings') ? 'Settings' :
-                            'Refined Pro Dashboard'
+                            'Interview Coach'
                         }</h2>
                     </div>
 
@@ -122,14 +126,7 @@ const DashboardLayout = () => {
                             <span className="search-icon"><Icons.Search /></span>
                             <input type="text" placeholder="Search..." />
                         </div>
-                        <button className="action-btn notifications" aria-label="Notifications">
-                            <Icons.Bell />
-                            <span className="indicator"></span>
-                        </button>
-                        <button className="action-btn help" aria-label="Help Center">
-                            <Icons.Help />
-                            <span>Help Center</span>
-                        </button>
+                        <ThemeToggle />
                     </div>
                 </header>
 

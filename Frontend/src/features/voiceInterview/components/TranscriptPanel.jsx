@@ -16,21 +16,16 @@ export const TranscriptPanel = ({
     const isProcessing = interviewState === "PROCESSING";
 
     return (
-        <div className="transcript-card" style={{ marginTop: "1rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                <h4 style={{ textTransform: "uppercase", fontSize: "0.85rem", letterSpacing: "1px", color: "rgba(255,255,255,0.7)" }}>SPOKEN TRANSCRIPTION / TYPED ANSWER</h4>
+        <div className="transcript-card">
+            <div className="transcript-header">
+                <h4>SPOKEN TRANSCRIPTION / TYPED ANSWER</h4>
                 {isRecording && (
-                    <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                        <span style={{ color: "#2ecc71", fontSize: "0.8rem", fontWeight: "bold", animation: "recordingPulse 1s infinite alternate" }}>🎤 Listening...</span>
-                        <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.8rem" }}>
-                            Confidence: <strong style={{ color: "#2ecc71" }}>{Math.round(browserConfidence * 100)}%</strong>
-                        </span>
-                        <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.8rem" }}>
-                            Language: <strong style={{ color: "#8a2be2" }}>{voiceLanguage === "hi-IN" ? "Hindi" : (voiceLanguage === "gu-IN" ? "Gujarati" : "English")}</strong>
-                        </span>
+                    <div className="listening-indicator">
+                        <span className="listening-dot" />
+                        <span>Listening...</span>
                     </div>
                 )}
-                {isPaused && <span style={{ color: "#e67e22", fontSize: "0.8rem", fontWeight: "bold" }}>Paused</span>}
+                {isPaused && <span className="paused-indicator">Paused</span>}
             </div>
             
             <textarea
@@ -38,7 +33,7 @@ export const TranscriptPanel = ({
                 onChange={(e) => onTranscriptChange(e.target.value)}
                 readOnly={isReadOnly}
                 placeholder="Your transcribed text will populate here as you speak. Alternatively, you can type your answer manually here..."
-                style={{ width: "100%", height: "150px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "1rem", color: "#fff", resize: "none" }}
+                className="transcript-textarea"
             />
         </div>
     );

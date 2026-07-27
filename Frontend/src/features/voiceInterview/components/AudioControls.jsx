@@ -16,20 +16,13 @@ export const AudioControls = ({
     children
 }) => {
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.5rem", marginTop: "1.5rem" }}>
-            <div style={{ display: "flex", gap: "1.5rem", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>Language:</span>
+        <div className="voice-controls-container">
+            <div className="voice-settings-grid">
+                <div className="voice-setting-item">
+                    <label htmlFor="voiceLanguageSelect">Language</label>
                     <select 
-                        style={{
-                            background: "rgba(255,255,255,0.03)", 
-                            border: "1px solid rgba(255,255,255,0.08)", 
-                            color: "#fff", 
-                            padding: "0.4rem 0.8rem", 
-                            borderRadius: "6px", 
-                            fontSize: "0.82rem",
-                            outline: "none"
-                        }}
+                        id="voiceLanguageSelect"
+                        className="voice-select"
                         value={voiceLanguage} 
                         onChange={(e) => setVoiceLanguage(e.target.value)}
                         disabled={["RECORDING", "PLAYING", "PROCESSING", "PAUSED_RECORDING"].includes(interviewState)}
@@ -40,19 +33,14 @@ export const AudioControls = ({
                     </select>
                 </div>
 
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>Speaker</span>
-                    <HelpTooltip content="Choose a speaker voice." />
+                <div className="voice-setting-item">
+                    <div className="label-with-help">
+                        <label htmlFor="voiceSpeakerSelect">Speaker</label>
+                        <HelpTooltip content="Choose a speaker voice." />
+                    </div>
                     <select 
-                        style={{
-                            background: "rgba(255,255,255,0.03)", 
-                            border: "1px solid rgba(255,255,255,0.08)", 
-                            color: "#fff", 
-                            padding: "0.4rem 0.8rem", 
-                            borderRadius: "6px", 
-                            fontSize: "0.82rem",
-                            outline: "none"
-                        }}
+                        id="voiceSpeakerSelect"
+                        className="voice-select"
                         value={voiceSpeaker}
                         onChange={(e) => setVoiceSpeaker(e.target.value)}
                         disabled={["RECORDING", "PLAYING", "PROCESSING", "PAUSED"].includes(interviewState)}
@@ -63,36 +51,39 @@ export const AudioControls = ({
                     </select>
                 </div>
 
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>Speed: {speakingRate.toFixed(1)}x</span>
+                <div className="voice-setting-item">
+                    <div className="label-with-value">
+                        <label>Speed</label>
+                        <span className="speed-val">{speakingRate.toFixed(1)}x</span>
+                    </div>
                     <input
                         type="range"
+                        className="voice-slider"
                         min="0.5"
                         max="2.0"
                         step="0.1"
                         value={speakingRate}
                         onChange={(e) => setSpeakingRate(parseFloat(e.target.value))}
                         disabled={["RECORDING", "PLAYING", "PROCESSING"].includes(interviewState)}
-                        style={{ width: "80px", accentColor: "#d20d3b" }}
                     />
                 </div>
             </div>
 
-            <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+            <div className="voice-volume-row">
                 {/* Assistant Volume placeholder. Rendered by parent passing children */}
                 {children}
             </div>
 
-            <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
-                <button onClick={onPlay} className="control-btn" disabled={interviewState === "RECORDING"} style={{ padding: "0.6rem 1rem", fontSize: "0.85rem", borderRadius: "6px" }}>
+            <div className="playback-buttons-row">
+                <button onClick={onPlay} className="control-btn" disabled={interviewState === "RECORDING"}>
                     <i className="fi fi-rr-volume"></i> {interviewState === "PLAYING" ? "Replay Question" : "Replay Question"}
                 </button>
                 
-                <button onClick={onPause} className="control-btn" disabled={interviewState !== "PLAYING" && interviewState !== "PAUSED_PLAYBACK"} style={{ padding: "0.6rem 1rem", fontSize: "0.85rem", borderRadius: "6px" }}>
+                <button onClick={onPause} className="control-btn" disabled={interviewState !== "PLAYING" && interviewState !== "PAUSED_PLAYBACK"}>
                     <i className="fi fi-rr-pause"></i> Pause
                 </button>
 
-                <button onClick={onStop} className="control-btn" disabled={interviewState !== "PLAYING" && interviewState !== "PAUSED_PLAYBACK"} style={{ padding: "0.6rem 1rem", fontSize: "0.85rem", borderRadius: "6px" }}>
+                <button onClick={onStop} className="control-btn" disabled={interviewState !== "PLAYING" && interviewState !== "PAUSED_PLAYBACK"}>
                     <i className="fi fi-rr-stop"></i> Stop Audio
                 </button>
             </div>

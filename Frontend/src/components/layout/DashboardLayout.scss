@@ -20,38 +20,45 @@
 }
 
 .sidebar-header {
-    height: 64px;
+    height: 60px;
     display: flex;
     align-items: center;
     padding: 0 20px;
     border-bottom: 1px solid var(--theme-border, #233147);
+    box-sizing: border-box;
     
     .logo-icon {
         color: #6366f1;
         display: flex;
         align-items: center;
         margin-right: 10px;
+
+        svg {
+            width: 24px;
+            height: 24px;
+            display: block;
+        }
     }
     
     .logo-text {
-        font-size: 1.15rem;
-        font-weight: 700;
+        font-size: clamp(24px, 1.8vw, 25px);
+        font-weight: 800;
         letter-spacing: -0.02em;
         color: #ffffff;
-        
-        .highlight {
-            color: #6366f1;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+
+        @media (max-width: 1024px) {
+            font-size: clamp(22px, 3vw, 24px);
         }
 
-        .pro-tag {
-            font-size: 0.75rem;
-            color: #818cf8;
-            font-weight: 600;
-            margin-left: 4px;
-            background: rgba(99, 102, 241, 0.15);
-            padding: 2px 6px;
-            border-radius: 6px;
-            border: 1px solid rgba(99, 102, 241, 0.25);
+        @media (max-width: 640px) {
+            font-size: clamp(20px, 3.8vw, 22px);
+        }
+
+        .highlight {
+            color: #6366f1;
         }
     }
 }
@@ -182,13 +189,22 @@
 }
 
 .dashboard-header {
-    height: 64px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 32px;
+    padding: 0 1.5rem;
     background-color: var(--theme-surface, #0d1322);
     border-bottom: 1px solid var(--theme-border, #233147);
+    box-sizing: border-box;
+
+    @media (max-width: 1024px) {
+        padding: 0 1rem;
+    }
+
+    @media (max-width: 640px) {
+        padding: 0 0.5rem;
+    }
     
     .mobile-toggle {
         display: none;
@@ -198,18 +214,41 @@
         margin-right: 14px;
     }
     
-    .header-title h2 {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #f8fafc;
-        letter-spacing: -0.01em;
+    .header-title {
+        display: flex;
+        align-items: center;
+        margin-right: auto;
+
+        h2 {
+            margin: 0;
+            font-size: 1.28rem;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.01em;
+            text-align: left;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+
+            .title-short {
+                display: none;
+            }
+
+            @media (max-width: 640px) {
+                .title-full {
+                    display: none;
+                }
+                .title-short {
+                    display: inline;
+                }
+            }
+        }
     }
     
     .header-actions {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 14px;
         
         .search-bar {
             display: flex;
@@ -218,8 +257,12 @@
             border: 1px solid var(--theme-border, #233147);
             border-radius: 20px;
             padding: 6px 14px;
-            width: 240px;
+            width: 220px;
             transition: all 0.2s ease;
+
+            @media (max-width: 640px) {
+                display: none;
+            }
             
             &:focus-within {
                 border-color: #6366f1;
@@ -286,9 +329,17 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: clamp(1rem, 2.5vw, 2rem) clamp(1rem, 3vw, 2.5rem);
+    padding: 1.25rem 1.5rem;
     background-color: var(--theme-bg, #090d16);
     box-sizing: border-box;
+
+    @media (max-width: 1024px) {
+        padding: 1rem 1rem;
+    }
+
+    @media (max-width: 640px) {
+        padding: 0.75rem 0.5rem;
+    }
     
     // Container max-width with comfortable margins
     > * {

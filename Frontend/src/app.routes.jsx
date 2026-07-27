@@ -70,9 +70,11 @@ const LayoutWrapper = () => {
             <Suspense fallback={<PageLoadingFallback />}>
                 {showSidebar ? <DashboardLayout /> : <Outlet />}
             </Suspense>
-            <div style={{ position: "fixed", top: "18px", right: showSidebar ? "170px" : "120px", zIndex: 1200 }}>
-                <ThemeToggle />
-            </div>
+            {!showSidebar && (
+                <div style={{ position: "fixed", top: "18px", right: "24px", zIndex: 1200 }}>
+                    <ThemeToggle />
+                </div>
+            )}
             <DeveloperLogs />
             <SessionExpiredModal />
         </>

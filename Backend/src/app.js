@@ -10,6 +10,9 @@ const requestLoggerMiddleware = require("./middlewares/security/requestLogger.mi
 
 const app = express()
 
+// Trust reverse proxy (e.g. Render / Cloudflare / NGINX) for accurate client IP rate-limiting
+app.set("trust proxy", 1)
+
 // 0. Middleware to trace Correlation IDs and selectively log performance/failures
 app.use(correlationIdMiddleware)
 app.use(requestLoggerMiddleware)

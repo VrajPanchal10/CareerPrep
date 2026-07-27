@@ -20,7 +20,7 @@ logger.hookConsole();
 const app = require("./src/app");
 const connectToDB = require("./src/config/database");
 const mongoose = require("mongoose");
-const { checkSmtpConnection } = require("./src/services/auth/email.service");
+const { checkGmailConnection } = require("./src/services/auth/email.service");
 const judge0Provider = require("./src/services/execution/judge0.provider");
 
 let serverInstance = null;
@@ -78,7 +78,7 @@ async function gracefulShutdown(code = 0) {
 process.on("SIGINT", () => gracefulShutdown(0));
 process.on("SIGTERM", () => gracefulShutdown(0));
 
-function printStartupBanner(port, dbHealthy, smtpStatus) {
+function printStartupBanner(port, dbHealthy, gmailStatus) {
     const isProd = process.env.NODE_ENV === "production";
     const envStr = isProd ? "Production" : "Development";
 
@@ -86,9 +86,9 @@ function printStartupBanner(port, dbHealthy, smtpStatus) {
     const hasGroq = !!process.env.Groq_API_KEY;
     const hasSarvam = !!process.env.SARVAM_API_KEY;
 
-    let smtpLine = `SMTP        : Gmail Connected ✅`;
-    if (!smtpStatus.connected) {
-        smtpLine = `SMTP        : Connection Failed ❌\n\nReason:\n${smtpStatus.error}`;
+    let gmailLine = `Gmail API   : Connected ✅`;
+    if (!gmailStatus.connected) {
+        gmailLine = `Gmail API   : Connection Unverified ⚠️\n\nReason:\n${gmailStatus.error}`;
     }
 
     logger.raw(`
@@ -104,7 +104,7 @@ Gemini      : API Key Loaded ✅
 Groq        : API Key Loaded ✅
 Sarvam      : API Key Loaded ✅
 
-${smtpLine}
+${gmailLine}
 
 Server Ready 🚀
 `);
@@ -124,11 +124,11 @@ async function startServer() {
         logger.error("[Server] Failed initial Judge0 runtime sync:", err.message);
     });
 
-    const smtpStatus = await checkSmtpConnection();
+    const gmailStatus = await checkGmailConnection();
 
     const port = process.env.PORT || 3000;
     serverInstance = app.listen(port, () => {
-        printStartupBanner(port, dbHealthy, smtpStatus);
+        printStartupBanner(port, dbHealthy, gmailStatus);
     });
 
     serverInstance.on("error", (err) => {

@@ -3,7 +3,7 @@ const router = express.Router();
 const authMiddleware = require("../middlewares/auth.middleware");
 const gateway = require("../services/aiGateway.service");
 const { checkHealth: checkJudge0Health } = require("../services/execution/judge0.provider");
-const { checkSmtpConnection } = require("../services/auth/email.service");
+const { checkGmailConnection } = require("../services/auth/email.service");
 const { getRateLimit } = require("../services/github/githubApi.service");
 const userModel = require("../models/user.model");
 const oauthService = require("../services/github/githubOAuth.service");
@@ -36,9 +36,9 @@ async function resolveUserToken(userId) {
 router.get("/health", authMiddleware.authUser, async (req, res, next) => {
     try {
         // Execute checks concurrently using Promise.allSettled to prevent one failure from blocking others.
-        const [judge0Result, smtpResult, githubToken] = await Promise.all([
+        const [judge0Result, gmailResult, githubToken] = await Promise.all([
             checkJudge0Health().catch(err => ({ healthy: false, error: err.message })),
-            checkSmtpConnection().catch(err => ({ connected: false, error: err.message })),
+            checkGmailConnection().catch(err => ({ connected: false, error: err.message })),
             resolveUserToken(req.user.id)
         ]);
 
@@ -92,9 +92,9 @@ router.get("/health", authMiddleware.authUser, async (req, res, next) => {
                     ? { status: "healthy", ...judge0Result } 
                     : { status: "unhealthy", error: judge0Result.error || "Execution engine unreachable" },
                 github: githubStatus,
-                smtp: smtpResult.connected 
-                    ? { status: "healthy" } 
-                    : { status: "unhealthy", error: smtpResult.error || "SMTP verification failed" }
+                gmail: gmailResult.connected 
+                    ? { status: "healthy", email: gmailResult.email } 
+                    : { status: "unhealthy", error: gmailResult.error || "Gmail REST API verification failed" }
             }
         };
 

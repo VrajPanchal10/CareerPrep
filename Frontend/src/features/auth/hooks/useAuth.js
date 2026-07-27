@@ -52,7 +52,7 @@ export const useAuth = () => {
         try {
             const data = await register({ username, email, password })
             setUser(data.user)
-            addToast("Registration successful! Welcome to CareerPrep.", "success");
+            addToast("Registration Successful", "success");
             return data;
         } catch (err) {
             console.error("Registration error:", err);
@@ -68,7 +68,7 @@ export const useAuth = () => {
         try {
             await logout()
             setUser(null)
-            addToast("Logged out successfully.", "info");
+            addToast("Logged Out", "info");
         } catch (err) {
             console.error("Logout error:", err);
             addToast("Failed to logout cleanly.", "warning");

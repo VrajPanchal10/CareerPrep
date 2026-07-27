@@ -17,12 +17,11 @@ const Login = () => {
     // Trigger toast if navigated from a successful password reset
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        if (params.get("reset") === "success") {
-            addToast("Password changed successfully. Please sign in using your new password.", "success");
-            // Clear URL param to prevent re-triggering on refresh
-            navigate("/login", { replace: true });
+        if (location.state?.resetSuccess || params.get("reset") === "success") {
+            addToast("Password Updated", "success");
+            window.history.replaceState({}, document.title);
         }
-    }, [navigate, addToast]);
+    }, [location, addToast]);
 
     // MFA Verification state parameters
     const [mfaRequired, setMfaRequired] = useState(false)
@@ -118,21 +117,20 @@ const Login = () => {
                                     onChange={(e) => { setPassword(e.target.value) }}
                                     id="password" name='password' placeholder='Enter password' required />
                             </div>
-                            <div className="remember-me-group" style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "1rem 0" }}>
-                                <input 
-                                    type="checkbox" 
-                                    id="rememberMe" 
-                                    checked={rememberMe}
-                                    onChange={(e) => setRememberMe(e.target.checked)}
-                                    style={{ width: "auto", cursor: "pointer" }}
-                                />
-                                <label htmlFor="rememberMe" style={{ cursor: "pointer", fontSize: "0.85rem", userSelect: "none", color: "rgba(255,255,255,0.7)" }}>
-                                    Remember Me
-                                </label>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>
-                                    Forgot Password?
+                            <div className="auth-options-row">
+                                <div className="remember-me-group">
+                                    <input 
+                                        type="checkbox" 
+                                        id="rememberMe" 
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                    />
+                                    <label htmlFor="rememberMe">
+                                        Remember Me
+                                    </label>
+                                </div>
+                                <Link to="/forgot-password" className="forgot-password-link">
+                                    Forgot password?
                                 </Link>
                             </div>
                             <LoadingButton 

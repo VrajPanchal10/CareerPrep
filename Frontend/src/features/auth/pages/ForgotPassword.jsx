@@ -31,7 +31,7 @@ const ForgotPassword = () => {
             await forgotPassword({ email: targetEmail });
             setIsSent(true);
             setCountdown(60); // Start 60s delay
-            addToast("Recovery email dispatched successfully.", "success");
+            addToast("Recovery Email Sent", "success");
         } catch (err) {
             console.error("Forgot password request failed:", err);
             addToast(err?.response?.data?.message || "Failed to process request. Please try again.", "error");
@@ -58,7 +58,7 @@ const ForgotPassword = () => {
                     <>
                         <h1>Forgot Password</h1>
                         <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)", marginBottom: "1.5rem", textAlign: "center", lineHeight: "1.5" }}>
-                            Enter your email address below, and we will email you a secure link to reset your password.
+                            Enter your registered email address. We'll send you a secure password reset link.
                         </p>
                         <form onSubmit={handleSubmit}>
                             <div className="input-group">

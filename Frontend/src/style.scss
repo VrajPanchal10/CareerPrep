@@ -324,3 +324,10 @@ body,
         border-color: rgba(99, 102, 241, 0.4) !important;
     }
 }
+
+/* Uniform Global Placeholder Palette Across All Inputs & Textareas */
+input::placeholder,
+textarea::placeholder {
+    color: #8F97AE !important;
+    opacity: 1 !important;
+}

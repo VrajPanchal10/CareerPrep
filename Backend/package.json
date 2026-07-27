@@ -6,8 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx nodemon server.js",
-    "start": "node server.js",
-    "test:smtp": "node scripts/testEmail.js"
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -28,7 +27,7 @@
     "mammoth": "^1.12.0",
     "mongoose": "^9.7.0",
     "multer": "^2.2.0",
-    "nodemailer": "^9.0.3",
+    "googleapis": "^144.0.0",
     "otplib": "^13.4.1",
     "pdf-parse": "^2.4.5",
     "puppeteer": "^24.3.0",

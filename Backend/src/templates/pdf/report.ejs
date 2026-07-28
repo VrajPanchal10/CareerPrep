@@ -146,7 +146,7 @@
   <% } %>
 
   <!-- PAGE 5: GITHUB PROJECT DEFENSE (Optional) -->
-  <% if (repoResult) { %>
+  <% if (typeof repoResult !== 'undefined' && repoResult && repoResult.scores && repoResult.feedback && Array.isArray(repoResult.feedback.strengths) && Array.isArray(repoResult.feedback.recommendations)) { %>
     <div class="page">
       <%- include('partials/header', { title: 'CareerPrep Project Mastery Report' }) %>
       

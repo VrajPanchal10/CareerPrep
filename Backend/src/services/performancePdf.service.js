@@ -31,18 +31,21 @@ async function generatePerformancePdf({ reportId, userId }) {
         const langCounts = {};
         
         codingSubmissions.forEach(sub => {
-            if (!sub.questionId) return;
+            if (!sub || !sub.questionId || !sub.questionId._id) return;
             const qId = sub.questionId._id.toString();
-            const topic = sub.questionId.topic;
+            const topic = sub.questionId.topic || "General";
+            const score = typeof sub.overallScore === "number" ? sub.overallScore : 0;
             
             if (!questionBestScores[qId]) {
-                questionBestScores[qId] = { score: sub.overallScore, topic };
-            } else if (sub.overallScore > questionBestScores[qId].score) {
-                questionBestScores[qId].score = sub.overallScore;
+                questionBestScores[qId] = { score, topic };
+            } else if (score > questionBestScores[qId].score) {
+                questionBestScores[qId].score = score;
             }
             
-            const lang = sub.language;
-            langCounts[lang] = (langCounts[lang] || 0) + 1;
+            if (sub.language) {
+                const lang = sub.language;
+                langCounts[lang] = (langCounts[lang] || 0) + 1;
+            }
         });
 
         const uniqueAttempts = Object.values(questionBestScores);

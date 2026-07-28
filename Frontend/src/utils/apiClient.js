@@ -79,6 +79,17 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // Auto-unwrap JSON error responses when responseType is 'blob'
+        if (error.response?.data instanceof Blob && (error.response.data.type?.includes("json") || error.response.data.type === "")) {
+            try {
+                const text = await error.response.data.text();
+                const json = JSON.parse(text);
+                error.response.data = json;
+            } catch (e) {
+                // If text is not valid JSON, leave error.response.data as is
+            }
+        }
+
         // ── Auto-recovery for CSRF Token Mismatch ────────────────────────────────
         if (
             error.response?.status === 403 &&

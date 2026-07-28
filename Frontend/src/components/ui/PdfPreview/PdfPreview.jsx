@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { downloadPerformancePdf } from "../../../features/interview/services/interview.api";
+import { formatErrorMessage } from "../../../utils/apiClient";
 import "./PdfPreview.scss";
 
 const PdfPreview = ({ reportId, onClose, onRegenerate }) => {
@@ -28,15 +29,18 @@ const PdfPreview = ({ reportId, onClose, onRegenerate }) => {
     const loadPdfBlob = async () => {
         setIsLoading(true);
         setError(null);
+        console.log(`[PDF DIAGNOSTIC] Frontend requesting PDF preview for reportId: ${reportId}`);
         try {
             cleanupPdfUrl();
             const data = await downloadPerformancePdf({ reportId });
             const blob = new Blob([data], { type: "application/pdf" });
             const url = window.URL.createObjectURL(blob);
+            console.log(`[PDF DIAGNOSTIC] Frontend received PDF blob. Object URL created: ${url}, Blob size: ${blob.size} bytes`);
             setPdfUrl(url);
         } catch (err) {
-            console.error("PDF preview generation error:", err);
-            setError("Could not generate PDF preview. Please check backend connection.");
+            console.error("[PDF DIAGNOSTIC ERROR] PDF preview generation error:", err);
+            const msg = formatErrorMessage(err, "Could not generate PDF preview. Please check backend connection.");
+            setError(msg);
         } finally {
             setIsLoading(false);
         }

@@ -28,7 +28,10 @@ async function getBrowser() {
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
-            "--disable-gpu"
+            "--disable-gpu",
+            "--no-first-run",
+            "--no-zygote",
+            "--single-process"
         ]
     };
 
@@ -37,8 +40,10 @@ async function getBrowser() {
     }
 
     // 3. Initiate launch
+    console.log(`[PDF DIAGNOSTIC] 4. Launching shared Puppeteer browser instance...`);
     launchPromise = puppeteer.launch(launchOptions)
         .then(browser => {
+            console.log(`[PDF DIAGNOSTIC] 4b. Puppeteer browser launched successfully.`);
             browserInstance = browser;
             launchPromise = null;
 
@@ -53,6 +58,7 @@ async function getBrowser() {
             return browser;
         })
         .catch(err => {
+            console.error("[PDF DIAGNOSTIC ERROR] Puppeteer launch failed:", err.message);
             launchPromise = null;
             throw err;
         });
@@ -99,7 +105,9 @@ async function renderPdf(templateName, data = {}, printOptions = {}) {
         if (fs.existsSync(footerPath)) {
             footerHtml = await ejs.renderFile(footerPath, data);
         }
+        console.log(`[PDF DIAGNOSTIC] 3. HTML Template compiled successfully. Length: ${htmlContent.length} chars.`);
     } catch (err) {
+        console.error("[PDF DIAGNOSTIC ERROR] EJS template compilation failed:", err.message);
         logSecurityEvent({
             eventType: "PDF_TEMPLATE_COMPILATION_FAILED",
             ip: clientIp,
@@ -114,6 +122,12 @@ async function renderPdf(templateName, data = {}, printOptions = {}) {
     try {
         browser = await getBrowser();
     } catch (err) {
+        console.error("===== PDF GENERATION ERROR: PUPPETEER LAUNCH FAILED =====");
+        console.error("Failure Step: Puppeteer Launch");
+        console.error("Executable Path:", process.env.PUPPETEER_EXECUTABLE_PATH || "default");
+        console.error("Exact Exception:", err.message);
+        console.error(err.stack);
+        console.error("=========================================================");
         logSecurityEvent({
             eventType: "PDF_CHROME_LAUNCH_FAILED",
             ip: clientIp,
@@ -124,8 +138,7 @@ async function renderPdf(templateName, data = {}, printOptions = {}) {
             }
         });
         throw new Error(
-            "PDF generation engine is currently unavailable. " +
-            "Please ensure Chromium dependencies are properly configured in this host environment."
+            `PDF generation engine failed to launch Chrome: ${err.message}`
         );
     }
 
@@ -138,7 +151,7 @@ async function renderPdf(templateName, data = {}, printOptions = {}) {
         await page.setDefaultNavigationTimeout(30000);
         await page.setDefaultTimeout(30000);
 
-        await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+        await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
 
         const pdfBuffer = await page.pdf({
             format: "A4",
@@ -156,11 +169,18 @@ async function renderPdf(templateName, data = {}, printOptions = {}) {
         });
 
         await page.close();
+        console.log(`[PDF DIAGNOSTIC] 5. PDF generated successfully by Puppeteer (${pdfBuffer.length} bytes).`);
         return pdfBuffer;
     } catch (err) {
         if (page) {
             await page.close().catch(() => {});
         }
+        console.error("===== PDF GENERATION ERROR: PAGE RENDERING FAILED =====");
+        console.error("Failure Step: page.setContent() / page.pdf()");
+        console.error("HTML Length:", htmlContent ? htmlContent.length : 0);
+        console.error("Exact Exception:", err.message);
+        console.error(err.stack);
+        console.error("======================================================");
         logSecurityEvent({
             eventType: "PDF_GENERATION_FAILED",
             ip: clientIp,

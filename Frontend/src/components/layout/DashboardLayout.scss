@@ -250,46 +250,6 @@
         align-items: center;
         gap: 14px;
         
-        .search-bar {
-            display: flex;
-            align-items: center;
-            background-color: #0f1627;
-            border: 1px solid var(--theme-border, #233147);
-            border-radius: 20px;
-            padding: 6px 14px;
-            width: 220px;
-            transition: all 0.2s ease;
-
-            @media (max-width: 640px) {
-                display: none;
-            }
-            
-            &:focus-within {
-                border-color: #6366f1;
-                box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
-            }
-            
-            .search-icon {
-                display: flex;
-                align-items: center;
-                color: #64748b;
-                margin-right: 8px;
-            }
-            
-            input {
-                background: none;
-                border: none;
-                color: #f8fafc;
-                font-size: 0.85rem;
-                outline: none;
-                width: 100%;
-                
-                &::placeholder {
-                    color: #64748b;
-                }
-            }
-        }
-        
         .action-btn {
             background: none;
             border: 1px solid transparent;
@@ -404,6 +364,12 @@
     
     .dashboard-content {
         padding: 20px 16px;
+    }
+
+    // Keep Performance Analytics cards visually centered on mobile
+    // by trimming only the extra right outer gutter for this page.
+    .dashboard-content:has(> .global-analytics-page) {
+        padding-right: 12px;
     }
     
     .sidebar-overlay {

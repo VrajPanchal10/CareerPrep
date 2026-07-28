@@ -4,6 +4,7 @@ import { useToast } from '../../../context/ToastContext';
 import { LoadingButton, PasswordInput } from '../../../components/ui';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router';
+import { formatErrorMessage } from '../../../utils/apiClient';
 
 const ProfileCard = () => {
     const { addToast } = useToast();
@@ -35,7 +36,7 @@ const ProfileCard = () => {
                     createdAt: data.profile.createdAt
                 });
             } catch (err) {
-                addToast("Failed to load profile", "error");
+                addToast(formatErrorMessage(err, "Failed to load profile"), "error");
             } finally {
                 setLoading(false);
             }
@@ -80,8 +81,7 @@ const ProfileCard = () => {
             if (import.meta.env.DEV) {
                 console.error("[ProfileCard] Profile update error:", err);
             }
-            const errorMessage = err?.response?.data?.message || err?.message || "Failed to update profile. Please try again.";
-            addToast(errorMessage, "error");
+            addToast(formatErrorMessage(err, "Failed to update profile. Please try again."), "error");
         } finally {
             setSaving(false);
         }
@@ -98,7 +98,7 @@ const ProfileCard = () => {
             setUser(null);
             navigate("/login");
         } catch (err) {
-            addToast(err?.response?.data?.message || "Failed to delete account", "error");
+            addToast(formatErrorMessage(err, "Failed to delete account"), "error");
         } finally {
             setDeleteLoading(false);
         }

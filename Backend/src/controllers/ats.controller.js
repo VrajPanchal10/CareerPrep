@@ -13,7 +13,8 @@ async function analyzeAtsController(req, res, next) {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: "Resume file is required."
+                code: "MISSING_FILE",
+                message: "Please select a resume file to upload."
             });
         }
 
@@ -21,7 +22,8 @@ async function analyzeAtsController(req, res, next) {
         if (!jobDescription || jobDescription.trim() === "") {
             return res.status(400).json({
                 success: false,
-                message: "Job description is required."
+                code: "MISSING_JOB_DESCRIPTION",
+                message: "Please enter a job description to match against."
             });
         }
 
@@ -32,7 +34,8 @@ async function analyzeAtsController(req, res, next) {
         } catch (parseErr) {
             return res.status(400).json({
                 success: false,
-                message: parseErr.message || "Unable to process document."
+                code: "PARSE_ERROR",
+                message: parseErr.message || "Unable to parse this document."
             });
         }
 
@@ -43,7 +46,8 @@ async function analyzeAtsController(req, res, next) {
             logger.error("Storage error:", storageErr);
             return res.status(500).json({
                 success: false,
-                message: "Failed to persist resume file in storage."
+                code: "UPLOAD_FAILED",
+                message: "Cloud upload failed. Please try again."
             });
         }
 

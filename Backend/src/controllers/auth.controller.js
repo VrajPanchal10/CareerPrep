@@ -18,13 +18,17 @@ async function registerUserController(req, res) {
 
     if (!username || !email || !password) {
         return res.status(400).json({
-            message: "Please provide username, email and password"
+            success: false,
+            code: "MISSING_FIELDS",
+            message: "Please enter username, email, and password."
         })
     }
 
     if (typeof username !== "string" || typeof email !== "string" || typeof password !== "string") {
         return res.status(400).json({
-            message: "Invalid input formats. All fields must be strings."
+            success: false,
+            code: "INVALID_INPUT",
+            message: "Please enter valid text for all fields."
         })
     }
 
@@ -38,15 +42,20 @@ async function registerUserController(req, res) {
             ip: req.ip || req.headers["x-forwarded-for"],
             details: { username, email, message: "User already exists." }
         });
+        const message = isUserAlreadyExists.email === email ? "Email already exists." : "Username already exists.";
         return res.status(400).json({
-            message: "User already exists with this username or email"
+            success: false,
+            code: "USER_EXISTS",
+            message: message
         })
     }
 
     const validation = validatePasswordPolicy(password);
     if (!validation.isValid) {
         return res.status(400).json({
-            message: "Password fails security policy requirements.",
+            success: false,
+            code: "WEAK_PASSWORD",
+            message: validation.errors?.[0] || "Password must contain at least 8 characters.",
             errors: validation.errors
         });
     }
@@ -101,7 +110,8 @@ async function registerUserController(req, res) {
     logger.info("New user registered", { userId: user._id, username: user.username });
 
     res.status(201).json({
-        message: "User registered successfully",
+        success: true,
+        message: "User registered successfully.",
         user: {
             id: user._id,
             username: user.username,
@@ -123,7 +133,9 @@ async function loginUserController(req, res) {
 
     if (!email || !password || typeof email !== "string" || typeof password !== "string") {
         return res.status(400).json({
-            message: "Invalid email or password format"
+            success: false,
+            code: "MISSING_CREDENTIALS",
+            message: "Please enter both email and password."
         })
     }
 
@@ -137,8 +149,31 @@ async function loginUserController(req, res) {
             details: { email, message: `Failed login attempt for non-existent email.` }
         });
         return res.status(400).json({
-            message: "Invalid email or password"
+            success: false,
+            code: "USER_NOT_FOUND",
+            message: "No account found with this email."
         })
+    }
+
+    if (user.isBlocked) {
+        logSecurityEvent({
+            eventType: "BLOCKED_LOGIN_ATTEMPT",
+            ip: clientIp,
+            details: { email, message: `Login attempt for blocked account.` }
+        });
+        return res.status(403).json({
+            success: false,
+            code: "ACCOUNT_BLOCKED",
+            message: "Your account has been temporarily blocked."
+        });
+    }
+
+    if (user.isVerified === false) {
+        return res.status(403).json({
+            success: false,
+            code: "EMAIL_NOT_VERIFIED",
+            message: "Please verify your email before logging in."
+        });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password)
@@ -149,7 +184,9 @@ async function loginUserController(req, res) {
             details: { email, message: `Failed login attempt (incorrect password).` }
         });
         return res.status(400).json({
-            message: "Invalid email or password"
+            success: false,
+            code: "INVALID_PASSWORD",
+            message: "Incorrect password. Please try again."
         })
     }
 

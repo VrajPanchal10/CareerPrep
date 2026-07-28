@@ -85,7 +85,7 @@ const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: process.env.NODE_ENV === "production" ? 10 : 100,
-    message: "Too many authentication attempts. Please try again in 15 minutes.",
+    message: "Too many attempts. Please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req, res, next, options) => {
@@ -96,6 +96,7 @@ const authLimiter = rateLimit({
         });
         return res.status(options.statusCode).json({
             success: false,
+            code: "TOO_MANY_ATTEMPTS",
             message: options.message
         });
     }

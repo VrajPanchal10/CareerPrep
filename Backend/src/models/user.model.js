@@ -19,6 +19,16 @@ const userSchema = new mongoose.Schema({
         required: true
     },
 
+    isVerified: {
+        type: Boolean,
+        default: true
+    },
+
+    isBlocked: {
+        type: Boolean,
+        default: false
+    },
+
     // Security - Password Reset Workflow
     resetPasswordToken: {
         type: String,

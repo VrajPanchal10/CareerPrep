@@ -48,11 +48,14 @@ const uploadSingleResume = (fieldName) => {
         uploadMiddleware(req, res, (err) => {
             if (err) {
                 let message = "Unable to process document.";
+                let code = "UPLOAD_ERROR";
 
                 if (err.message === "Only PDF and DOCX files are allowed.") {
                     message = "Only PDF and DOCX files are allowed.";
+                    code = "INVALID_FILE_TYPE";
                 } else if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
                     message = "Maximum file size is 5 MB.";
+                    code = "FILE_TOO_LARGE";
                 } else {
                     message = err.message || "Unable to process document.";
                 }
@@ -65,6 +68,7 @@ const uploadSingleResume = (fieldName) => {
 
                 return res.status(400).json({
                     success: false,
+                    code: code,
                     message: message
                 });
             }

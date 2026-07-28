@@ -4,6 +4,7 @@ import { useToast } from '../../../context/ToastContext';
 import { LoadingButton, PasswordInput } from '../../../components/ui';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useNavigate } from 'react-router';
+import { formatErrorMessage } from '../../../utils/apiClient';
 
 // Relative time calculation helper
 const getRelativeTimeString = (dateString) => {
@@ -44,7 +45,7 @@ const SecurityCard = () => {
                 devices: data.security?.devices || []
             });
         } catch (err) {
-            addToast("Failed to load security info", "error");
+            addToast(formatErrorMessage(err, "Failed to load security info"), "error");
         } finally {
             setLoading(false);
         }
@@ -68,7 +69,7 @@ const SecurityCard = () => {
             setPwd({ current: '', new: '', confirm: '' });
             load();
         } catch (err) {
-            addToast(err?.response?.data?.message || "Failed to update password", "error");
+            addToast(formatErrorMessage(err, "Failed to update password"), "error");
         } finally {
             setPwdLoading(false);
         }
@@ -87,7 +88,7 @@ const SecurityCard = () => {
             addToast("Device signed out successfully", "success");
             await load();
         } catch (err) {
-            addToast("Failed to revoke device", "error");
+            addToast(formatErrorMessage(err, "Failed to revoke device"), "error");
         } finally {
             setRevokeLoading(prev => ({ ...prev, [id]: false }));
         }
@@ -100,7 +101,7 @@ const SecurityCard = () => {
             addToast("All other devices have been signed out.", "success");
             await load();
         } catch (err) {
-            addToast("Failed to sign out other devices", "error");
+            addToast(formatErrorMessage(err, "Failed to sign out other devices"), "error");
         } finally {
             setRevokeAllLoading(false);
         }

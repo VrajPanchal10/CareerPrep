@@ -154,25 +154,67 @@ apiClient.interceptors.response.use(
             }
         }
 
-        // ── Error Normalization: Attach userMessage ───────────────────────────
-        if (error.response?.data instanceof Blob && error.response.data.type === 'application/json') {
-            try {
-                const text = await error.response.data.text();
-                const json = JSON.parse(text);
-                error.userMessage = json.message || json.error?.message || error.message || "An unexpected error occurred.";
-            } catch (e) {
-                error.userMessage = error.message || "An unexpected error occurred.";
-            }
-        } else {
-            error.userMessage =
-                error.response?.data?.message ||
-                error.response?.data?.error?.message ||
-                error.message ||
-                "An unexpected error occurred. Please try again.";
+        // ── Error Normalization: Network, Timeout, Server & Structured Backend Codes ───
+        let userMessage = null;
+        let errorCode = error.response?.data?.code || null;
+
+        if (typeof window !== "undefined" && window.navigator && window.navigator.onLine === false) {
+            userMessage = "No internet connection. Please check your network and try again.";
+            errorCode = "OFFLINE";
+        } else if (error.code === "ERR_NETWORK" || error.message === "Network Error" || (!error.response && !error.code)) {
+            userMessage = "No internet connection. Please check your network and try again.";
+            errorCode = "OFFLINE";
+        } else if (error.code === "ECONNABORTED" || (error.message && error.message.toLowerCase().includes("timeout"))) {
+            userMessage = "The request timed out. Please try again.";
+            errorCode = "TIMEOUT";
+        } else if (error.response?.status === 429 || errorCode === "TOO_MANY_ATTEMPTS") {
+            userMessage = "Too many attempts. Please try again later.";
+            errorCode = "TOO_MANY_ATTEMPTS";
+        } else if (error.response?.status === 503 || errorCode === "AI_UNAVAILABLE") {
+            userMessage = "AI service is temporarily unavailable. Please try again in a few moments.";
+            errorCode = "AI_UNAVAILABLE";
+        } else if (error.response?.status >= 500) {
+            userMessage = error.response?.data?.message || "Something went wrong on our server. Please try again later.";
+            errorCode = errorCode || "SERVER_ERROR";
         }
+
+        if (!userMessage) {
+            if (error.response?.data instanceof Blob && error.response.data.type === "application/json") {
+                try {
+                    const text = await error.response.data.text();
+                    const json = JSON.parse(text);
+                    userMessage = json.message || json.error?.message || "An unexpected error occurred.";
+                    errorCode = json.code || errorCode;
+                } catch (e) {
+                    userMessage = "An unexpected error occurred. Please try again.";
+                }
+            } else {
+                userMessage =
+                    error.response?.data?.message ||
+                    error.response?.data?.error?.message ||
+                    error.message ||
+                    "An unexpected error occurred. Please try again.";
+            }
+        }
+
+        error.userMessage = userMessage;
+        error.errorCode = errorCode;
 
         return Promise.reject(error);
     }
 );
 
+/**
+ * Standardized helper to resolve a truthful, user-friendly error message from any error object
+ */
+export const formatErrorMessage = (error, defaultFallback = "An unexpected error occurred. Please try again.") => {
+    if (!error) return defaultFallback;
+    if (error.userMessage) return error.userMessage;
+    if (typeof error === "string") return error;
+    if (error.response?.data?.message) return error.response.data.message;
+    if (error.message) return error.message;
+    return defaultFallback;
+};
+
 export default apiClient;
+

@@ -14,7 +14,7 @@ import { useContext, useEffect } from "react"
 import { InterviewContext } from "../interview.context"
 import { useParams } from "react-router"
 import { useToast } from "../../../context/ToastContext"
-
+import { formatErrorMessage } from "../../../utils/apiClient"
 
 export const useInterview = () => {
 
@@ -118,7 +118,7 @@ export const useInterview = () => {
             setActiveSession(data)
         } catch (error) {
             console.error("Error startSession hook:", error)
-            addToast(error?.response?.data?.message || "Failed to start mock practice session.", "error")
+            addToast(formatErrorMessage(error, "Failed to start mock practice session."), "error")
         } finally {
             setLoading(false)
         }
@@ -140,7 +140,7 @@ export const useInterview = () => {
             setActiveSession(response.session)
         } catch (error) {
             console.error("Error submitAnswer hook:", error)
-            addToast(error?.response?.data?.message || "Failed to evaluate answer.", "error")
+            addToast(formatErrorMessage(error, "Failed to evaluate answer."), "error")
         } finally {
             setLoading(false)
         }
@@ -159,7 +159,7 @@ export const useInterview = () => {
             }
         } catch (error) {
             console.error("Error completeSession hook:", error)
-            addToast(error?.response?.data?.message || "Failed to complete interview session statistics.", "error")
+            addToast(formatErrorMessage(error, "Failed to complete interview session statistics."), "error")
         } finally {
             setLoading(false)
         }
@@ -175,7 +175,7 @@ export const useInterview = () => {
             setActiveSession(data)
         } catch (error) {
             console.error("Error loadSessionById hook:", error)
-            addToast("Failed to load interview session details.", "error")
+            addToast(formatErrorMessage(error, "Failed to load interview session details."), "error")
         } finally {
             setLoading(false)
         }
@@ -188,7 +188,7 @@ export const useInterview = () => {
             setProgressHistory(response.progress || [])
         } catch (error) {
             console.error("Error loadProgress hook:", error)
-            addToast("Failed to retrieve historical progress.", "error")
+            addToast(formatErrorMessage(error, "Failed to retrieve historical progress."), "error")
         }
     }
 
@@ -207,7 +207,7 @@ export const useInterview = () => {
             window.URL.revokeObjectURL(url)
         } catch (error) {
             console.error("Error downloadReportPdf hook:", error)
-            addToast("Failed to compile or download Performance Report PDF.", "error")
+            addToast(formatErrorMessage(error, "Failed to compile or download Performance Report PDF."), "error")
         } finally {
             setLoading(false)
         }

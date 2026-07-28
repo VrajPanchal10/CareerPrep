@@ -122,10 +122,6 @@ const DashboardLayout = () => {
                     </div>
 
                     <div className="header-actions">
-                        <div className="search-bar">
-                            <span className="search-icon"><Icons.Search /></span>
-                            <input type="text" placeholder="Search..." />
-                        </div>
                         <ThemeToggle />
                     </div>
                 </header>

@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { AuthContext } from "../auth.context";
 import { login, register, logout } from "../services/auth.api";
 import { useToast } from "../../../context/ToastContext";
+import { formatErrorMessage } from "../../../utils/apiClient";
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
@@ -19,7 +20,7 @@ export const useAuth = () => {
             return data;
         } catch (err) {
             console.error("Login error:", err);
-            addToast(err.response?.data?.message || "Invalid email or password. Please try again.", "error");
+            addToast(formatErrorMessage(err, "Invalid email or password. Please try again."), "error");
             throw err;
         } finally {
             setLoading(false);
@@ -35,7 +36,7 @@ export const useAuth = () => {
             return data;
         } catch (err) {
             console.error("Registration error:", err);
-            addToast(err.response?.data?.message || "Registration failed. Please try again.", "error");
+            addToast(formatErrorMessage(err, "Registration failed. Please try again."), "error");
             throw err;
         } finally {
             setLoading(false);

@@ -5,6 +5,7 @@ import { useAts } from '../hooks/useAts'
 import '../style/atsHome.scss'
 import { useToast, ProgressBar, LoadingButton, SkeletonDashboard, EmptyState, ScrollToTop, ErrorBoundary, HelpTooltip } from '../../../components/ui'
 import DevLogger from '../../../utils/devLogger'
+import { formatErrorMessage } from '../../../utils/apiClient'
 
 const AtsHome = () => {
     const { loading, generateReport, reports } = useAts()
@@ -112,7 +113,7 @@ const AtsHome = () => {
             }
         } catch (err) {
             setUploadStatus("error")
-            addToast("Upload or analysis failed. Check your file size or connection.", "error")
+            addToast(formatErrorMessage(err, "Upload or analysis failed. Check your file size or connection."), "error")
         } finally {
             setIsUploading(false)
         }

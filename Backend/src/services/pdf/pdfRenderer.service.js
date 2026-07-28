@@ -4,12 +4,6 @@ const path = require("path");
 const fs = require("fs");
 const { logSecurityEvent } = require("../../utils/securityLogger");
 
-// Ensure Puppeteer cache directory is inside the project workspace for cloud persistence (Render/Vercel)
-if (!process.env.PUPPETEER_CACHE_DIR) {
-    const defaultCacheDir = path.join(process.cwd(), ".cache", "puppeteer");
-    process.env.PUPPETEER_CACHE_DIR = defaultCacheDir;
-}
-
 // Singleton browser instance state
 let browserInstance = null;
 let launchPromise = null;
@@ -42,13 +36,35 @@ async function getBrowser() {
         ]
     };
 
-    // Use environment override if set (e.g. system Chromium)
+    let resolvedExecPath = null;
+    try {
+        resolvedExecPath = puppeteer.executablePath();
+        console.log(`[PDF DIAGNOSTIC] Resolved Puppeteer executable path: ${resolvedExecPath} (Exists: ${fs.existsSync(resolvedExecPath)})`);
+    } catch (e) {
+        console.warn(`[PDF DIAGNOSTIC] Could not resolve standard executable path via Puppeteer: ${e.message}`);
+    }
+
+    // 1. Priority: Explicit environment variable override
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
         launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+        console.log(`[PDF DIAGNOSTIC] Using PUPPETEER_EXECUTABLE_PATH env var: ${launchOptions.executablePath}`);
+    } 
+    // 2. Priority: Resolved Puppeteer default binary path if exists
+    else if (resolvedExecPath && fs.existsSync(resolvedExecPath)) {
+        launchOptions.executablePath = resolvedExecPath;
+    } 
+    // 3. Fallback: Check standard Render Linux build cache path
+    else {
+        const renderDefaultPath = "/opt/render/.cache/puppeteer/chrome/linux-148.0.7778.97/chrome-linux64/chrome";
+        if (fs.existsSync(renderDefaultPath)) {
+            console.log(`[PDF DIAGNOSTIC] Found Chrome at Render default cache path: ${renderDefaultPath}`);
+            launchOptions.executablePath = renderDefaultPath;
+        }
     }
 
     // 3. Initiate launch
-    console.log(`[PDF DIAGNOSTIC] 4. Launching shared Puppeteer browser instance (Cache DIR: ${process.env.PUPPETEER_CACHE_DIR})...`);
+    console.log(`[PDF DIAGNOSTIC] 4. Launching shared Puppeteer browser instance...`);
+    console.log(`[PDF DIAGNOSTIC] Current working dir: ${process.cwd()}, Executable: ${launchOptions.executablePath || 'default'}`);
     launchPromise = puppeteer.launch(launchOptions)
         .then(browser => {
             console.log(`[PDF DIAGNOSTIC] 4b. Puppeteer browser launched successfully.`);

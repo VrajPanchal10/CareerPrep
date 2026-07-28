@@ -23,6 +23,26 @@ async function getBrowser() {
         return launchPromise;
     }
 
+    console.error("===== RUNTIME PUPPETEER DIAGNOSTICS =====");
+    console.error("[DIAGNOSTIC] process.cwd():", process.cwd());
+    console.error("[DIAGNOSTIC] process.env.HOME:", process.env.HOME);
+    console.error("[DIAGNOSTIC] process.env.PUPPETEER_CACHE_DIR:", process.env.PUPPETEER_CACHE_DIR);
+    console.error("[DIAGNOSTIC] process.env.PUPPETEER_EXECUTABLE_PATH:", process.env.PUPPETEER_EXECUTABLE_PATH);
+
+    let execPath = null;
+    try {
+        execPath = puppeteer.executablePath();
+        console.error("[DIAGNOSTIC] puppeteer.executablePath():", execPath);
+        console.error("[DIAGNOSTIC] fs.existsSync(execPath):", fs.existsSync(execPath));
+    } catch (err) {
+        console.error("[DIAGNOSTIC EXCEPTION] puppeteer.executablePath() threw:", err.message);
+        console.error(err.stack);
+    }
+
+    console.error("[DIAGNOSTIC] fs.existsSync('/opt/render/.cache/puppeteer'):", fs.existsSync("/opt/render/.cache/puppeteer"));
+    console.error("[DIAGNOSTIC] fs.existsSync('/opt/render/.cache/puppeteer/chrome'):", fs.existsSync("/opt/render/.cache/puppeteer/chrome"));
+    console.error("==========================================");
+
     const launchOptions = {
         headless: true,
         args: [
@@ -36,51 +56,18 @@ async function getBrowser() {
         ]
     };
 
-    let resolvedExecPath = null;
-    try {
-        resolvedExecPath = puppeteer.executablePath();
-        console.log(`[PDF DIAGNOSTIC] Resolved Puppeteer executable path: ${resolvedExecPath} (Exists: ${fs.existsSync(resolvedExecPath)})`);
-    } catch (e) {
-        console.warn(`[PDF DIAGNOSTIC] Could not resolve standard executable path via Puppeteer: ${e.message}`);
-    }
-
-    // 1. Priority: Explicit environment variable override
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
         launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-        console.log(`[PDF DIAGNOSTIC] Using PUPPETEER_EXECUTABLE_PATH env var: ${launchOptions.executablePath}`);
-    } 
-    // 2. Priority: Resolved Puppeteer default binary path if exists
-    else if (resolvedExecPath && fs.existsSync(resolvedExecPath)) {
-        launchOptions.executablePath = resolvedExecPath;
-    } 
-    // 3. Fallback: Check standard Render Linux build cache path
-    else {
-        const renderDefaultPath = "/opt/render/.cache/puppeteer/chrome/linux-148.0.7778.97/chrome-linux64/chrome";
-        if (fs.existsSync(renderDefaultPath)) {
-            console.log(`[PDF DIAGNOSTIC] Found Chrome at Render default cache path: ${renderDefaultPath}`);
-            launchOptions.executablePath = renderDefaultPath;
-        }
-    }
-
-    // 3. Initiate launch
-    console.log("[MARKER: PDF_RENDERER_V2] Executing pdfRenderer.service.js getBrowser()");
-    console.log("cwd", process.cwd());
-    try {
-        console.log("execPath", puppeteer.executablePath());
-        console.log("exists", fs.existsSync(puppeteer.executablePath()));
-    } catch (err) {
-        console.log("execPath Error:", err.message);
     }
 
     launchPromise = puppeteer.launch(launchOptions)
         .then(browser => {
-            console.log(`[PDF DIAGNOSTIC] 4b. Puppeteer browser launched successfully.`);
+            console.error("[DIAGNOSTIC SUCCESS] Puppeteer browser launched successfully.");
             browserInstance = browser;
             launchPromise = null;
 
-            // Handle unexpected crash / termination gracefully
             browser.once("disconnected", () => {
-                console.warn("[Puppeteer] Browser instance disconnected or crashed. Resetting singleton.");
+                console.error("[Puppeteer] Browser instance disconnected or crashed. Resetting singleton.");
                 if (browserInstance === browser) {
                     browserInstance = null;
                 }
@@ -89,7 +76,8 @@ async function getBrowser() {
             return browser;
         })
         .catch(err => {
-            console.error("[PDF DIAGNOSTIC ERROR] Puppeteer launch failed:", err.message);
+            console.error("[DIAGNOSTIC FAILURE] puppeteer.launch() threw error:", err.message);
+            console.error(err.stack);
             launchPromise = null;
             throw err;
         });

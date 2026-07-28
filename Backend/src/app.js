@@ -67,6 +67,29 @@ app.use("/api/ai", aiRouter)
 app.use("/api/system", systemRouter)
 app.use("/api/settings", settingsRouter)
 
+// Print registered routes on startup for audit
+console.log("=== REGISTERED EXPRESS ROUTES ===");
+const printRoutes = (stack, parentPath = '') => {
+    stack.forEach((layer) => {
+        if (layer.route) {
+            const methods = Object.keys(layer.route.methods).map(m => m.toUpperCase()).join(', ');
+            console.log(`[ROUTE] ${methods.padEnd(7)} ${parentPath}${layer.route.path}`);
+        } else if (layer.name === 'router' && layer.handle.stack) {
+            let path = layer.regexp.source
+                .replace('^\\/', '/')
+                .replace('\\/?(?=\\/|$)', '')
+                .replace(/\\\//g, '/')
+                .replace('(?i)', '')
+                .replace('(?:\\/(?=$))?', '');
+            printRoutes(layer.handle.stack, parentPath + path);
+        }
+    });
+};
+if (app._router && app._router.stack) {
+    printRoutes(app._router.stack);
+}
+console.log("=================================");
+
 
 
 // 404 JSON Fallback Handler for unmatched API routes

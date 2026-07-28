@@ -266,6 +266,8 @@ async function exportPerformancePdfController(req, res, next) {
 async function deleteInterviewReportController(req, res, next) {
     try {
         const { interviewId } = req.params;
+        console.log(`[DELETE ROUTE MATCHED] Executing delete for reportId: ${interviewId}, userId: ${req.user?.id}`);
+        logger.info(`[DELETE ROUTE MATCHED] Executing delete for reportId: ${interviewId}, userId: ${req.user?.id}`);
 
         if (!interviewId || !mongoose.Types.ObjectId.isValid(interviewId)) {
             return res.status(400).json({

@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const { generateAtsReport } = require("../services/ai.service");
 const atsReportModel = require("../models/atsReport.model");
 const storageService = require("../services/storage.service");
@@ -196,9 +197,60 @@ async function getResumeFileController(req, res, next) {
     }
 }
 
+/**
+ * @description Controller to delete an ATS report by ID for the logged-in user.
+ */
+async function deleteAtsReportController(req, res, next) {
+    try {
+        const { atsId } = req.params;
+        console.log(`[DELETE ROUTE MATCHED] Executing delete for atsId: ${atsId}, userId: ${req.user?.id}`);
+        logger.info(`[DELETE ROUTE MATCHED] Executing delete for atsId: ${atsId}, userId: ${req.user?.id}`);
+
+        if (!atsId || !mongoose.Types.ObjectId.isValid(atsId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Failed to delete ATS Match Scan."
+            });
+        }
+
+        const deletedReport = await atsReportModel.findOneAndDelete({
+            _id: atsId,
+            user: req.user.id
+        });
+
+        if (!deletedReport) {
+            return res.status(404).json({
+                success: false,
+                message: "ATS Match Scan not found."
+            });
+        }
+
+        // Clean up physical file storage if present
+        if (deletedReport.relativePath) {
+            try {
+                await storageService.deleteFile(deletedReport.relativePath);
+            } catch (storageErr) {
+                logger.error("Failed to delete physical resume file on storage:", storageErr);
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "ATS Match Scan deleted successfully."
+        });
+    } catch (error) {
+        logger.error("Error in deleteAtsReportController:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete ATS Match Scan."
+        });
+    }
+}
+
 module.exports = {
     analyzeAtsController,
     getAllAtsReportsController,
     getAtsReportByIdController,
-    getResumeFileController
+    getResumeFileController,
+    deleteAtsReportController
 };

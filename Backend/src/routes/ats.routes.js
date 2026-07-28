@@ -33,4 +33,12 @@ atsRouter.get("/report/:atsId", authMiddleware.authUser, atsController.getAtsRep
  */
 atsRouter.get("/report/:atsId/resume", authMiddleware.authUser, atsController.getResumeFileController)
 
+/**
+ * @route DELETE /api/ats/report/:atsId
+ * @description delete an ATS report by atsId.
+ * @access private
+ */
+atsRouter.delete("/report/:atsId", authMiddleware.authUser, authMiddleware.csrfProtection, atsController.deleteAtsReportController)
+atsRouter.delete("/:atsId", authMiddleware.authUser, authMiddleware.csrfProtection, atsController.deleteAtsReportController)
+
 module.exports = atsRouter

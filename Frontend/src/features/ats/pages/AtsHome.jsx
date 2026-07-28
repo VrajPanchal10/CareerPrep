@@ -8,7 +8,7 @@ import DevLogger from '../../../utils/devLogger'
 import { formatErrorMessage } from '../../../utils/apiClient'
 
 const AtsHome = () => {
-    const { loading, generateReport, reports } = useAts()
+    const { loading, generateReport, reports, deleteReport } = useAts()
     const { addToast } = useToast()
     const [jobDescription, setJobDescription] = useState("")
     const [fileName, setFileName] = useState("")
@@ -265,14 +265,10 @@ const AtsHome = () => {
                                         <button
                                             type="button"
                                             className='delete-card-btn'
-                                            onClick={(e) => {
+                                            onClick={async (e) => {
                                                 e.stopPropagation();
                                                 if (window.confirm("Are you sure you want to delete this historical ATS match scan?")) {
-                                                    const updated = reports.filter(r => r._id !== report._id);
-                                                    if (typeof setReports === 'function') {
-                                                        setReports(updated);
-                                                    }
-                                                    addToast("ATS Match Scan deleted.", "info");
+                                                    await deleteReport(report._id);
                                                 }
                                             }}
                                             title="Delete ATS Scan History"

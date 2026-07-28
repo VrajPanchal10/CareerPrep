@@ -1,4 +1,4 @@
-import { generateAtsReport, getAtsReportById, getAllAtsReports } from "../services/ats.api"
+import { generateAtsReport, getAtsReportById, getAllAtsReports, deleteAtsReport } from "../services/ats.api"
 import { useContext, useEffect } from "react"
 import { AtsContext } from "../ats.context"
 import { useParams } from "react-router"
@@ -66,6 +66,35 @@ export const useAts = () => {
         return data
     }
 
+    const deleteReport = async (id) => {
+        setLoading(true)
+        try {
+            const data = await deleteAtsReport(id)
+            if (data && data.success) {
+                setReports(prev => (prev || []).filter(r => r && r._id !== id))
+                if (report && report._id === id) {
+                    setReport(null)
+                }
+                addToast("ATS Match Scan deleted successfully.", "success")
+                return true
+            } else {
+                addToast(data?.message || "Failed to delete ATS Match Scan.", "error")
+                return false
+            }
+        } catch (error) {
+            console.error("Error deleteReport hook in useAts:", error)
+            if (!navigator.onLine || error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
+                addToast("No internet connection. Please check your network and try again.", "error")
+            } else {
+                const msg = error?.response?.data?.message || "Failed to delete ATS Match Scan."
+                addToast(msg, "error")
+            }
+            return false
+        } finally {
+            setLoading(false)
+        }
+    }
+
     useEffect(() => {
         if (atsId) {
             getReportById(atsId)
@@ -74,5 +103,5 @@ export const useAts = () => {
         }
     }, [ atsId ])
 
-    return { loading, report, reports, generateReport, getReportById, getReports }
+    return { loading, report, reports, generateReport, getReportById, getReports, deleteReport }
 }

@@ -33,3 +33,11 @@ export const getAllAtsReports = async () => {
     const response = await api.get("/api/ats/")
     return response.data
 }
+
+/**
+ * @description Service to delete an ATS report by ID.
+ */
+export const deleteAtsReport = async (atsId) => {
+    const response = await api.delete(`/api/ats/report/${atsId}`)
+    return response.data
+}

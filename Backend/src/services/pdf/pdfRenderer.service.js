@@ -63,8 +63,15 @@ async function getBrowser() {
     }
 
     // 3. Initiate launch
-    console.log(`[PDF DIAGNOSTIC] 4. Launching shared Puppeteer browser instance...`);
-    console.log(`[PDF DIAGNOSTIC] Current working dir: ${process.cwd()}, Executable: ${launchOptions.executablePath || 'default'}`);
+    console.log("[MARKER: PDF_RENDERER_V2] Executing pdfRenderer.service.js getBrowser()");
+    console.log("cwd", process.cwd());
+    try {
+        console.log("execPath", puppeteer.executablePath());
+        console.log("exists", fs.existsSync(puppeteer.executablePath()));
+    } catch (err) {
+        console.log("execPath Error:", err.message);
+    }
+
     launchPromise = puppeteer.launch(launchOptions)
         .then(browser => {
             console.log(`[PDF DIAGNOSTIC] 4b. Puppeteer browser launched successfully.`);

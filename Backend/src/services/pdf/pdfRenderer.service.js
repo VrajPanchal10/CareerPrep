@@ -4,6 +4,12 @@ const path = require("path");
 const fs = require("fs");
 const { logSecurityEvent } = require("../../utils/securityLogger");
 
+// Ensure Puppeteer cache directory is inside the project workspace for cloud persistence (Render/Vercel)
+if (!process.env.PUPPETEER_CACHE_DIR) {
+    const defaultCacheDir = path.join(process.cwd(), ".cache", "puppeteer");
+    process.env.PUPPETEER_CACHE_DIR = defaultCacheDir;
+}
+
 // Singleton browser instance state
 let browserInstance = null;
 let launchPromise = null;
@@ -24,6 +30,7 @@ async function getBrowser() {
     }
 
     const launchOptions = {
+        headless: true,
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
@@ -35,12 +42,13 @@ async function getBrowser() {
         ]
     };
 
+    // Use environment override if set (e.g. system Chromium)
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
         launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
     }
 
     // 3. Initiate launch
-    console.log(`[PDF DIAGNOSTIC] 4. Launching shared Puppeteer browser instance...`);
+    console.log(`[PDF DIAGNOSTIC] 4. Launching shared Puppeteer browser instance (Cache DIR: ${process.env.PUPPETEER_CACHE_DIR})...`);
     launchPromise = puppeteer.launch(launchOptions)
         .then(browser => {
             console.log(`[PDF DIAGNOSTIC] 4b. Puppeteer browser launched successfully.`);

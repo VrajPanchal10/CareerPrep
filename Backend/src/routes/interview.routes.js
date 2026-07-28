@@ -21,6 +21,14 @@ interviewRouter.post("/", authMiddleware.authUser, authMiddleware.csrfProtection
 interviewRouter.get("/report/:interviewId", authMiddleware.authUser, interviewController.getInterviewReportByIdController)
 
 /**
+ * @route DELETE /api/interview/report/:interviewId
+ * @description delete an interview report by interviewId.
+ * @access private
+ */
+interviewRouter.delete("/report/:interviewId", authMiddleware.authUser, authMiddleware.csrfProtection, interviewController.deleteInterviewReportController)
+interviewRouter.delete("/:interviewId", authMiddleware.authUser, authMiddleware.csrfProtection, interviewController.deleteInterviewReportController)
+
+/**
  * @route GET /api/interview/
  * @description get all interview reports of logged in user.
  * @access private

@@ -37,6 +37,15 @@ export const getInterviewReportById = async (interviewId) => {
     return response.data
 }
 
+/**
+ * @description Service to delete an interview report by interviewId.
+ */
+export const deleteInterviewReport = async (interviewId) => {
+    const response = await api.delete(`/api/interview/report/${interviewId}`)
+
+    return response.data
+}
+
 
 /**
  * @description Service to get all interview reports of logged in user.

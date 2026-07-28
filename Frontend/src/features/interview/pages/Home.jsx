@@ -40,7 +40,7 @@ const SVG = {
 };
 
 const Home = () => {
-    const { loading, generateReport, reports } = useInterview();
+    const { loading, generateReport, reports, deleteReport } = useInterview();
     const { addToast } = useToast();
     const [jobDescription, setJobDescription] = useState("");
     const [selfDescription, setSelfDescription] = useState("");
@@ -159,18 +159,7 @@ const Home = () => {
     const handleRemovePlan = async (reportId, e) => {
         e.stopPropagation();
         if (window.confirm("Are you sure you want to remove this interview plan?")) {
-            try {
-                // Remove locally from context reports
-                const updated = (reports || []).filter(r => r && r._id !== reportId);
-                if (typeof setReports === 'function') {
-                    setReports(updated);
-                } else {
-                    window.location.reload();
-                }
-                addToast("Interview plan removed.", "info");
-            } catch (err) {
-                addToast("Failed to remove plan.", "error");
-            }
+            await deleteReport(reportId);
         }
     };
 

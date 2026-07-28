@@ -2,6 +2,7 @@ import {
     getAllInterviewReports, 
     generateInterviewReport, 
     getInterviewReportById, 
+    deleteInterviewReport,
     generateResumePdf,
     startInterviewSession,
     completeInterviewSession,
@@ -213,6 +214,35 @@ export const useInterview = () => {
         }
     }
 
+    const deleteReport = async (reportId) => {
+        setLoading(true)
+        try {
+            const data = await deleteInterviewReport(reportId)
+            if (data && data.success) {
+                setReports(prev => (prev || []).filter(r => r && r._id !== reportId))
+                if (report && report._id === reportId) {
+                    setReport(null)
+                }
+                addToast("Interview plan deleted successfully.", "success")
+                return true
+            } else {
+                addToast(data?.message || "Failed to delete interview plan.", "error")
+                return false
+            }
+        } catch (error) {
+            console.error("Error deleteReport hook:", error)
+            if (!navigator.onLine || error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
+                addToast("No internet connection. Please check your network and try again.", "error")
+            } else {
+                const msg = error?.response?.data?.message || "Failed to delete interview plan.\nPlease try again."
+                addToast(msg, "error")
+            }
+            return false
+        } finally {
+            setLoading(false)
+        }
+    }
+
     useEffect(() => {
         if (interviewId) {
             getReportById(interviewId)
@@ -224,7 +254,7 @@ export const useInterview = () => {
 
     return { 
         loading, report, reports, activeSession, progressHistory, 
-        generateReport, getReportById, getReports, getResumePdf,
+        generateReport, getReportById, getReports, deleteReport, getResumePdf,
         startSession, submitAnswer, completeSession, loadSessionById, loadProgress,
         downloadReportPdf
     }

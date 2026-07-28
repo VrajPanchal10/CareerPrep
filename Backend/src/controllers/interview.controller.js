@@ -1,6 +1,8 @@
+const mongoose = require("mongoose")
 const { generateInterviewReport, generateResumePdf } = require("../services/ai.service")
 const { generatePerformancePdf } = require("../services/performancePdf.service")
 const interviewReportModel = require("../models/interviewReport.model")
+const interviewSessionModel = require("../models/interviewSession.model")
 const upload = require("../middlewares/file.middleware")
 const { logger } = require("../utils/securityLogger")
 
@@ -258,10 +260,57 @@ async function exportPerformancePdfController(req, res, next) {
     }
 }
 
+/**
+ * @description Controller to delete an interview report by ID for logged in user.
+ */
+async function deleteInterviewReportController(req, res, next) {
+    try {
+        const { interviewId } = req.params;
+
+        if (!interviewId || !mongoose.Types.ObjectId.isValid(interviewId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Failed to delete interview plan."
+            });
+        }
+
+        const deletedReport = await interviewReportModel.findOneAndDelete({
+            _id: interviewId,
+            user: req.user.id
+        });
+
+        if (!deletedReport) {
+            return res.status(404).json({
+                success: false,
+                message: "Failed to delete interview plan."
+            });
+        }
+
+        // Clean up associated practice sessions
+        try {
+            await interviewSessionModel.deleteMany({ interviewReport: interviewId, user: req.user.id });
+        } catch (cleanupErr) {
+            logger.error("Failed to clean up associated interview sessions:", cleanupErr);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Interview plan deleted successfully."
+        });
+    } catch (error) {
+        logger.error("Error in deleteInterviewReportController:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete interview plan."
+        });
+    }
+}
+
 module.exports = { 
     generateInterViewReportController, 
     getInterviewReportByIdController, 
     getAllInterviewReportsController, 
     generateResumePdfController,
-    exportPerformancePdfController
+    exportPerformancePdfController,
+    deleteInterviewReportController
 }

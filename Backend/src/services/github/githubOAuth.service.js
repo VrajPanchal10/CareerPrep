@@ -219,12 +219,6 @@ async function revokeToken(accessToken) {
         logger.warn("[githubOAuth] Token revocation call failed (non-fatal):", err.message);
     }
 }
-        // We intentionally do not throw on revocation failure — the local data
-        // should be cleared regardless.
-    } catch (err) {
-        logger.warn("[githubOAuth] Token revocation call failed (non-fatal):", err.message);
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Exports

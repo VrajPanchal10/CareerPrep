@@ -1,5 +1,9 @@
 require("dotenv").config();
 const { logger } = require("./src/utils/securityLogger");
+const { validateAndLogGithubConfig } = require("./src/config/githubOAuth.config");
+
+// Validate GitHub OAuth Environment Configuration on startup
+validateAndLogGithubConfig();
 
 // Enforce environment validation
 const requiredEnv = ["JWT_SECRET", "GOOGLE_GENAI_API_KEY", "MONGO_URI"];

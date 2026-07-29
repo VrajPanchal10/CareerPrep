@@ -10,9 +10,11 @@ const githubApi = require("../services/github/githubApi.service");
 const rateLimitService = require("../services/github/githubRateLimit.service");
 const { buildRepoPickerEntry } = require("../services/github/githubSecurity.service");
 const { invalidateRepoCache } = require("../services/github/githubCache.service");
-const { logger } = require("../utils/securityLogger");
+const { resolveGithubConfig } = require("../config/githubOAuth.config");
 
-const FRONTEND_REDIRECT = process.env.FRONTEND_GITHUB_REDIRECT || "http://localhost:5173/github-defense";
+function getFrontendRedirect() {
+    return resolveGithubConfig().frontendRedirect;
+}
 
 // ---------------------------------------------------------------------------
 // Helper: load and decrypt user's stored GitHub token
@@ -57,7 +59,7 @@ async function initiateOAuthController(req, res, next) {
         return res.redirect(url);
     } catch (err) {
         logger.error("[githubOAuth] initiateOAuth error:", err.message);
-        return res.redirect(`${FRONTEND_REDIRECT}?error=oauth_init_failed`);
+        return res.redirect(`${getFrontendRedirect()}?error=oauth_init_failed`);
     }
 }
 
@@ -71,16 +73,16 @@ async function oauthCallbackController(req, res, next) {
 
     // User denied access
     if (githubError) {
-        return res.redirect(`${FRONTEND_REDIRECT}?error=access_denied`);
+        return res.redirect(`${getFrontendRedirect()}?error=access_denied`);
     }
 
     // CSRF state validation
     if (!oauthService.validateAndConsumeOAuthState(state)) {
-        return res.redirect(`${FRONTEND_REDIRECT}?error=invalid_state`);
+        return res.redirect(`${getFrontendRedirect()}?error=invalid_state`);
     }
 
     if (!code) {
-        return res.redirect(`${FRONTEND_REDIRECT}?error=missing_code`);
+        return res.redirect(`${getFrontendRedirect()}?error=missing_code`);
     }
 
     // This callback is unauthenticated by GitHub — we need the user's JWT from cookie
@@ -93,7 +95,7 @@ async function oauthCallbackController(req, res, next) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         userId = decoded.id;
     } catch (sessionErr) {
-        return res.redirect(`${FRONTEND_REDIRECT}?error=session_expired`);
+        return res.redirect(`${getFrontendRedirect()}?error=session_expired`);
     }
 
     try {
@@ -121,10 +123,10 @@ async function oauthCallbackController(req, res, next) {
         });
 
         logger.info(`[githubOAuth] GitHub account connected for user ${userId}: @${githubUser.login}`);
-        return res.redirect(`${FRONTEND_REDIRECT}?connected=true`);
+        return res.redirect(`${getFrontendRedirect()}?connected=true`);
     } catch (err) {
         logger.error("[githubOAuth] Callback error:", err.message);
-        return res.redirect(`${FRONTEND_REDIRECT}?error=token_exchange_failed`);
+        return res.redirect(`${getFrontendRedirect()}?error=token_exchange_failed`);
     }
 }
 

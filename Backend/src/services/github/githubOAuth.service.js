@@ -13,20 +13,14 @@
 
 const crypto = require("crypto");
 const { logger } = require("../../utils/securityLogger");
+const { resolveGithubConfig, maskString } = require("../../config/githubOAuth.config");
 
 // ---------------------------------------------------------------------------
-// Environment validation
+// Environment getters (dynamic resolution at call-time via centralized config)
 // ---------------------------------------------------------------------------
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const GITHUB_REDIRECT_URI = process.env.GITHUB_OAUTH_REDIRECT_URI;
-
-// 32-byte (256-bit) key for AES-256-GCM — must be set in environment
-// Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-const TOKEN_ENCRYPTION_KEY = process.env.GITHUB_TOKEN_ENCRYPTION_KEY;
-
-// OAuth scopes requested
-const OAUTH_SCOPES = "repo read:org read:user user:email";
+function getGithubConfig() {
+    return resolveGithubConfig();
+}
 
 // ---------------------------------------------------------------------------
 // AES-256-GCM Encryption helpers
@@ -37,13 +31,14 @@ const OAUTH_SCOPES = "repo read:org read:user user:email";
  * Throws clearly if the key is missing or malformed.
  */
 function getEncryptionKey() {
-    if (!TOKEN_ENCRYPTION_KEY) {
+    const keyStr = process.env.GITHUB_TOKEN_ENCRYPTION_KEY;
+    if (!keyStr) {
         throw new Error(
             "[githubOAuth] GITHUB_TOKEN_ENCRYPTION_KEY environment variable is not set. " +
             "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
         );
     }
-    const keyBuffer = Buffer.from(TOKEN_ENCRYPTION_KEY, "hex");
+    const keyBuffer = Buffer.from(keyStr, "hex");
     if (keyBuffer.length !== 32) {
         throw new Error("[githubOAuth] GITHUB_TOKEN_ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes).");
     }
@@ -133,17 +128,21 @@ function validateAndConsumeOAuthState(state) {
  * @returns {{ url: string, state: string }}
  */
 function getAuthorizationUrl() {
-    if (!GITHUB_CLIENT_ID) {
-        throw new Error("[githubOAuth] GITHUB_CLIENT_ID environment variable is not set.");
+    const config = getGithubConfig();
+    if (!config.clientId) {
+        throw new Error(`[githubOAuth] Client ID is not configured for ${config.mode} environment.`);
     }
     const state = generateOAuthState();
     const params = new URLSearchParams({
-        client_id: GITHUB_CLIENT_ID,
-        redirect_uri: GITHUB_REDIRECT_URI,
-        scope: OAUTH_SCOPES,
+        client_id: config.clientId,
+        redirect_uri: config.callbackUrl,
+        scope: config.scopes,
         state,
         allow_signup: "false"
     });
+
+    logger.info(`[githubOAuth] Redirecting to GitHub OAuth: App=${config.mode}, ClientID=${maskString(config.clientId)}, Callback=${config.callbackUrl}, FrontendRedirect=${config.frontendRedirect}`);
+
     return {
         url: `https://github.com/login/oauth/authorize?${params.toString()}`,
         state
@@ -156,9 +155,13 @@ function getAuthorizationUrl() {
  * @returns {Promise<{ accessToken: string, scopes: string[] }>}
  */
 async function exchangeCodeForToken(code) {
-    if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
-        throw new Error("[githubOAuth] GitHub OAuth credentials are not configured.");
+    const config = getGithubConfig();
+
+    if (!config.clientId || !config.clientSecret) {
+        throw new Error(`[githubOAuth] GitHub OAuth credentials are not configured for ${config.mode} mode.`);
     }
+
+    logger.info(`[githubOAuth] Exchanging code for token: App=${config.mode}, ClientID=${maskString(config.clientId)}, Callback=${config.callbackUrl}`);
 
     const response = await fetch("https://github.com/login/oauth/access_token", {
         method: "POST",
@@ -168,10 +171,10 @@ async function exchangeCodeForToken(code) {
             "User-Agent": "CareerPrep-Platform"
         },
         body: JSON.stringify({
-            client_id: GITHUB_CLIENT_ID,
-            client_secret: GITHUB_CLIENT_SECRET,
+            client_id: config.clientId,
+            client_secret: config.clientSecret,
             code,
-            redirect_uri: GITHUB_REDIRECT_URI
+            redirect_uri: config.callbackUrl
         })
     });
 
@@ -196,10 +199,12 @@ async function exchangeCodeForToken(code) {
  */
 async function revokeToken(accessToken) {
     try {
-        // GitHub's delete-app-token endpoint requires Basic auth with client credentials
-        const credentials = Buffer.from(`${GITHUB_CLIENT_ID}:${GITHUB_CLIENT_SECRET}`).toString("base64");
+        const config = getGithubConfig();
+        if (!config.clientId || !config.clientSecret) return;
+
+        const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
         await fetch(
-            `https://api.github.com/applications/${GITHUB_CLIENT_ID}/token`,
+            `https://api.github.com/applications/${config.clientId}/token`,
             {
                 method: "DELETE",
                 headers: {
@@ -210,6 +215,10 @@ async function revokeToken(accessToken) {
                 body: JSON.stringify({ access_token: accessToken })
             }
         );
+    } catch (err) {
+        logger.warn("[githubOAuth] Token revocation call failed (non-fatal):", err.message);
+    }
+}
         // We intentionally do not throw on revocation failure — the local data
         // should be cleared regardless.
     } catch (err) {

@@ -23,6 +23,8 @@ import { Shield, CheckCircle, ArrowLeft } from "lucide-react";
 
 const GithubDashboard = () => {
     const navigate = useNavigate();
+    const { addToast } = useToast();
+
     const {
         loading,
         error,
@@ -41,12 +43,13 @@ const GithubDashboard = () => {
         repoTotal,
         rateLimitStatus,
         statusLoading,
+        isConnecting,
         disconnecting,
         error: oauthError,
         connect,
         disconnect,
         fetchRepositories
-    } = useGithubOAuth();
+    } = useGithubOAuth({ addToast });
 
     const [repoUrl, setRepoUrl] = useState("");
     const [selectedAnalysisId, setSelectedAnalysisId] = useState("");
@@ -64,7 +67,6 @@ const GithubDashboard = () => {
     const [activeFile, setActiveFile] = useState("");
     const [activeFolder, setActiveFolder] = useState("");
     const [isScraping, setIsScraping] = useState(false);
-    const { addToast } = useToast();
 
     const [filters, setFilters] = useState({ dateRange: "all", role: "all", type: "all", repo: "all" });
 
@@ -89,14 +91,11 @@ const GithubDashboard = () => {
     // Client-side filtering logic
     const filteredAnalyses = activeAnalyses.filter(item => {
         if (filters.dateRange !== "all") {
-            const itemDate = new Date(item.createdAt || Date.now());
-            const limit = new Date();
-            if (filters.dateRange === "7days") limit.setDate(limit.getDate() - 7);
-            else if (filters.dateRange === "30days") limit.setDate(limit.getDate() - 30);
-            if (itemDate < limit) return false;
-        }
-        if (filters.type !== "all" && filters.type !== "github") {
-            return false;
+            const date = new Date(item.createdAt);
+            const now = new Date();
+            if (filters.dateRange === "today" && date.toDateString() !== now.toDateString()) return false;
+            if (filters.dateRange === "week" && (now - date) > 7 * 24 * 60 * 60 * 1000) return false;
+            if (filters.dateRange === "month" && (now - date) > 30 * 24 * 60 * 60 * 1000) return false;
         }
         return true;
     });
@@ -108,25 +107,6 @@ const GithubDashboard = () => {
         };
         initDashboard();
     }, [loadDashboard]);
-
-    // Handle toast notification when returning from GitHub OAuth redirect
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("connected") === "true") {
-            addToast("✅ GitHub account connected successfully!", "success");
-            window.history.replaceState({}, "", window.location.pathname);
-        } else if (params.get("error")) {
-            const errorMessages = {
-                access_denied: "GitHub authorization was denied.",
-                invalid_state: "Security validation failed. Please try again.",
-                token_exchange_failed: "Failed to connect GitHub account. Please try again.",
-                session_expired: "Your session expired. Please log in and try again.",
-                oauth_init_failed: "Could not start GitHub authorization. Please try again."
-            };
-            addToast(errorMessages[params.get("error")] || "GitHub connection failed.", "error");
-            window.history.replaceState({}, "", window.location.pathname);
-        }
-    }, [addToast]);
 
     const handleConfirmDisconnect = async () => {
         if (window.confirm("Disconnect GitHub account?\n\nYou will need to reconnect before analyzing private repositories.")) {
@@ -410,11 +390,20 @@ const GithubDashboard = () => {
                                 </div>
                             )}
 
+                            {/* Connecting state during OAuth return */}
+                            {isConnecting && (
+                                <div className="git-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", gap: "0.75rem", textAlign: "center" }}>
+                                    <span className="gh-connect-btn__spinner" style={{ width: "28px", height: "28px", borderTopColor: "#10b981", animation: "spin 0.8s linear infinite" }} />
+                                    <h4 style={{ margin: 0, color: "#e2e8f0", fontSize: "0.95rem" }}>Connecting GitHub Account...</h4>
+                                    <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>Fetching account profile, permissions, and repositories...</p>
+                                </div>
+                            )}
+
                             {/* Not connected: Connect Panel */}
-                            {!statusLoading && !isConnected && (
+                            {!statusLoading && !isConnecting && !isConnected && (
                                 <GitHubConnectPanel
                                     onConnect={connect}
-                                    loading={statusLoading}
+                                    loading={statusLoading || isConnecting}
                                     error={oauthError}
                                 />
                             )}

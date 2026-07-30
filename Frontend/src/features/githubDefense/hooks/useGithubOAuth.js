@@ -11,8 +11,9 @@ const RATE_LIMIT_POLL_MS = 60 * 1000; // Poll rate limit every 60 seconds
 
 /**
  * Hook managing GitHub OAuth connection state, repository listing, and rate limit tracking.
+ * @param {{ addToast?: (msg: string, type: string) => void }} [options]
  */
-export const useGithubOAuth = () => {
+export const useGithubOAuth = ({ addToast } = {}) => {
     const [isConnected, setIsConnected] = useState(false);
     const [githubUser, setGithubUser] = useState(null);   // { githubUsername, githubAvatarUrl, scopes, connectedAt }
     const [repositories, setRepositories] = useState([]);
@@ -20,6 +21,7 @@ export const useGithubOAuth = () => {
     const [repoTotal, setRepoTotal] = useState(0);
     const [rateLimitStatus, setRateLimitStatus] = useState(null);
     const [statusLoading, setStatusLoading] = useState(true);
+    const [isConnecting, setIsConnecting] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
     const [error, setError] = useState(null);
 
@@ -46,25 +48,43 @@ export const useGithubOAuth = () => {
                 setGithubUser(null);
                 setRateLimitStatus(null);
             }
+            return data;
         } catch (err) {
             // Non-fatal — user may simply not be connected
             setIsConnected(false);
             setGithubUser(null);
+            return null;
         } finally {
             setStatusLoading(false);
         }
     }, []);
 
-    useEffect(() => {
-        refreshStatus();
+    const hasProcessedUrlRef = useRef(false);
 
-        // Check for ?connected=true in URL after OAuth redirect
+    useEffect(() => {
+        if (hasProcessedUrlRef.current) return;
+
+        // Check for ?connected=true or ?error=... in URL after OAuth redirect
         const params = new URLSearchParams(window.location.search);
-        if (params.get("connected") === "true") {
-            // Clean up URL without page reload
+        const isOAuthReturn = params.get("connected") === "true";
+        const oauthErrorParam = params.get("error");
+
+        if (isOAuthReturn) {
+            hasProcessedUrlRef.current = true;
+            // Clean up URL parameters immediately to prevent duplicate triggers
             window.history.replaceState({}, "", window.location.pathname);
-        }
-        if (params.get("error")) {
+            setIsConnecting(true);
+            
+            refreshStatus().then(() => {
+                if (addToast) {
+                    addToast("✅ GitHub account connected successfully!", "success");
+                }
+                setIsConnecting(false);
+            });
+        } else if (oauthErrorParam) {
+            hasProcessedUrlRef.current = true;
+            window.history.replaceState({}, "", window.location.pathname);
+            
             const errorMessages = {
                 access_denied: "GitHub authorization was denied.",
                 invalid_state: "Security validation failed. Please try again.",
@@ -72,10 +92,16 @@ export const useGithubOAuth = () => {
                 session_expired: "Your session expired. Please log in and try again.",
                 oauth_init_failed: "Could not start GitHub authorization. Please try again."
             };
-            setError(errorMessages[params.get("error")] || "GitHub connection failed.");
-            window.history.replaceState({}, "", window.location.pathname);
+            const msg = errorMessages[oauthErrorParam] || "GitHub connection failed.";
+            setError(msg);
+            if (addToast) {
+                addToast(`⚠️ ${msg}`, "error");
+            }
+            refreshStatus();
+        } else {
+            refreshStatus();
         }
-    }, [refreshStatus]);
+    }, [refreshStatus, addToast]);
 
     // -----------------------------------------------------------------------
     // Rate limit polling when connected
@@ -151,6 +177,7 @@ export const useGithubOAuth = () => {
         repoTotal,
         rateLimitStatus,
         statusLoading,
+        isConnecting,
         disconnecting,
         error,
         // Actions

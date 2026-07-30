@@ -142,10 +142,12 @@ async function oauthCallbackController(req, res, next) {
             }
         });
 
+        const finalRedirectUrl = `${targetFrontend}?connected=true`;
         if (logger && logger.info) {
             logger.info(`[githubOAuth] GitHub account connected for user ${userId}: @${githubUser.login}`);
+            logger.info(`[githubOAuth] Executing final browser 302 redirect to: ${finalRedirectUrl}`);
         }
-        return res.redirect(`${targetFrontend}?connected=true`);
+        return res.redirect(finalRedirectUrl);
     } catch (err) {
         if (logger && logger.error) {
             logger.error("[githubOAuth] Callback error:", err.message || err);

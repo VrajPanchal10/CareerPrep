@@ -9,7 +9,7 @@ const oauthService = require("../services/github/githubOAuth.service");
 const githubApi = require("../services/github/githubApi.service");
 const rateLimitService = require("../services/github/githubRateLimit.service");
 const { buildRepoPickerEntry } = require("../services/github/githubSecurity.service");
-const { invalidateRepoCache } = require("../services/github/githubCache.service");
+const { logger } = require("../utils/securityLogger");
 const { resolveGithubConfig } = require("../config/githubOAuth.config");
 
 function getFrontendRedirect() {
@@ -54,12 +54,13 @@ function resolveToken(user) {
  */
 async function initiateOAuthController(req, res, next) {
     try {
-        const { url } = oauthService.getAuthorizationUrl();
+        const { url } = oauthService.getAuthorizationUrl(req);
         // Redirect the browser — state is stored server-side, not in URL query visible to client
         return res.redirect(url);
     } catch (err) {
         logger.error("[githubOAuth] initiateOAuth error:", err.message);
-        return res.redirect(`${getFrontendRedirect()}?error=oauth_init_failed`);
+        const frontendRedirect = resolveGithubConfig(req).frontendRedirect;
+        return res.redirect(`${frontendRedirect}?error=oauth_init_failed`);
     }
 }
 
@@ -69,38 +70,57 @@ async function initiateOAuthController(req, res, next) {
  * Exchanges code for token, stores encrypted token on User, redirects to frontend.
  */
 async function oauthCallbackController(req, res, next) {
-    const { code, state, error: githubError } = req.query;
-
-    // User denied access
-    if (githubError) {
-        return res.redirect(`${getFrontendRedirect()}?error=access_denied`);
-    }
-
-    // CSRF state validation
-    if (!oauthService.validateAndConsumeOAuthState(state)) {
-        return res.redirect(`${getFrontendRedirect()}?error=invalid_state`);
-    }
-
-    if (!code) {
-        return res.redirect(`${getFrontendRedirect()}?error=missing_code`);
-    }
-
-    // This callback is unauthenticated by GitHub — we need the user's JWT from cookie
-    // to know which User document to update. Decode it manually.
-    let userId;
-    try {
-        const jwt = require("jsonwebtoken");
-        const token = req.cookies?.token;
-        if (!token) throw new Error("No session cookie");
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        userId = decoded.id;
-    } catch (sessionErr) {
-        return res.redirect(`${getFrontendRedirect()}?error=session_expired`);
-    }
+    const activeConfig = resolveGithubConfig(req);
+    const targetFrontend = activeConfig.frontendRedirect;
 
     try {
+        const { code, state, error: githubError } = req.query;
+
+        // Diagnostic logging for callback
+        const stateCheck = oauthService.validateAndConsumeOAuthStateDetailed(state);
+
+        logger.info("==================================================");
+        logger.info("        GITHUB OAUTH CALLBACK DIAGNOSTICS         ");
+        logger.info("==================================================");
+        logger.info(` Environment:        ${process.env.NODE_ENV || "development"}`);
+        logger.info(` Request Host:       ${req.headers.host || "N/A"}`);
+        logger.info(` OAuth Mode:         ${activeConfig.mode}`);
+        logger.info(` Received State:     ${state ? state.slice(0, 8) + "..." : "NONE"}`);
+        logger.info(` Expected State:     ${stateCheck.expected}`);
+        logger.info(` State Match:        ${stateCheck.valid}`);
+        logger.info(` Redirect Selected:  ${targetFrontend}`);
+        logger.info("==================================================");
+
+        // User denied access
+        if (githubError) {
+            return res.redirect(`${targetFrontend}?error=access_denied`);
+        }
+
+        // CSRF state validation
+        if (!stateCheck.valid) {
+            logger.warn(`[githubOAuth] State validation failed for received state: ${state}`);
+            return res.redirect(`${targetFrontend}?error=invalid_state`);
+        }
+
+        if (!code) {
+            return res.redirect(`${targetFrontend}?error=missing_code`);
+        }
+
+        // This callback is unauthenticated by GitHub — we need the user's JWT from cookie
+        // to know which User document to update. Decode it manually.
+        let userId;
+        try {
+            const jwt = require("jsonwebtoken");
+            const token = req.cookies?.token;
+            if (!token) throw new Error("No session cookie");
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            userId = decoded.id;
+        } catch (sessionErr) {
+            return res.redirect(`${targetFrontend}?error=session_expired`);
+        }
+
         // Exchange code for token
-        const { accessToken, scopes } = await oauthService.exchangeCodeForToken(code);
+        const { accessToken, scopes } = await oauthService.exchangeCodeForToken(code, req);
 
         // Fetch GitHub user profile
         const githubUser = await githubApi.getAuthenticatedUser(accessToken);
@@ -122,11 +142,17 @@ async function oauthCallbackController(req, res, next) {
             }
         });
 
-        logger.info(`[githubOAuth] GitHub account connected for user ${userId}: @${githubUser.login}`);
-        return res.redirect(`${getFrontendRedirect()}?connected=true`);
+        if (logger && logger.info) {
+            logger.info(`[githubOAuth] GitHub account connected for user ${userId}: @${githubUser.login}`);
+        }
+        return res.redirect(`${targetFrontend}?connected=true`);
     } catch (err) {
-        logger.error("[githubOAuth] Callback error:", err.message);
-        return res.redirect(`${getFrontendRedirect()}?error=token_exchange_failed`);
+        if (logger && logger.error) {
+            logger.error("[githubOAuth] Callback error:", err.message || err);
+        } else {
+            console.error("[githubOAuth] Callback error:", err);
+        }
+        return res.redirect(`${targetFrontend}?error=token_exchange_failed`);
     }
 }
 

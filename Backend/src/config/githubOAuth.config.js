@@ -14,8 +14,21 @@ const isProduction = process.env.NODE_ENV === "production";
 
 /**
  * Resolves current active GitHub OAuth configuration dynamically.
+ * @param {object} [req] - Optional Express request object for dynamic host inspection
  */
-function resolveGithubConfig() {
+function resolveGithubConfig(req = null) {
+    let host = "";
+    if (req && req.headers && req.headers.host) {
+        host = req.headers.host;
+    }
+
+    // Auto-detect local request host (localhost or 127.0.0.1)
+    const isLocalHostRequest = host.includes("localhost") || host.includes("127.0.0.1");
+    const isProductionEnv = process.env.NODE_ENV === "production";
+    
+    // Force LOCAL mode if request originates from localhost, even if NODE_ENV was set to production by mistake
+    const isProduction = isProductionEnv && !isLocalHostRequest;
+
     let clientId;
     let clientSecret;
     let callbackUrl;
@@ -32,11 +45,11 @@ function resolveGithubConfig() {
             (process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL.replace(/\/$/, "")}/github-defense` : "https://careerprep-platform.vercel.app/github-defense");
     } else {
         mode = "LOCAL";
-        // Prefer LOCAL_* variables if present, fallback to GITHUB_* for local testing flexibility
+        // Prefer LOCAL_* variables if present, fallback to GITHUB_* credentials for client keys, but strictly enforce LOCAL localhost URLs
         clientId = process.env.LOCAL_GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID;
         clientSecret = process.env.LOCAL_GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET;
-        callbackUrl = process.env.LOCAL_GITHUB_OAUTH_REDIRECT_URI || process.env.GITHUB_OAUTH_REDIRECT_URI || "http://localhost:3000/api/github-oauth/callback";
-        frontendRedirect = process.env.LOCAL_FRONTEND_GITHUB_REDIRECT || process.env.FRONTEND_GITHUB_REDIRECT || "http://localhost:5173/github-defense";
+        callbackUrl = process.env.LOCAL_GITHUB_OAUTH_REDIRECT_URI || "http://localhost:3000/api/github-oauth/callback";
+        frontendRedirect = process.env.LOCAL_FRONTEND_GITHUB_REDIRECT || "http://localhost:5173/github-defense";
     }
 
     return {

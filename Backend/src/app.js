@@ -103,9 +103,34 @@ app.use((req, res, next) => {
     });
 });
 
+/* Helper to parse file and line number from error stack trace */
+function parseErrorLocation(stack) {
+    if (!stack) return { file: "unknown", line: "unknown" };
+    const lines = stack.split("\n");
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.includes("node_modules")) continue; // Filter out node_modules frames
+        const match = line.match(/\((.+):(\d+):(\d+)\)/) || line.match(/at\s+(.+):(\d+):(\d+)/);
+        if (match) {
+            return { file: match[1], line: match[2] };
+        }
+    }
+    return { file: "unknown", line: "unknown" };
+}
+
 /* Global Error Handler Middleware */
 app.use((err, req, res, next) => {
-    logger.error("Unhandled Error Caught by Global Middleware:", err);
+    const correlationId = req.correlationId || req.headers?.["x-correlation-id"] || "N/A";
+    const { file, line } = parseErrorLocation(err.stack);
+
+    logger.error("================ GLOBAL ERROR CAUGHT ================");
+    logger.error(`Correlation ID : ${correlationId}`);
+    logger.error(`Route / Method : ${req.method} ${req.originalUrl}`);
+    logger.error(`Error Name     : ${err.name || "Error"}`);
+    logger.error(`Message        : ${err.message}`);
+    logger.error(`File / Line    : ${file}:${line}`);
+    logger.error(`Stack Trace    :\n${err.stack || err}`);
+    logger.error("====================================================");
     
     let statusCode = err.status || err.statusCode || 500;
     let message = err.message || "An unexpected error occurred on the server.";

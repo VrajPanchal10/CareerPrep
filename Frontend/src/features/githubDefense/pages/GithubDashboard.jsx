@@ -109,6 +109,32 @@ const GithubDashboard = () => {
         initDashboard();
     }, [loadDashboard]);
 
+    // Handle toast notification when returning from GitHub OAuth redirect
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("connected") === "true") {
+            addToast("✅ GitHub account connected successfully!", "success");
+            window.history.replaceState({}, "", window.location.pathname);
+        } else if (params.get("error")) {
+            const errorMessages = {
+                access_denied: "GitHub authorization was denied.",
+                invalid_state: "Security validation failed. Please try again.",
+                token_exchange_failed: "Failed to connect GitHub account. Please try again.",
+                session_expired: "Your session expired. Please log in and try again.",
+                oauth_init_failed: "Could not start GitHub authorization. Please try again."
+            };
+            addToast(errorMessages[params.get("error")] || "GitHub connection failed.", "error");
+            window.history.replaceState({}, "", window.location.pathname);
+        }
+    }, [addToast]);
+
+    const handleConfirmDisconnect = async () => {
+        if (window.confirm("Disconnect GitHub account?\n\nYou will need to reconnect before analyzing private repositories.")) {
+            await disconnect();
+            addToast("✅ GitHub account disconnected.", "info");
+        }
+    };
+
     // Set first analysis as selected by default when they load
     useEffect(() => {
         if (filteredAnalyses.length > 0 && !selectedAnalysisId) {
@@ -338,7 +364,7 @@ const GithubDashboard = () => {
                                 <GitHubStatusBar
                                     githubUser={githubUser}
                                     rateLimitStatus={rateLimitStatus}
-                                    onDisconnect={disconnect}
+                                    onDisconnect={handleConfirmDisconnect}
                                     disconnecting={disconnecting}
                                 />
                             )}
@@ -453,11 +479,19 @@ const GithubDashboard = () => {
                         <div>
 
                         {!selectedAnalysis ? (
-                            <div className="git-card" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "350px", textAlign: "center" }}>
+                            <div className="git-card" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "380px", textAlign: "center", padding: "2rem" }}>
                                 <div>
                                     <span style={{ fontSize: "3rem" }}>🚀</span>
-                                    <h3 style={{ margin: "1rem 0 0.5rem 0" }}>Start Codebase Analysis</h3>
-                                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem" }}>Provide a GitHub URL on the left panel to scan project folders, frameworks, security standards, and trigger Mock defenses.</p>
+                                    <h3 style={{ margin: "1rem 0 0.5rem 0", fontSize: "1.25rem" }}>Start Codebase Analysis</h3>
+                                    <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.9rem", maxWidth: "480px", margin: "0 auto 1.25rem auto", lineHeight: "1.5" }}>
+                                        Select any repository from the left panel or provide a GitHub URL to scan project folders, detect frameworks, security standards, and trigger AI Mock Defenses.
+                                    </p>
+                                    <div style={{ display: "inline-flex", flexDirection: "column", gap: "0.5rem", textAlign: "left", background: "rgba(0,0,0,0.3)", padding: "1rem 1.5rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.08)", fontSize: "0.85rem", color: "rgba(255,255,255,0.85)" }}>
+                                        <span>• <strong>Architecture Review</strong>: Framework & module graph analysis</span>
+                                        <span>• <strong>Security Audit</strong>: Secret leaks & vulnerability checks</span>
+                                        <span>• <strong>Project Defense Q&A</strong>: Tailored technical interview questions</span>
+                                        <span>• <strong>Code Quality Score</strong>: Automated codebase health rating</span>
+                                    </div>
                                 </div>
                             </div>
                         ) : (

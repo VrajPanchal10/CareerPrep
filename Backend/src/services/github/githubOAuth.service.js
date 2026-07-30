@@ -124,11 +124,41 @@ function validateAndConsumeOAuthState(state) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Validates and consumes a state token (one-time use).
+ * @param {string} state
+ * @returns {{ valid: boolean, expected: boolean, expired: boolean }}
+ */
+function validateAndConsumeOAuthStateDetailed(state) {
+    if (!state) return { valid: false, expected: false, expired: false };
+    const hasState = pendingStates.has(state);
+    if (!hasState) return { valid: false, expected: false, expired: false };
+    
+    const meta = pendingStates.get(state);
+    pendingStates.delete(state); // One-time use
+    const isExpired = Date.now() > meta.expiresAt;
+    
+    return {
+        valid: !isExpired,
+        expected: true,
+        expired: isExpired
+    };
+}
+
+function validateAndConsumeOAuthState(state) {
+    return validateAndConsumeOAuthStateDetailed(state).valid;
+}
+
+// ---------------------------------------------------------------------------
+// GitHub OAuth API calls
+// ---------------------------------------------------------------------------
+
+/**
  * Builds the GitHub authorization URL.
+ * @param {object} [req] Express request object
  * @returns {{ url: string, state: string }}
  */
-function getAuthorizationUrl() {
-    const config = getGithubConfig();
+function getAuthorizationUrl(req = null) {
+    const config = resolveGithubConfig(req);
     if (!config.clientId) {
         throw new Error(`[githubOAuth] Client ID is not configured for ${config.mode} environment.`);
     }
@@ -141,10 +171,23 @@ function getAuthorizationUrl() {
         allow_signup: "false"
     });
 
-    logger.info(`[githubOAuth] Redirecting to GitHub OAuth: App=${config.mode}, ClientID=${maskString(config.clientId)}, Callback=${config.callbackUrl}, FrontendRedirect=${config.frontendRedirect}`);
+    const authUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;
+
+    logger.info("==================================================");
+    logger.info("       GITHUB OAUTH INITIATION DIAGNOSTICS        ");
+    logger.info("==================================================");
+    logger.info(` Environment:        ${process.env.NODE_ENV || "development"}`);
+    logger.info(` Request Host:       ${req?.headers?.host || "N/A"}`);
+    logger.info(` OAuth Mode:         ${config.mode}`);
+    logger.info(` Frontend Redirect:  ${config.frontendRedirect}`);
+    logger.info(` Backend Callback:   ${config.callbackUrl}`);
+    logger.info(` Generated State:    ${maskString(state, 8)}`);
+    logger.info(` Client ID:          ${maskString(config.clientId)}`);
+    logger.info(` Authorization URL:  ${authUrl}`);
+    logger.info("==================================================");
 
     return {
-        url: `https://github.com/login/oauth/authorize?${params.toString()}`,
+        url: authUrl,
         state
     };
 }
@@ -152,10 +195,11 @@ function getAuthorizationUrl() {
 /**
  * Exchanges an authorization code for a GitHub access token.
  * @param {string} code
+ * @param {object} [req] Express request object
  * @returns {Promise<{ accessToken: string, scopes: string[] }>}
  */
-async function exchangeCodeForToken(code) {
-    const config = getGithubConfig();
+async function exchangeCodeForToken(code, req = null) {
+    const config = resolveGithubConfig(req);
 
     if (!config.clientId || !config.clientSecret) {
         throw new Error(`[githubOAuth] GitHub OAuth credentials are not configured for ${config.mode} mode.`);
@@ -228,6 +272,7 @@ module.exports = {
     decryptToken,
     getAuthorizationUrl,
     validateAndConsumeOAuthState,
+    validateAndConsumeOAuthStateDetailed,
     exchangeCodeForToken,
     revokeToken
 };

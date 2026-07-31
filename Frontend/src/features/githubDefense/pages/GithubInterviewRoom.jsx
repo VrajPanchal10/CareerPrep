@@ -395,7 +395,7 @@ const GithubInterviewRoom = () => {
                         ))}
 
                         {/* Current Active Question Display */}
-                        {activeQuestionIdx >= activeSession.answers.length && currentQuestion && (
+                        {activeQuestionIdx >= activeSession.answers.length && (
                             <div className="log-entry ai-entry current-active-question">
                                 <div className="ai-sender-row">
                                     <span className="sender-badge ai">Interviewer</span>
@@ -409,12 +409,22 @@ const GithubInterviewRoom = () => {
                                     {getQuestionText(currentQuestion) ? (
                                         <p className="question-text">{getQuestionText(currentQuestion)}</p>
                                     ) : (
-                                        <div className="generating-question-placeholder">
-                                            <Loader2 size={16} className="spinner-icon" />
-                                            <span>Generating next interview question...</span>
+                                        <div className="generating-question-placeholder flex-column-gap">
+                                            <div className="loader-inline-row">
+                                                <Loader2 size={16} className="spinner-icon" />
+                                                <span>Generating next interview question...</span>
+                                            </div>
+                                            <button 
+                                                type="button" 
+                                                className="btn-sync-retry" 
+                                                onClick={() => loadSession(sessionId)}
+                                                title="Click to reload session from server if question generation is delayed"
+                                            >
+                                                <RotateCcw size={12} /> Refresh Question Session
+                                            </button>
                                         </div>
                                     )}
-                                    {currentQuestion.isFollowUp && (
+                                    {currentQuestion?.isFollowUp && (
                                         <span className="followup-alert">
                                             ⚡ Contextual Follow-Up question triggered based on your response
                                         </span>

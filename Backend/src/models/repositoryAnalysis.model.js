@@ -62,6 +62,14 @@ const repositoryAnalysisSchema = new mongoose.Schema({
         deploymentOverview: String,
         improvementOpportunities: [String]
     },
+    interviewTopics: {
+        architecture: [String],
+        frontend: [String],
+        backend: [String],
+        database: [String],
+        deploymentAndSecurity: [String],
+        githubDefense: [String]
+    },
     // Cache invalidation key — set to the repo's latest commit SHA at analysis time
     commitSha: {
         type: String,

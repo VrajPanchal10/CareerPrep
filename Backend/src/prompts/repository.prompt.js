@@ -3,27 +3,66 @@
  */
 module.exports = {
     generateRepoAnalysisPrompt: ({ repoUrl, repoName, owner, filesContext, folderStructure }) => {
-        return `You are a Senior Software Architect and GitHub Analysis Expert.
-Analyze the following public GitHub repository details, including README, package configurations, entry scripts, and selective source code directories.
-Construct a high-level summary, knowledge graph, health report, and project snapshot.
+        return `You are a Principal Software Architect and Lead Technical Auditor.
+Analyze the provided GitHub repository source files, package manifests, and folder structure for "${repoName}" by ${owner}.
 
-Repository Details:
+Repository Metadata:
 - URL: ${repoUrl}
 - Name: ${repoName}
 - Owner: ${owner}
 
-Folder Structure Layout:
+Directory Layout:
 ${folderStructure}
 
-Scraped Code and Manifest Files Context:
+Source Code & Manifest Context:
 ${filesContext}
 
-Make sure to evaluate:
-1. Architecture Patterns: Folder structures, design models, code separation.
-2. Health Report: Security concerns, scalability bottlenecks, missing practices (lack of unit tests, logging, Docker configurations, environment validation).
-3. Project Snapshot: Bulleted overviews of security, deployment, features, and tech stack.
+Instructions:
+Generate a comprehensive, highly specific repository analysis as JSON matching the schema. You MUST populate every field in detail based directly on the actual code, packages, frameworks, patterns, and files in this repository:
 
-Format the output as JSON according to the schema.`;
+1. "summary": A rich 3-4 sentence technical overview of what ${repoName} does, its primary architecture pattern, core capabilities, and infrastructure.
+
+2. "projectSnapshot":
+   - "projectSummary": Concise 2-sentence summary.
+   - "techStack": Array of specific tools, libraries, and frameworks detected (e.g. React, Node.js, Express, MongoDB, Tailwind, Vite, Axios, JWT).
+   - "architectureOverview": Detailed explanation of the architectural pattern (e.g., MVC, Service Layer, Monorepo, Microservices) and file organization.
+   - "mainFeatures": Array of 4-6 key features implemented in this repository.
+   - "securityOverview": Detailed description of security mechanisms (e.g. JWT tokens, bcrypt, Helmet, CSRF, input validation, CORS).
+   - "deploymentOverview": Explanation of hosting/deployment strategies, environment variables, build setup, or Docker configuration.
+   - "improvementOpportunities": Array of 3-4 actionable refactoring opportunities.
+
+3. "healthReport":
+   - "architectureStrengths": Array of 3-5 clear architectural strengths.
+   - "architectureWeaknesses": Array of 3-5 code/structure weaknesses or tech debt.
+   - "securityConcerns": Array of 2-4 potential security gaps or risk areas.
+   - "scalabilityConcerns": Array of 2-4 performance or scalability bottlenecks.
+   - "missingEngineeringPractices": Array of 2-4 missing practices (e.g. CI/CD pipelines, unit testing, structured logging).
+   - "improvementRecommendations": Array of 3-5 concrete recommendations for improvement.
+
+4. "knowledgeGraph":
+   - "projectName": "${repoName}"
+   - "frontendStack": Array of frontend tools/frameworks detected.
+   - "backendStack": Array of backend frameworks/libraries detected.
+   - "database": Array of database systems, ORMs, and ODMs used.
+   - "authentication": Array of auth protocols and packages used.
+   - "majorFeatures": Array of key application capabilities.
+   - "folderStructure": Concise folder hierarchy summary.
+   - "keyComponents": Array of major UI/architectural components.
+   - "services": Array of service modules and helper modules.
+   - "routes": Array of API endpoints or page routes detected.
+   - "models": Array of database schemas/models detected.
+   - "externalApis": Array of third-party APIs integrated.
+   - "deploymentApproach": Array of deployment platforms/tools.
+
+5. "interviewTopics":
+   - "architecture": Array of 3 technical questions specifically challenging architectural choices in ${repoName}.
+   - "frontend": Array of 3 technical questions on frontend design, state, or performance in ${repoName}.
+   - "backend": Array of 3 technical questions on backend middleware, routes, or error handling in ${repoName}.
+   - "database": Array of 3 technical questions on data models, query optimization, or indexing in ${repoName}.
+   - "deploymentAndSecurity": Array of 3 technical questions on deployment, environment secrets, and security posture in ${repoName}.
+   - "githubDefense": Array of 3 technical defense questions on technical trade-offs, refactoring priorities, and scalability.
+
+DO NOT return empty arrays or generic placeholders. Base all items on the provided source code and repository structure. Return ONLY valid JSON.`;
     },
 
     generateRepoQuestionsPrompt: ({ knowledgeGraph, limit }) => {

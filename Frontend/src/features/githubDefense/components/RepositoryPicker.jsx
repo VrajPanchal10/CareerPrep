@@ -189,26 +189,17 @@ const RepositoryPicker = ({ repositories, loading, total, onFetch, onAnalyze, an
                             >
                                 <div className="repo-picker__item-info">
                                     <div className="repo-picker__item-header">
-                                        <span className="repo-picker__name">📁 {repo.name}</span>
+                                        <span className="repo-picker__name" title={repo.name}>📁 {repo.name}</span>
+                                    </div>
+                                    <div className="repo-picker__meta">
                                         <span
                                             className={`repo-picker__badge ${repo.isPrivate ? "repo-picker__badge--private" : "repo-picker__badge--public"}`}
                                             aria-label={repo.isPrivate ? "Private repository" : "Public repository"}
                                         >
                                             {repo.isPrivate ? "🔒 Private" : "Public"}
                                         </span>
-                                    </div>
-                                    <div className="repo-picker__meta">
-                                        {repo.language && (
-                                            <span className="repo-picker__lang">
-                                                <span className="lang-dot" aria-hidden="true" />
-                                                {repo.language}
-                                            </span>
-                                        )}
                                         <span className="repo-picker__size" aria-label={`Size: ${formatSize(repo.sizeKb)}`}>
-                                            • {formatSize(repo.sizeKb)}
-                                        </span>
-                                        <span className="repo-picker__updated" aria-label={`Updated ${formatDate(repo.updatedAt)}`}>
-                                            • {formatDate(repo.updatedAt)}
+                                            {formatSize(repo.sizeKb)}
                                         </span>
                                     </div>
                                 </div>

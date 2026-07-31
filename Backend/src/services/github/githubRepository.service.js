@@ -452,6 +452,23 @@ async function analyzeRepository({ owner, repo, token, source, scopes, userId, f
     logger.info(`[githubRepository] [STAGE 9] AI analysis completed successfully.`);
 
     // --- Stage 10: Persist to MongoDB ------------------------------------------
+    const summary = (aiAnalysis?.summary && typeof aiAnalysis.summary === "string" && aiAnalysis.summary.trim())
+        ? aiAnalysis.summary.trim()
+        : (aiAnalysis?.projectSnapshot?.projectSummary && typeof aiAnalysis.projectSnapshot.projectSummary === "string" && aiAnalysis.projectSnapshot.projectSummary.trim())
+        ? aiAnalysis.projectSnapshot.projectSummary.trim()
+        : `${repo} is a software codebase developed by ${owner} featuring application modules and service workflows.`;
+
+    logger.debug(`[githubRepository] [STAGE 10] Persisting analysis to MongoDB:`, {
+        userId,
+        repoUrl,
+        repoName: repo,
+        owner,
+        summaryLength: summary.length,
+        hasKnowledgeGraph: Boolean(aiAnalysis?.knowledgeGraph),
+        hasHealthReport: Boolean(aiAnalysis?.healthReport),
+        hasProjectSnapshot: Boolean(aiAnalysis?.projectSnapshot)
+    });
+
     const savedAnalysis = await repositoryAnalysisModel.create({
         user: userId,
         repoUrl,
@@ -462,10 +479,11 @@ async function analyzeRepository({ owner, repo, token, source, scopes, userId, f
         commitSha: commitSha || null,
         sizeKb,
         analysisVersion: 1,
-        summary: aiAnalysis.summary,
-        knowledgeGraph: aiAnalysis.knowledgeGraph,
-        healthReport: aiAnalysis.healthReport,
-        projectSnapshot: aiAnalysis.projectSnapshot
+        summary,
+        knowledgeGraph: aiAnalysis?.knowledgeGraph || {},
+        healthReport: aiAnalysis?.healthReport || {},
+        projectSnapshot: aiAnalysis?.projectSnapshot || {},
+        interviewTopics: aiAnalysis?.interviewTopics || {}
     });
 
     // --- Stage 11: Populate cache ----------------------------------------------

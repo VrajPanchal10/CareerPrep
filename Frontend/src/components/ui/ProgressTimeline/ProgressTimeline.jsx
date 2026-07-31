@@ -11,16 +11,51 @@ const STAGES = [
     { key: "completed", label: "Analysis Completed!" }
 ];
 
-const ProgressTimeline = ({ currentStage = "connecting", filesAnalyzed = 0, currentFile = "", currentFolder = "" }) => {
-    const currentStageIndex = STAGES.findIndex(s => s.key === currentStage);
+const ProgressTimeline = ({ 
+    currentStage = "connecting", 
+    filesAnalyzed = 0, 
+    currentFile = "", 
+    currentFolder = "",
+    repoName = ""
+}) => {
+    const rawIndex = STAGES.findIndex(s => s.key === currentStage);
+    const currentStageIndex = rawIndex >= 0 ? rawIndex : 0;
+    const progressPercent = Math.min(100, Math.max(12, Math.round(((currentStageIndex + 1) / STAGES.length) * 100)));
 
     return (
-        <div className="progress-timeline-card" role="status" aria-live="polite">
+        <div className="progress-timeline-card git-card" role="status" aria-live="polite">
+            {/* Header */}
             <div className="progress-timeline-card__header">
-                <h3>Repo Analysis Status Timeline</h3>
-                <span className="stage-indicator">
-                    Stage {currentStageIndex + 1} of {STAGES.length}
-                </span>
+                <div className="header-title-group">
+                    <span className="pulse-icon">⚡</span>
+                    <div>
+                        <h3>Analyzing Repository</h3>
+                        <p className="repo-target-name">{repoName || "GitHub Repository"}</p>
+                    </div>
+                </div>
+                <div className="header-badge-group">
+                    <span className="stage-indicator">
+                        Stage {currentStageIndex + 1} of {STAGES.length}
+                    </span>
+                </div>
+            </div>
+
+            {/* Overall Progress Bar */}
+            <div className="overall-progress-container">
+                <div className="progress-bar-label-row">
+                    <span>Overall Audit Progress</span>
+                    <span className="progress-pct-val">{progressPercent}%</span>
+                </div>
+                <div className="progress-bar-track">
+                    <div 
+                        className="progress-bar-fill" 
+                        style={{ width: `${progressPercent}%` }} 
+                    />
+                </div>
+                <div className="progress-bar-footer">
+                    <span>⚡ AI Analysis Engine Running...</span>
+                    <span>Est. Time: ~3–5 seconds</span>
+                </div>
             </div>
 
             {/* Steps Timeline Grid */}
@@ -36,12 +71,21 @@ const ProgressTimeline = ({ currentStage = "connecting", filesAnalyzed = 0, curr
                     return (
                         <div key={stage.key} className={`timeline-step timeline-step--${statusClass}`}>
                             <div className="step-marker">
-                                {isCompleted ? "✓" : idx + 1}
+                                {isCompleted ? (
+                                    <span className="check-icon">✓</span>
+                                ) : isActive ? (
+                                    <span className="spinner-ring" />
+                                ) : (
+                                    <span className="step-num">{idx + 1}</span>
+                                )}
                             </div>
                             <div className="step-content">
                                 <span className="step-label">{stage.label}</span>
                                 {isActive && (
-                                    <span className="active-badge anim-pulse">ACTIVE</span>
+                                    <span className="active-badge anim-pulse">IN PROGRESS</span>
+                                )}
+                                {isCompleted && (
+                                    <span className="completed-badge">DONE</span>
                                 )}
                             </div>
                         </div>
@@ -52,19 +96,24 @@ const ProgressTimeline = ({ currentStage = "connecting", filesAnalyzed = 0, curr
             {/* Real-time file processing info panel */}
             {currentStage !== "completed" && (
                 <div className="live-progress-details">
-                    <div className="details-row">
-                        <span className="details-label">Audited Folders:</span>
-                        <span className="details-val bold">{currentFolder || "root/"}</span>
+                    <div className="details-header">
+                        <span>🔍 REAL-TIME AUDIT TELEMETRY</span>
                     </div>
-                    {currentFile && (
+                    <div className="details-grid">
                         <div className="details-row">
-                            <span className="details-label">Reading File:</span>
-                            <span className="details-val code-val">{currentFile}</span>
+                            <span className="details-label">Audited Folder:</span>
+                            <span className="details-val bold">{currentFolder || "root/"}</span>
                         </div>
-                    )}
-                    <div className="details-row">
-                        <span className="details-label">Parsed Nodes:</span>
-                        <span className="details-val bold">{filesAnalyzed} elements mapped</span>
+                        {currentFile && (
+                            <div className="details-row">
+                                <span className="details-label">Reading File:</span>
+                                <span className="details-val code-val">{currentFile}</span>
+                            </div>
+                        )}
+                        <div className="details-row">
+                            <span className="details-label">Parsed Elements:</span>
+                            <span className="details-val bold">{filesAnalyzed} nodes mapped</span>
+                        </div>
                     </div>
                 </div>
             )}

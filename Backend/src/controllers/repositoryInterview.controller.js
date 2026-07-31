@@ -237,6 +237,8 @@ async function startRepositoryInterviewController(req, res, next) {
             repositoryAnalysis: analysis._id,
             repoName: analysis.repoName,
             repoUrl: analysis.repoUrl,
+            interviewLength: interviewLength || "Quick",
+            targetQuestionCount: limit,
             questions: formattedQuestions,
             answers: [],
             status: "active"
@@ -318,9 +320,11 @@ async function submitRepositoryAnswerController(req, res, next) {
             session.answers.push(answerObj);
         }
 
-        // Handle Contextual Follow-Up question (max limit 1 follow-up level)
+        // Handle Contextual Follow-Up question (strictly cap session.questions.length at targetQuestionCount)
         let followUpQuestion = null;
-        if (!question.isFollowUp) {
+        const targetLimit = session.targetQuestionCount || 5;
+
+        if (!question.isFollowUp && session.questions.length < targetLimit) {
             const alreadyHasFollowUp = session.questions.some(
                 q => q.isFollowUp && q.parentQuestionIndex === questionIndex
             );
@@ -342,9 +346,14 @@ async function submitRepositoryAnswerController(req, res, next) {
                         parentQuestionIndex: questionIndex
                     };
 
-                    // Inject follow-up immediately below the answered question index
+                    // Inject follow-up immediately below answered question index
                     session.questions.splice(questionIndex + 1, 0, followUpQuestion);
-                    logger.debug(`[Repo Interview] Follow-up question injected at index ${questionIndex + 1}`);
+                    
+                    // Strictly trim questions array to targetLimit so total count never exceeds 5 / 10 / 15
+                    if (session.questions.length > targetLimit) {
+                        session.questions = session.questions.slice(0, targetLimit);
+                    }
+                    logger.debug(`[Repo Interview] Follow-up question injected at index ${questionIndex + 1}. Questions count capped at ${session.questions.length}`);
                 }
             }
         }

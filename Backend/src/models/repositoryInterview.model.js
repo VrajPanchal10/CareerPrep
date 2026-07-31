@@ -19,6 +19,15 @@ const repositoryInterviewSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    interviewLength: {
+        type: String,
+        enum: ["Quick", "Standard", "Deep"],
+        default: "Quick"
+    },
+    targetQuestionCount: {
+        type: Number,
+        default: 5
+    },
     questions: [{
         questionText: String,
         intention: String,

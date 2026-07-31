@@ -81,6 +81,20 @@ const RepositoryPicker = ({ repositories, loading, total, onFetch, onAnalyze, an
         }
     }, [focusedIndex]);
 
+    const searchInputRef = useRef(null);
+
+    // Global Ctrl+K keyboard shortcut listener
+    useEffect(() => {
+        const handleGlobalKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener("keydown", handleGlobalKeyDown);
+        return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    }, []);
+
     return (
         <div className="repo-picker" role="region" aria-label="Repository Picker">
             {/* Search + Filters */}
@@ -88,6 +102,7 @@ const RepositoryPicker = ({ repositories, loading, total, onFetch, onAnalyze, an
                 <div className="repo-picker__search-wrap">
                     <span className="repo-picker__search-icon" aria-hidden="true">🔍</span>
                     <input
+                        ref={searchInputRef}
                         type="search"
                         className="repo-picker__search"
                         placeholder="Search repositories…"
@@ -96,6 +111,18 @@ const RepositoryPicker = ({ repositories, loading, total, onFetch, onAnalyze, an
                         aria-label="Search repositories"
                         id="repoPickerSearch"
                     />
+                    {search ? (
+                        <button
+                            type="button"
+                            className="repo-picker__clear-btn"
+                            onClick={() => { setSearch(""); setPage(1); }}
+                            aria-label="Clear search"
+                        >
+                            ×
+                        </button>
+                    ) : (
+                        <kbd className="repo-picker__shortcut-badge">Ctrl K</kbd>
+                    )}
                 </div>
                 <div className="repo-picker__filters">
                     <select
@@ -162,7 +189,7 @@ const RepositoryPicker = ({ repositories, loading, total, onFetch, onAnalyze, an
                             >
                                 <div className="repo-picker__item-info">
                                     <div className="repo-picker__item-header">
-                                        <span className="repo-picker__name">{repo.name}</span>
+                                        <span className="repo-picker__name">📁 {repo.name}</span>
                                         <span
                                             className={`repo-picker__badge ${repo.isPrivate ? "repo-picker__badge--private" : "repo-picker__badge--public"}`}
                                             aria-label={repo.isPrivate ? "Private repository" : "Public repository"}
@@ -170,9 +197,6 @@ const RepositoryPicker = ({ repositories, loading, total, onFetch, onAnalyze, an
                                             {repo.isPrivate ? "🔒 Private" : "Public"}
                                         </span>
                                     </div>
-                                    {repo.description && (
-                                        <p className="repo-picker__desc">{repo.description}</p>
-                                    )}
                                     <div className="repo-picker__meta">
                                         {repo.language && (
                                             <span className="repo-picker__lang">
@@ -181,13 +205,10 @@ const RepositoryPicker = ({ repositories, loading, total, onFetch, onAnalyze, an
                                             </span>
                                         )}
                                         <span className="repo-picker__size" aria-label={`Size: ${formatSize(repo.sizeKb)}`}>
-                                            {formatSize(repo.sizeKb)}
-                                        </span>
-                                        <span className="repo-picker__branch" aria-label={`Default branch: ${repo.defaultBranch}`}>
-                                            ⎇ {repo.defaultBranch}
+                                            • {formatSize(repo.sizeKb)}
                                         </span>
                                         <span className="repo-picker__updated" aria-label={`Updated ${formatDate(repo.updatedAt)}`}>
-                                            Updated {formatDate(repo.updatedAt)}
+                                            • {formatDate(repo.updatedAt)}
                                         </span>
                                     </div>
                                 </div>

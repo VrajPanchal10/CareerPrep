@@ -41,7 +41,10 @@ const AnalyticsFilters = ({ onFilterChange, repositories = [] }) => {
     return (
         <div className="analytics-filters" role="search" aria-label="Dashboard Analytics Filter Bar">
             <div className="analytics-filters__title">
-                <span>🔍 Filter Analytics:</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="filter-funnel-icon">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                <span>FILTER ANALYTICS:</span>
             </div>
 
             <div className="analytics-filters__options">

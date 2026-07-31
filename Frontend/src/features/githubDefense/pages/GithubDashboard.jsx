@@ -19,7 +19,7 @@ import GitHubStatusBar from "../components/GitHubStatusBar";
 import GitHubConnectPanel from "../components/GitHubConnectPanel";
 import RepositoryPicker from "../components/RepositoryPicker";
 import DevLogger from "../../../utils/devLogger";
-import { Shield, CheckCircle, ArrowLeft } from "lucide-react";
+import { Shield, CheckCircle, ArrowLeft, ChevronDown } from "lucide-react";
 
 const GithubDashboard = () => {
     const navigate = useNavigate();
@@ -51,6 +51,7 @@ const GithubDashboard = () => {
         fetchRepositories
     } = useGithubOAuth({ addToast });
 
+    const [sidebarTab, setSidebarTab] = useState("picker"); // "picker" | "history"
     const [repoUrl, setRepoUrl] = useState("");
     const [selectedAnalysisId, setSelectedAnalysisId] = useState("");
     const [activeTab, setActiveTab] = useState("snapshot");
@@ -299,45 +300,33 @@ const GithubDashboard = () => {
 
     return (
         <ErrorBoundary>
-            <div style={{ minHeight: "100%", background: "transparent" }}>
+            <div className="git-dashboard-page">
                 <Navbar />
-                
-                <main className="git-dashboard-page">
-                    <header className="git-header">
-                        <div className="header-left">
-                            <h1><Shield className="highlight" size={28} strokeWidth={2.5} style={{ verticalAlign: "middle", marginRight: "0.4rem" }} /> GitHub <span className="highlight">Project Defense</span></h1>
-                            <p>Audit repository structures and defend architectural decisions in tough technical mock simulations.</p>
-                        </div>
-                        <div className="header-right">
-                            <button className="back-btn-ghost" onClick={() => navigate('/')} id="exitGithubDefenseBtn">
-                                <ArrowLeft size={16} strokeWidth={2.5} />
-                                <span className="btn-text-full">Exit GitHub Defense</span>
-                                <span className="btn-text-short">Exit</span>
-                            </button>
-                        </div>
-                    </header>
 
-                    <div style={{ marginBottom: "1.25rem" }}>
-                        <AnalyticsFilters onFilterChange={setFilters} />
+                {/* Page Title Header */}
+                <header className="git-header">
+                    <div className="header-left">
+                        <h1>GitHub <span className="highlight">Project Defense</span></h1>
+                        <p>Audit repository structures and defend architectural decisions in tough technical mock simulations.</p>
                     </div>
+                    <div className="header-right">
+                        <button className="back-btn-ghost" onClick={() => navigate("/dashboard")} id="exitGithubDefenseBtn">
+                            <ArrowLeft size={16} />
+                            <span className="btn-text-full">Exit GitHub Defense</span>
+                            <span className="btn-text-short">Exit</span>
+                        </button>
+                    </div>
+                </header>
 
-                    {error && (
-                        <div style={{
-                            background: "rgba(231, 76, 60, 0.1)",
-                            border: "1px solid #e74c3c",
-                            borderRadius: "8px",
-                            padding: "1rem",
-                            marginBottom: "2rem",
-                            color: "#e74c3c",
-                            fontSize: "0.9rem"
-                        }}>
-                            ⚠️ {error}
-                        </div>
-                    )}
+                {/* Global Analytics Filter Toolbar */}
+                <div style={{ marginBottom: "1rem" }}>
+                    <AnalyticsFilters filters={filters} onFilterChange={setFilters} />
+                </div>
 
+                <main>
                     <div className="git-grid">
-                        {/* Left Sidebar: GitHub OAuth + Repository Picker + History */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                        {/* Unified Left Sidebar Column */}
+                        <div className="git-grid__sidebar">
 
                             {/* GitHub Status Bar — shown when connected */}
                             {isConnected && githubUser && (
@@ -353,49 +342,68 @@ const GithubDashboard = () => {
                             {largeRepoInfo && (
                                 <div className="repo-confirm-dialog">
                                     <h4>⚠️ Large Repository ({largeRepoInfo.sizeMb} MB)</h4>
-                                    <p>
-                                        This repository is larger than usual. Analysis will take longer and use more GitHub API quota. Do you want to proceed?
-                                    </p>
+                                    <p>This repository is larger than usual. Proceed with analysis?</p>
                                     <div className="repo-confirm-dialog__actions">
-                                        <button
-                                            className="repo-confirm-dialog__confirm-btn"
-                                            onClick={handleForceAnalyze}
-                                            id="confirmLargeRepoBtn"
-                                        >
+                                        <button className="repo-confirm-dialog__confirm-btn" onClick={handleForceAnalyze} id="confirmLargeRepoBtn">
                                             Yes, Analyze Anyway
                                         </button>
-                                        <button
-                                            className="repo-confirm-dialog__cancel-btn"
-                                            onClick={() => setLargeRepoInfo(null)}
-                                            id="cancelLargeRepoBtn"
-                                        >
+                                        <button className="repo-confirm-dialog__cancel-btn" onClick={() => setLargeRepoInfo(null)} id="cancelLargeRepoBtn">
                                             Cancel
                                         </button>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Connected: Repository Picker */}
+                            {/* Consolidated Repository Navigator Card */}
                             {!statusLoading && isConnected && (
-                                <div className="git-card">
-                                    <h2>Select Repository</h2>
-                                    <RepositoryPicker
-                                        repositories={repositories}
-                                        loading={reposLoading}
-                                        total={repoTotal}
-                                        onFetch={fetchRepositories}
-                                        onAnalyze={handlePickerAnalyze}
-                                        analyzingRepo={analyzingRepo}
-                                    />
+                                <div className="git-card sidebar-nav-card">
+                                    <h3 className="sidebar-card-title">Repositories</h3>
+                                    <div className="sidebar-nav-tabs" role="tablist">
+                                        <button
+                                            className={`sidebar-nav-btn ${sidebarTab === "picker" ? "sidebar-nav-btn--active" : ""}`}
+                                            onClick={() => setSidebarTab("picker")}
+                                            role="tab"
+                                            aria-selected={sidebarTab === "picker"}
+                                        >
+                                            📁 GitHub Repos {repoTotal ? <span className="tab-count-badge">{repoTotal}</span> : null}
+                                        </button>
+                                        <button
+                                            className={`sidebar-nav-btn ${sidebarTab === "history" ? "sidebar-nav-btn--active" : ""}`}
+                                            onClick={() => setSidebarTab("history")}
+                                            role="tab"
+                                            aria-selected={sidebarTab === "history"}
+                                        >
+                                            📜 History <span className="tab-count-badge">{filteredAnalyses.length}</span>
+                                        </button>
+                                    </div>
+
+                                    {sidebarTab === "picker" ? (
+                                        <RepositoryPicker
+                                            repositories={repositories}
+                                            loading={reposLoading}
+                                            total={repoTotal}
+                                            onFetch={fetchRepositories}
+                                            onAnalyze={handlePickerAnalyze}
+                                            analyzingRepo={analyzingRepo}
+                                        />
+                                    ) : (
+                                        <RepositoryHistory 
+                                            analyses={filteredAnalyses}
+                                            selectedAnalysisId={selectedAnalysisId}
+                                            onSelect={setSelectedAnalysisId}
+                                            onReanalyze={handleReanalyze}
+                                            onDelete={handleDeleteAnalysis}
+                                        />
+                                    )}
                                 </div>
                             )}
 
                             {/* Connecting state during OAuth return */}
                             {isConnecting && (
-                                <div className="git-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", gap: "0.75rem", textAlign: "center" }}>
-                                    <span className="gh-connect-btn__spinner" style={{ width: "28px", height: "28px", borderTopColor: "#10b981", animation: "spin 0.8s linear infinite" }} />
-                                    <h4 style={{ margin: 0, color: "#e2e8f0", fontSize: "0.95rem" }}>Connecting GitHub Account...</h4>
-                                    <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>Fetching account profile, permissions, and repositories...</p>
+                                <div className="git-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "1.5rem", gap: "0.75rem", textAlign: "center" }}>
+                                    <span className="gh-connect-btn__spinner" style={{ width: "24px", height: "24px", borderTopColor: "#10b981", animation: "spin 0.8s linear infinite" }} />
+                                    <h4 style={{ margin: 0, color: "#e2e8f0", fontSize: "0.9rem" }}>Connecting GitHub Account...</h4>
+                                    <p style={{ margin: 0, fontSize: "0.78rem", color: "rgba(255,255,255,0.5)" }}>Fetching account profile, permissions, and repositories...</p>
                                 </div>
                             )}
 
@@ -408,17 +416,14 @@ const GithubDashboard = () => {
                                 />
                             )}
 
-                            {/* Public Repository URL fallback (always available) */}
-                            <div className="git-card">
-                                <h2>
-                                    Public Repository URL
-                                    <span style={{ fontSize: "0.7rem", fontWeight: 400, color: "rgba(255,255,255,0.4)", marginLeft: "0.5rem" }}>
-                                        No login required
-                                    </span>
-                                </h2>
-                                <form className="analyze-section" onSubmit={handleAnalyze}>
-                                    <div className="form-group">
-                                        <label htmlFor="repoUrl">GitHub URL</label>
+                            {/* Public Repository URL Drawer (Compact Accordion) */}
+                            <details className="public-repo-drawer git-card">
+                                <summary className="public-repo-drawer__summary">
+                                    <span>🔗 Public Repository Analyzer</span>
+                                    <ChevronDown size={18} className="drawer-chevron-icon" />
+                                </summary>
+                                <form className="analyze-section" onSubmit={handleAnalyze} style={{ marginTop: "0.65rem" }}>
+                                    <div className="form-group" style={{ marginBottom: "0.5rem" }}>
                                         <input 
                                             type="url" 
                                             id="repoUrl" 
@@ -427,6 +432,7 @@ const GithubDashboard = () => {
                                             onChange={(e) => setRepoUrl(e.target.value)}
                                             required
                                             disabled={loading}
+                                            style={{ width: "100%", padding: "0.45rem 0.65rem", fontSize: "0.82rem" }}
                                         />
                                     </div>
                                     <LoadingButton 
@@ -435,39 +441,27 @@ const GithubDashboard = () => {
                                         loadingText="Analyzing..."
                                         className="submit-btn" 
                                         id="repoSubmitBtn"
+                                        style={{ width: "100%", padding: "0.45rem", fontSize: "0.82rem" }}
                                     >
                                         🔍 Analyze Repository
                                     </LoadingButton>
                                 </form>
-                            </div>
-
-                            {isScraping && (
-                                <ProgressTimeline 
-                                    currentStage={scrapeStage}
-                                    filesAnalyzed={filesCount}
-                                    currentFile={activeFile}
-                                    currentFolder={activeFolder}
-                                />
-                            )}
-
-                        {/* Analysis History Card */}
-                        <div className="git-card micro-interactive-card" style={{ flex: 1, minHeight: 0 }}>
-                            <h2>My Repositories</h2>
-                            <RepositoryHistory 
-                                analyses={filteredAnalyses}
-                                selectedAnalysisId={selectedAnalysisId}
-                                onSelect={setSelectedAnalysisId}
-                                onReanalyze={handleReanalyze}
-                                onDelete={handleDeleteAnalysis}
-                            />
-                        </div>
+                            </details>
                         </div>
                         {/* end left sidebar column */}
 
-                        {/* Right Main Panel: Audit & Results */}
-                        <div>
+                        {/* Right Main Panel: Audit Workspace */}
+                        <div className="git-main-panel">
 
-                        {!selectedAnalysis ? (
+                        {isScraping ? (
+                            <ProgressTimeline 
+                                currentStage={scrapeStage}
+                                filesAnalyzed={filesCount}
+                                currentFile={activeFile}
+                                currentFolder={activeFolder}
+                                repoName={analyzingRepo || repoUrl || "GitHub Repository"}
+                            />
+                        ) : !selectedAnalysis ? (
                             <div className="git-card" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "380px", textAlign: "center", padding: "2rem" }}>
                                 <div>
                                     <span style={{ fontSize: "3rem" }}>🚀</span>
@@ -484,155 +478,81 @@ const GithubDashboard = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="dashboard-content">
-                                {/* Section A: Project Snapshot & Launch Interview */}
-                                <div className="git-card git-card__highlight mastery-overview-card">
-                                    {currentDashboard ? (
-                                        <div className="mastery-score-dial">
-                                            <div className="dial-svg">
-                                                <svg width="180" height="180" viewBox="0 0 100 100">
-                                                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
-                                                    <circle 
-                                                        cx="50" 
-                                                        cy="50" 
-                                                        r="40" 
-                                                        fill="transparent" 
-                                                        stroke="#d20d3b" 
-                                                        strokeWidth="6" 
-                                                        strokeDasharray={`${currentDashboard.projectMasteryScore * 2.51} 251`}
-                                                        strokeLinecap="round"
-                                                        transform="rotate(-90 50 50)"
-                                                    />
-                                                </svg>
-                                                <div className="dial-score-text">
-                                                    <span className="num">{currentDashboard.projectMasteryScore}%</span>
-                                                    <span className="label">Overall Score</span>
-                                                </div>
+                            <div className="git-dashboard-main-content">
+                                {/* Section A: 2-Column Responsive Repository Introduction Hero Card */}
+                                <div className="git-card repo-hero-card">
+                                    {/* Left Column (~70%): Repo Title, GitHub Link, 3-Line Summary */}
+                                    <div className="repo-hero-card__left">
+                                        <div className="repo-hero-card__header">
+                                            <div className="repo-title-group">
+                                                <span className="repo-icon">📁</span>
+                                                <h3>{selectedAnalysis.repoName}</h3>
                                             </div>
+                                            {selectedAnalysis.repoUrl && (
+                                                <a href={selectedAnalysis.repoUrl} target="_blank" rel="noreferrer" className="repo-url-link">
+                                                    🔗 GitHub Repo
+                                                </a>
+                                            )}
                                         </div>
-                                    ) : (
-                                        <div className="mastery-score-dial">
-                                            <div className="dial-svg">
-                                                <svg width="180" height="180" viewBox="0 0 100 100">
-                                                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
-                                                </svg>
-                                                <div className="dial-score-text">
-                                                    <span className="num">--</span>
-                                                    <span className="label">No Score</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                        <p className="repo-hero-card__summary">{selectedAnalysis.summary}</p>
+                                    </div>
 
-                                    <div className="mastery-details">
-                                        <h3>{selectedAnalysis.repoName}</h3>
-                                        <a href={selectedAnalysis.repoUrl} target="_blank" rel="noreferrer" className="repo-url-link">
-                                            🔗 {selectedAnalysis.repoUrl}
-                                        </a>
-                                        <p>{selectedAnalysis.summary}</p>
-                                        
-                                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "1rem", marginTop: "1rem" }}>
-                                            <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                                                <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Defense Depth</span>
-                                                <select 
-                                                    value={interviewLength} 
-                                                    onChange={(e) => setInterviewLength(e.target.value)}
-                                                    style={{
-                                                        background: "#151515",
-                                                        border: "1px solid rgba(255,255,255,0.1)",
-                                                        color: "#ffffff",
-                                                        padding: "0.4rem 0.8rem",
-                                                        borderRadius: "4px",
-                                                        fontSize: "0.85rem",
-                                                        outline: "none"
-                                                    }}
-                                                >
-                                                    <option value="Quick">Quick Defense (5 Qs)</option>
-                                                    <option value="Standard">Standard Defense (10 Qs)</option>
-                                                    <option value="Deep">Deep Defense (15 Qs)</option>
-                                                </select>
-                                            </div>
+                                    {/* Right Column (~30%): Defense Controls (Vertically Aligned) */}
+                                    <div className="repo-hero-card__right">
+                                        <div className="defense-controls-wrap">
+                                            <span className="depth-label">DEFENSE DEPTH</span>
+                                            <select 
+                                                value={interviewLength} 
+                                                onChange={(e) => setInterviewLength(e.target.value)}
+                                                className="depth-select"
+                                            >
+                                                <option value="Quick">Quick Defense (5 Qs)</option>
+                                                <option value="Standard">Standard Defense (10 Qs)</option>
+                                                <option value="Deep">Deep Defense (15 Qs)</option>
+                                            </select>
 
-                                            <button className="cta-btn" onClick={handleStartInterview} disabled={loading} style={{ background: "linear-gradient(135deg, #4f46e5, #3b82f6)", border: "none" }}>
+                                            <button className="cta-btn" onClick={handleStartInterview} disabled={loading}>
                                                 <Shield size={16} /> Start Defense Mock
                                             </button>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Section B: Category Scorebars (If result exists) */}
-                                {currentDashboard && (
-                                    <div className="git-card">
-                                        <h2>Mastery Breakdown</h2>
-                                        <div className="scores-grid">
-                                            <div className="score-bar-card">
-                                                <span className="score-title">Architecture</span>
-                                                <span className="score-value">{currentDashboard.architectureScore}%</span>
-                                                <div className="bar-track">
-                                                    <div className="bar-fill" style={{ width: `${currentDashboard.architectureScore}%` }}></div>
-                                                </div>
-                                            </div>
-                                            <div className="score-bar-card">
-                                                <span className="score-title">Security</span>
-                                                <span className="score-value">{currentDashboard.securityScore}%</span>
-                                                <div className="bar-track">
-                                                    <div className="bar-fill" style={{ width: `${currentDashboard.securityScore}%` }}></div>
-                                                </div>
-                                            </div>
-                                            <div className="score-bar-card">
-                                                <span className="score-title">Database</span>
-                                                <span className="score-value">{currentDashboard.databaseScore}%</span>
-                                                <div className="bar-track">
-                                                    <div className="bar-fill" style={{ width: `${currentDashboard.databaseScore}%` }}></div>
-                                                </div>
-                                            </div>
-                                            <div className="score-bar-card">
-                                                <span className="score-title">API Design</span>
-                                                <span className="score-value">{currentDashboard.apiDesignScore}%</span>
-                                                <div className="bar-track">
-                                                    <div className="bar-fill" style={{ width: `${currentDashboard.apiDesignScore}%` }}></div>
-                                                </div>
-                                            </div>
-                                            <div className="score-bar-card">
-                                                <span className="score-title">Deployment</span>
-                                                <span className="score-value">{currentDashboard.deploymentScore}%</span>
-                                                <div className="bar-track">
-                                                    <div className="bar-fill" style={{ width: `${currentDashboard.deploymentScore}%` }}></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Section C: Project Audit tabs */}
+                                {/* Section B: Project Audit Tabs (GitHub / VS Code Style) */}
                                 <div className="git-card">
-                                    <div className="audit-tabs">
+                                    <div className="audit-tabs vscode-tabs" role="tablist">
                                         <button 
                                             className={`tab-btn ${activeTab === 'snapshot' ? 'tab-btn--active' : ''}`}
                                             onClick={() => setActiveTab('snapshot')}
+                                            role="tab"
+                                            aria-selected={activeTab === 'snapshot'}
                                         >
-                                            Project Snapshot
+                                            Overview
                                         </button>
                                         <button 
                                             className={`tab-btn ${activeTab === 'health' ? 'tab-btn--active' : ''}`}
                                             onClick={() => setActiveTab('health')}
+                                            role="tab"
+                                            aria-selected={activeTab === 'health'}
                                         >
                                             Codebase Health
                                         </button>
                                         <button 
                                             className={`tab-btn ${activeTab === 'structure' ? 'tab-btn--active' : ''}`}
                                             onClick={() => setActiveTab('structure')}
+                                            role="tab"
+                                            aria-selected={activeTab === 'structure'}
                                         >
-                                            Knowledge Graph
+                                            Architecture & Graph
                                         </button>
-                                        {currentDashboard && (
-                                            <button 
-                                                className={`tab-btn ${activeTab === 'trends' ? 'tab-btn--active' : ''}`}
-                                                onClick={() => setActiveTab('trends')}
-                                            >
-                                                Strengths & Improvements
-                                            </button>
-                                        )}
+                                        <button 
+                                            className={`tab-btn ${activeTab === 'trends' ? 'tab-btn--active' : ''}`}
+                                            onClick={() => setActiveTab('trends')}
+                                            role="tab"
+                                            aria-selected={activeTab === 'trends'}
+                                        >
+                                            Interview Topics
+                                        </button>
                                     </div>
 
                                     {/* Tab 1: Project Snapshot */}

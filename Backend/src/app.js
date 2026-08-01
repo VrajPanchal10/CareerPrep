@@ -54,6 +54,8 @@ const aiRouter = require("./routes/ai.routes")
 const systemRouter = require("./routes/system.routes")
 const settingsRouter = require("./routes/settings.routes")
 
+const pkg = require("../package.json");
+
 /* using all the routes here */
 app.use("/api/auth", authRouter)
 app.use("/api/interview", interviewRouter)
@@ -64,6 +66,31 @@ app.use("/api/github-oauth", githubOAuthRouter)
 app.use("/api/ai", aiRouter)
 app.use("/api/system", systemRouter)
 app.use("/api/settings", settingsRouter)
+
+// Root API Welcome Endpoint
+app.get("/", (req, res) => {
+    res.status(200).json({
+        success: true,
+        name: "CareerPrep Backend API",
+        description: "AI-powered placement readiness platform backend.",
+        version: pkg.version || "1.0.0",
+        environment: process.env.NODE_ENV || "development",
+        status: "Online",
+        timestamp: new Date().toISOString(),
+        documentation: "https://github.com/VrajPanchal10/Ai-resume-analyzer",
+        availableRoutes: {
+            "Authentication": "/api/auth",
+            "ATS Resume Analysis": "/api/ats",
+            "Mock Interview": "/api/interview",
+            "Voice Session": "/api/voice-session",
+            "GitHub Project Defense": "/api/github-defense",
+            "GitHub OAuth": "/api/github-oauth",
+            "AI Gateway": "/api/ai",
+            "System Diagnostics": "/api/system",
+            "Settings": "/api/settings"
+        }
+    });
+});
 
 // Print registered routes on startup for audit
 console.log("=== REGISTERED EXPRESS ROUTES ===");

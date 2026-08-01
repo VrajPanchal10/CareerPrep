@@ -77,7 +77,7 @@ app.get("/", (req, res) => {
         environment: process.env.NODE_ENV || "development",
         status: "Online",
         timestamp: new Date().toISOString(),
-        documentation: "https://github.com/VrajPanchal10/Ai-resume-analyzer",
+        documentation: "https://github.com/VrajPanchal10/CareerPrep",
         availableRoutes: {
             "Authentication": "/api/auth",
             "ATS Resume Analysis": "/api/ats",

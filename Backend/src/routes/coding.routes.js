@@ -1,4 +1,0 @@
-// Removed: Deprecated coding routes
-const express = require("express");
-const router = express.Router();
-module.exports = router;

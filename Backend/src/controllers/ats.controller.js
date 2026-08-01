@@ -203,8 +203,7 @@ async function getResumeFileController(req, res, next) {
 async function deleteAtsReportController(req, res, next) {
     try {
         const { atsId } = req.params;
-        console.log(`[DELETE ROUTE MATCHED] Executing delete for atsId: ${atsId}, userId: ${req.user?.id}`);
-        logger.info(`[DELETE ROUTE MATCHED] Executing delete for atsId: ${atsId}, userId: ${req.user?.id}`);
+        logger.debug(`[DELETE ROUTE MATCHED] Executing delete for atsId: ${atsId}, userId: ${req.user?.id}`);
 
         if (!atsId || !mongoose.Types.ObjectId.isValid(atsId)) {
             return res.status(400).json({

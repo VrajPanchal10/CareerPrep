@@ -202,12 +202,11 @@ async function exportPerformancePdfController(req, res, next) {
         const { reportId } = req.params;
         const mongoose = require("mongoose");
 
-        console.log(`[PDF DIAGNOSTIC] 1. Controller entered: exportPerformancePdfController for reportId: ${reportId}, userId: ${req.user?.id}`);
-        logger.info(`[PDF DIAGNOSTIC] 1. Controller entered for reportId: ${reportId}`);
+        logger.debug(`[PDF DIAGNOSTIC] Controller entered for reportId: ${reportId}, userId: ${req.user?.id}`);
         
         // 1. Validate ObjectId format
         if (!mongoose.Types.ObjectId.isValid(reportId)) {
-            console.warn(`[PDF DIAGNOSTIC REJECTED] Invalid ObjectId format: ${reportId}`);
+            logger.warn(`[PDF DIAGNOSTIC REJECTED] Invalid ObjectId format: ${reportId}`);
             return res.status(400).json({
                 success: false,
                 message: "Invalid Interview Report ID format."
@@ -217,14 +216,14 @@ async function exportPerformancePdfController(req, res, next) {
         // 2. Validate existence and ownership before launching Puppeteer
         const report = await interviewReportModel.findOne({ _id: reportId, user: req.user.id });
         if (!report) {
-            console.warn(`[PDF DIAGNOSTIC REJECTED] Report not found or unauthorized for reportId: ${reportId}`);
+            logger.warn(`[PDF DIAGNOSTIC REJECTED] Report not found or unauthorized for reportId: ${reportId}`);
             return res.status(404).json({
                 success: false,
                 message: "Interview Plan report not found or unauthorized access."
             });
         }
 
-        console.log(`[PDF DIAGNOSTIC] 2. Database query completed. Found report titled: "${report.title || 'Untitled'}"`);
+        logger.debug(`[PDF DIAGNOSTIC] Database query completed. Found report titled: "${report.title || 'Untitled'}"`);
 
         let pdfBuffer;
         try {
@@ -233,11 +232,6 @@ async function exportPerformancePdfController(req, res, next) {
                 userId: req.user.id
             });
         } catch (error) {
-            console.error("===== PDF GENERATION ERROR =====");
-            console.error("Failure Step: generatePerformancePdf call");
-            console.error("Exact Exception:", error.message);
-            console.error(error.stack);
-            console.error("=================================");
             logger.error("Error in generatePerformancePdf call:", error);
             return res.status(500).json({
                 success: false,
@@ -251,14 +245,14 @@ async function exportPerformancePdfController(req, res, next) {
         }
 
         if (!pdfBuffer || pdfBuffer.length === 0) {
-            console.error("[PDF DIAGNOSTIC ERROR] PDF buffer is empty.");
+            logger.error("[PDF DIAGNOSTIC ERROR] PDF buffer is empty.");
             return res.status(500).json({
                 success: false,
                 message: "Performance PDF generation produced an empty file."
             });
         }
 
-        console.log(`[PDF DIAGNOSTIC] 6. Returning PDF binary stream response (${pdfBuffer.length} bytes).`);
+        logger.debug(`[PDF DIAGNOSTIC] Returning PDF binary stream response (${pdfBuffer.length} bytes).`);
 
         res.set({
             "Content-Type": "application/pdf",
@@ -268,10 +262,6 @@ async function exportPerformancePdfController(req, res, next) {
 
         return res.send(pdfBuffer);
     } catch (error) {
-        console.error("===== PDF CONTROLLER UNHANDLED ERROR =====");
-        console.error(error);
-        console.error(error.stack);
-        console.error("==========================================");
         logger.error("Error in exportPerformancePdfController:", error);
         next(error);
     }
@@ -283,8 +273,7 @@ async function exportPerformancePdfController(req, res, next) {
 async function deleteInterviewReportController(req, res, next) {
     try {
         const { interviewId } = req.params;
-        console.log(`[DELETE ROUTE MATCHED] Executing delete for reportId: ${interviewId}, userId: ${req.user?.id}`);
-        logger.info(`[DELETE ROUTE MATCHED] Executing delete for reportId: ${interviewId}, userId: ${req.user?.id}`);
+        logger.debug(`[DELETE ROUTE MATCHED] Executing delete for reportId: ${interviewId}, userId: ${req.user?.id}`);
 
         if (!interviewId || !mongoose.Types.ObjectId.isValid(interviewId)) {
             return res.status(400).json({

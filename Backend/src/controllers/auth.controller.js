@@ -97,7 +97,8 @@ async function registerUserController(req, res) {
     res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 24 * 60 * 60 * 1000
     })
 
     const csrfToken = crypto.randomBytes(32).toString("hex");
@@ -219,10 +220,8 @@ async function loginUserController(req, res) {
     const cookieOpts = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
-    }
-    if (rememberMe) {
-        cookieOpts.maxAge = 7 * 24 * 60 * 60 * 1000;
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
     }
     res.cookie("token", token, cookieOpts)
 
@@ -345,52 +344,56 @@ async function refreshTokenController(req, res) {
     const token = req.cookies?.token
     if (!token) {
         return res.status(401).json({
+            success: false,
             message: "No token to refresh."
         })
     }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET, { ignoreExpiration: true })
+        if (!decoded || !decoded.id || !decoded.sessionId) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid token payload structure."
+            })
+        }
         
         const isTokenBlacklisted = await tokenBlacklistModel.findOne({ token })
         if (isTokenBlacklisted) {
             return res.status(401).json({
+                success: false,
                 message: "Token has been revoked or blacklisted."
             })
         }
 
         const user = await userModel.findById(decoded.id)
-        if (!user) {
+        if (!user || user.isBlocked) {
             return res.status(401).json({
+                success: false,
                 message: "User session is invalid or user does not exist."
             })
         }
 
-        // Validate sessionId exists in current sessions list
-        const activeSession = user.refreshSessions.find(s => s.token === decoded.sessionId);
+        // Validate sessionId exists in user's refreshSessions array
+        const activeSession = (user.refreshSessions || []).find(s => s.sessionId === decoded.sessionId);
         if (!activeSession) {
             return res.status(401).json({
+                success: false,
                 message: "Invalid or revoked device session."
             });
         }
 
-        // Token Rotation: invalidate the old sessionId and sign a new one
-        const newSessionId = crypto.randomUUID();
-        user.refreshSessions = user.refreshSessions.filter(s => s.token !== decoded.sessionId);
-        user.refreshSessions.push({
-            token: newSessionId,
-            deviceInfo: req.headers["user-agent"] || "Generic Web Client",
-            lastActivity: new Date()
-        });
-        
+        // Update activity timestamp on current session
+        const now = new Date();
+        activeSession.lastActivity = now;
         if (user.sessionMetadata) {
-            user.sessionMetadata.lastActivity = new Date();
+            user.sessionMetadata.lastActivity = now;
         }
         await user.save();
 
         const rememberMe = !!decoded.rememberMe
         const newToken = jwt.sign(
-            { id: user._id, username: user.username, sessionId: newSessionId, rememberMe },
+            { id: user._id, username: user.username, sessionId: decoded.sessionId, rememberMe },
             process.env.JWT_SECRET,
             { expiresIn: rememberMe ? "7d" : "1d" }
         )
@@ -398,24 +401,20 @@ async function refreshTokenController(req, res) {
         const refreshCookieOpts = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
-        }
-        if (rememberMe) {
-            refreshCookieOpts.maxAge = 7 * 24 * 60 * 60 * 1000;
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
         }
         res.cookie("token", newToken, refreshCookieOpts)
 
         const csrfToken = crypto.randomBytes(32).toString("hex");
         const csrfCookieOpts = {
             secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
-        }
-        if (rememberMe) {
-            csrfCookieOpts.maxAge = 7 * 24 * 60 * 60 * 1000;
-        } else {
-            csrfCookieOpts.maxAge = 24 * 60 * 60 * 1000;
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
         }
         res.cookie("csrfToken", csrfToken, csrfCookieOpts)
+
+        logger.info("Session token refreshed", { userId: user._id, username: user.username })
 
         res.status(200).json({
             success: true,
@@ -432,6 +431,7 @@ async function refreshTokenController(req, res) {
     } catch (err) {
         logger.error("Error refreshing token:", err)
         return res.status(401).json({
+            success: false,
             message: "Invalid token."
         })
     }
@@ -800,11 +800,9 @@ async function verifyMfaController(req, res) {
         const cookieOpts = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
         };
-        if (rememberMe) {
-            cookieOpts.maxAge = 7 * 24 * 60 * 60 * 1000;
-        }
         res.cookie("token", token, cookieOpts);
 
         const csrfToken = crypto.randomBytes(32).toString("hex");

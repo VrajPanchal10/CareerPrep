@@ -266,7 +266,7 @@ const PdfPreview = ({ reportId, onClose, onRegenerate }) => {
                                     </div>
                                     <div className="round-badge round-badge--ready">
                                         <span className="badge-check">✔</span>
-                                        <span>DSA & Coding</span>
+                                        <span>DSA & Problem Solving</span>
                                         <span className="badge-score">82%</span>
                                     </div>
                                     <div className="round-badge round-badge--ready">

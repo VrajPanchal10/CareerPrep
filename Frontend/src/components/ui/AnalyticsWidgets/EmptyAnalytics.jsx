@@ -6,7 +6,7 @@ import EmptyState from "../EmptyState/EmptyState";
  */
 const EmptyAnalytics = ({ 
     title = "No analytics data compiled yet.", 
-    description = "Complete practice assessments, resume audits, or coding workspace sessions to aggregate performance trends.",
+    description = "Complete practice assessments, resume audits, or voice interview sessions to aggregate performance trends.",
     primaryAction
 }) => {
     return (

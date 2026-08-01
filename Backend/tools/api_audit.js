@@ -35,7 +35,7 @@ async function run() {
     let interviewId = '';
     let atsId = '';
     let voiceSessionId = '';
-    let codeQuestionId = '';
+
 
     // ── Login ─────────────────────────────────────────────────────────────
     console.log('\n🔐 AUTH');
@@ -139,56 +139,6 @@ async function run() {
         report(`GET /api/ats/report/:atsId`, 'SKIP', `No historical ATS report to query`);
     }
 
-    // ── Coding Questions ──────────────────────────────────────────────────
-    console.log('\n💻 CODING WORKSPACE');
-    const qRes = await makeRequest({ ...BASE, path: '/api/coding/questions', method: 'GET',
-        headers: authHeaders() });
-    try {
-        const qData = JSON.parse(qRes.data);
-        if (qRes.status === 200 && qData.success) {
-            const count = qData.questions?.length || 0;
-            codeQuestionId = qData.questions?.[0]?._id;
-            report('GET /api/coding/questions', 'PASS', `${count} questions`);
-        } else {
-            report('GET /api/coding/questions', 'FAIL', qData.message || qRes.status);
-        }
-    } catch(e) { report('GET /api/coding/questions', 'FAIL', `parse error: ${qRes.data.slice(0,100)}`); }
-
-    // ── Coding Submissions ────────────────────────────────────────────────
-    const submRes = await makeRequest({ ...BASE, path: '/api/coding/submissions', method: 'GET',
-        headers: authHeaders() });
-    try {
-        const submData = JSON.parse(submRes.data);
-        if (submRes.status === 200 && submData.success) {
-            report('GET /api/coding/submissions', 'PASS', `${submData.submissions?.length || 0} submissions`);
-        } else {
-            report('GET /api/coding/submissions', 'FAIL', submData.message || submRes.status);
-        }
-    } catch(e) { report('GET /api/coding/submissions', 'FAIL', `parse error`); }
-
-    // ── Coding Progress ───────────────────────────────────────────────────
-    const progRes = await makeRequest({ ...BASE, path: '/api/coding/progress', method: 'GET',
-        headers: authHeaders() });
-    try {
-        const progData = JSON.parse(progRes.data);
-        if (progRes.status === 200 && progData.success) {
-            report('GET /api/coding/progress', 'PASS', `readiness: ${progData.stats?.codingReadinessScore}`);
-        } else {
-            report('GET /api/coding/progress', 'FAIL', progData.message || progRes.status);
-        }
-    } catch(e) { report('GET /api/coding/progress', 'FAIL', `parse error`); }
-
-    // ── Judge0 Health ─────────────────────────────────────────────────────
-    const j0Res = await makeRequest({ ...BASE, path: '/api/coding/health', method: 'GET',
-        headers: authHeaders() });
-    try {
-        const j0Data = JSON.parse(j0Res.data);
-        if (j0Res.status === 200) {
-            report('GET /api/coding/health (Judge0)', 'PASS', JSON.stringify(j0Data).slice(0,80));
-        } else {
-            report('GET /api/coding/health (Judge0)', 'FAIL', j0Data.message || j0Res.status);
-        }
-    } catch(e) { report('GET /api/coding/health (Judge0)', 'FAIL', `status: ${j0Res.status}`); }
 
     // ── Voice Sessions ────────────────────────────────────────────────────
     console.log('\n🎤 VOICE INTERVIEW');

@@ -389,7 +389,6 @@ const Settings = () => {
                                 {renderProviderStatus("Gemini AI", health.gemini, "LLM Orchestrator")}
                                 {renderProviderStatus("Groq AI", health.groq, "Inference Acceleration")}
                                 {renderProviderStatus("OpenRouter AI", health.openrouter, "Fallback Model Gateway")}
-                                {renderProviderStatus("Judge0 Engine", health.judge0, "Code Sandbox Execution")}
                                 {renderProviderStatus("GitHub API", health.github, "Project Analysis Metadata")}
                                 {renderProviderStatus("Sarvam Audio", health.sarvam, "STT / TTS Synthesis")}
                                 {renderProviderStatus("SMTP Gateway", health.smtp, "Email Notification Dispatcher")}

@@ -4,7 +4,6 @@ const gateway = require("./aiGateway.service");
 
 // Import centralized prompt templates
 const atsPrompts = require("../prompts/ats.prompt");
-const codingPrompts = require("../prompts/coding.prompt");
 const interviewPrompts = require("../prompts/interview.prompt");
 const pdfPrompts = require("../prompts/pdf.prompt");
 
@@ -93,26 +92,6 @@ const answerEvaluationSchema = z.object({
     }).describe("AI feedback summarizing pros and cons of the answer")
 });
 
-const codingQuestionSchema = z.object({
-    title: z.string().describe("A concise and clear title for the coding question (e.g. 'Two Sum', 'Reverse Linked List')"),
-    description: z.string().describe("Detailed markdown description of the coding challenge, including problem statement and explanation"),
-    difficulty: z.enum(["Easy", "Medium", "Hard"]).describe("The difficulty level of the coding question"),
-    topic: z.string().describe("The main category or topic of the question (e.g. 'Arrays', 'Dynamic Programming')"),
-    sampleInput: z.string().describe("Sample inputs for the code test cases (e.g., 'nums = [2,7,11,15], target = 9')"),
-    sampleOutput: z.string().describe("Expected output matching the sample inputs (e.g., '[0,1]')"),
-    constraints: z.array(z.string()).describe("A list of constraints on the inputs (e.g., '1 <= nums.length <= 10^4')"),
-    hints: z.array(z.string()).describe("A list of progressive hints to guide the user towards the solution")
-});
-
-const codeEvaluationSchema = z.object({
-    overallScore: z.number().min(0).max(100).describe("Weighted aggregate score between 0 and 100 based on correctness, readability, complexities, logic, structure, and edge cases"),
-    correctnessScore: z.number().min(0).max(100).describe("Score out of 100 for theoretical correctness and logic alignment"),
-    readabilityScore: z.number().min(0).max(100).describe("Score out of 100 for code structure, variable naming, formatting, and cleanliness"),
-    complexityScore: z.number().min(0).max(100).describe("Score out of 100 for optimal time and space complexity efficiency"),
-    strengths: z.array(z.string()).describe("List of 2-3 key strengths or positive attributes of the submitted code"),
-    weaknesses: z.array(z.string()).describe("List of 2-3 gaps, inefficiencies, or errors identified in the code"),
-    suggestions: z.array(z.string()).describe("Actionable tips or alternatives to improve the code's correctness, structure, or complexity")
-});
 
 const voiceAnswerEvaluationSchema = z.object({
     overallScore: z.number().min(0).max(100).describe("Weighted aggregate score between 0 and 100 assessing the verbal answer quality"),
@@ -195,31 +174,6 @@ async function evaluateUserAnswer({ question, intention, modelAnswer, userAnswer
     return response.output;
 }
 
-/**
- * Generate customized programming question.
- */
-async function generateAiCodingQuestion({ topic, difficulty }) {
-    const prompt = codingPrompts.generateCodingQuestionPrompt({ topic, difficulty });
-    // Route coding workspaces generation to Groq
-    const response = await gateway.routeTask("codingExplanations", { prompt }, {
-        jsonMode: true,
-        responseSchema: codingQuestionSchema.toJSONSchema()
-    });
-    return response.output;
-}
-
-/**
- * Evaluate programming code submission.
- */
-async function evaluateCodeSubmission({ question, language, code }) {
-    const prompt = codingPrompts.evaluateCodeSubmissionPrompt({ question, language, code });
-    // Route semantic code evaluation to Groq
-    const response = await gateway.routeTask("semanticCodeEvaluation", { prompt }, {
-        jsonMode: true,
-        responseSchema: codeEvaluationSchema.toJSONSchema()
-    });
-    return response.output;
-}
 
 /**
  * Evaluate Live Voice mock interview answer.
@@ -262,8 +216,6 @@ module.exports = {
     generateResumePdf,
     generateAtsReport,
     evaluateUserAnswer,
-    generateAiCodingQuestion,
-    evaluateCodeSubmission,
     evaluateVoiceAnswer,
     generateAiFollowUpQuestion,
     generateVoiceSessionSummaryRecommendation

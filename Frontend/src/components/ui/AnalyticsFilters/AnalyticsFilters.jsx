@@ -90,7 +90,6 @@ const AnalyticsFilters = ({ onFilterChange, repositories = [] }) => {
                         <option value="ats">ATS Resume Audits</option>
                         <option value="interview">Interview Plans</option>
                         <option value="voice">Verbal Mocks</option>
-                        <option value="code">Coding Challenges</option>
                         <option value="github">Project Defenses</option>
                     </select>
                 </div>

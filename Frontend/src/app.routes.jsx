@@ -16,8 +16,6 @@ const Interview = lazy(() => import("./features/interview/pages/Interview"));
 const AtsHome = lazy(() => import("./features/ats/pages/AtsHome"));
 const AtsDashboard = lazy(() => import("./features/ats/pages/AtsDashboard"));
 const PerformanceDashboard = lazy(() => import("./features/interview/pages/PerformanceDashboard"));
-const CodeWorkspace = lazy(() => import("./features/code/pages/CodeWorkspace"));
-const CodingDashboard = lazy(() => import("./features/code/pages/CodingDashboard"));
 const VoiceDashboard = lazy(() => import("./features/voiceInterview/pages/VoiceDashboard"));
 const VoiceInterviewRoom = lazy(() => import("./features/voiceInterview/pages/VoiceInterviewRoom"));
 const GithubDashboard = lazy(() => import("./features/githubDefense/pages/GithubDashboard"));
@@ -113,14 +111,6 @@ export const router = createBrowserRouter([
             {
                 path: "/ats/:atsId",
                 element: <Protected><AtsDashboard /></Protected>
-            },
-            {
-                path: "/code",
-                element: <Protected><CodeWorkspace /></Protected>
-            },
-            {
-                path: "/code/dashboard",
-                element: <Protected><CodingDashboard /></Protected>
             },
             {
                 path: "/voice-interview",

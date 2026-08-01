@@ -11,7 +11,7 @@ const getAdviceForWeakness = (weakness) => {
         return "Security scores are lagging. Recommended Action: Review OWASP Top 10 vulnerabilities and take a focused Project Defense session.";
     }
     if (topic.includes("algorithm") || topic.includes("data structure")) {
-        return "Algorithms need polishing. Recommended Action: Practice 2 Medium-level LeetCode-style questions in the Coding Workspace.";
+        return "Algorithms need polishing. Recommended Action: Review core data structures and algorithmic complexity concepts.";
     }
     if (topic.includes("communication")) {
         return "Communication clarity can be improved. Recommended Action: Run a Verbal Mock Interview using the STAR method for behavioral questions.";

@@ -91,7 +91,7 @@ function createMimeMessage({ from, replyTo, to, subject, htmlBody, textBody }) {
 function generatePasswordResetTemplates(username, resetUrl) {
     const year = new Date().getFullYear();
 
-    const textBody = `Reset Your CareerPrep Password\n\nHello ${username},\n\nWe received a request to reset your CareerPrep password.\n\nReset your password by clicking or copying this link:\n${resetUrl}\n\nThis link expires in 60 minutes.\n\nIf you didn't request this, you can safely ignore this email. Your password will remain unchanged.\n\nSecurity Notice: For your security, never share this link with anyone.\n\n--\nCareerPrep Team\nAI Resume Analyzer | Interview Coach | Coding Workspace`;
+    const textBody = `Reset Your CareerPrep Password\n\nHello ${username},\n\nWe received a request to reset your CareerPrep password.\n\nReset your password by clicking or copying this link:\n${resetUrl}\n\nThis link expires in 60 minutes.\n\nIf you didn't request this, you can safely ignore this email. Your password will remain unchanged.\n\nSecurity Notice: For your security, never share this link with anyone.\n\n--\nCareerPrep Team\nAI Resume Analyzer | Interview Coach`;
 
     const htmlBody = `
 <!DOCTYPE html>
@@ -156,7 +156,7 @@ function generatePasswordResetTemplates(username, resetUrl) {
                 </div>
             </div>
             <div class="footer">
-                <p class="footer-ecosystem">CareerPrep Ecosystem &bull; AI Resume Analyzer &bull; Interview Coach &bull; Coding Workspace</p>
+                <p class="footer-ecosystem">CareerPrep Ecosystem &bull; AI Resume Analyzer &bull; Interview Coach</p>
                 <p class="footer-copyright">&copy; ${year} CareerPrep. All rights reserved.</p>
             </div>
         </div>
@@ -237,7 +237,7 @@ function generatePasswordChangedTemplates(username = "User", details = {}) {
                 </div>
             </div>
             <div class="footer">
-                <p class="footer-ecosystem">CareerPrep Ecosystem &bull; AI Resume Analyzer &bull; Interview Coach &bull; Coding Workspace</p>
+                <p class="footer-ecosystem">CareerPrep Ecosystem &bull; AI Resume Analyzer &bull; Interview Coach</p>
                 <p class="footer-copyright">&copy; ${year} CareerPrep. All rights reserved.</p>
             </div>
         </div>

@@ -31,7 +31,6 @@ const GlobalAnalytics = () => {
     // Segment attempts for targeted comparisons
     const filteredAts = useMemo(() => attempts.filter(a => a.type === "ats"), [attempts]);
     const filteredInterviews = useMemo(() => attempts.filter(a => a.type === "interview"), [attempts]);
-    const filteredCoding = useMemo(() => attempts.filter(a => a.type === "code"), [attempts]);
     const filteredVoice = useMemo(() => attempts.filter(a => a.type === "voice"), [attempts]);
     const filteredGithub = useMemo(() => attempts.filter(a => a.type === "github"), [attempts]);
 
@@ -200,17 +199,6 @@ const GlobalAnalytics = () => {
                             </div>
                         </div>
 
-                        {/* Bottom Full-Width Row: Coding Challenges Progression */}
-                        <div className="grid-full-width">
-                            <ErrorBoundary>
-                                <ComparisonCard 
-                                    attempts={filteredCoding} 
-                                    title="Coding Challenges Performance Progression" 
-                                    actionUrl="/coding"
-                                    actionText="Start Coding Challenge"
-                                />
-                            </ErrorBoundary>
-                        </div>
                     </div>
                 )}
             </main>

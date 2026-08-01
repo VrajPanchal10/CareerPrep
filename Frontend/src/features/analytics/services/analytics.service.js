@@ -34,15 +34,6 @@ export async function fetchInterviewSessions(interviewId) {
     }
 }
 
-export async function fetchCodingProgress() {
-    try {
-        const response = await apiClient.get("/api/code/progress");
-        return response.data?.success ? response.data.stats || null : null;
-    } catch (err) {
-        console.error("fetchCodingProgress failed:", err);
-        return null;
-    }
-}
 
 export async function fetchVoiceProgress() {
     try {

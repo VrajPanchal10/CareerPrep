@@ -25,7 +25,6 @@ const app = require("./src/app");
 const connectToDB = require("./src/config/database");
 const mongoose = require("mongoose");
 const { checkGmailConnection } = require("./src/services/auth/email.service");
-const judge0Provider = require("./src/services/execution/judge0.provider");
 
 let serverInstance = null;
 
@@ -103,7 +102,6 @@ Port        : ${port}
 
 Database    : ${dbHealthy ? "Connected ✅" : "Failed ❌"}
 
-Piston      : Configured ✅
 Gemini      : API Key Loaded ✅
 Groq        : API Key Loaded ✅
 Sarvam      : API Key Loaded ✅
@@ -123,10 +121,7 @@ async function startServer() {
         logger.error("Startup database connection check failed", err);
     }
 
-    // Sync Piston runtimes on startup
-    judge0Provider.syncRuntimes().catch(err => {
-        logger.error("[Server] Failed initial Judge0 runtime sync:", err.message);
-    });
+
 
     const gmailStatus = await checkGmailConnection();
 

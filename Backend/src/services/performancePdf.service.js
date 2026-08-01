@@ -3,7 +3,6 @@ const interviewSessionModel = require("../models/interviewSession.model");
 const atsReportModel = require("../models/atsReport.model");
 const userModel = require("../models/user.model");
 const puppeteer = require("puppeteer");
-const codingSubmissionModel = require("../models/codingSubmission.model");
 const repositoryInterviewResultModel = require("../models/repositoryInterviewResult.model");
 
 /**
@@ -14,78 +13,7 @@ async function generatePerformancePdf({ reportId, userId }) {
     const user = await userModel.findById(userId);
     const report = await interviewReportModel.findById(reportId);
     
-    // Fetch coding submissions to compile Coding Performance Summary page
-    const codingSubmissions = await codingSubmissionModel.find({ userId }).populate("questionId");
-    
-    let codingReadinessScore = 0;
-    let topLanguagesStr = "N/A";
-    let strongTopicsStr = "None logged";
-    let weakTopicsStr = "None logged";
-    let hasCodingStats = false;
 
-    if (codingSubmissions && codingSubmissions.length > 0) {
-        hasCodingStats = true;
-        
-        // 1. Calculate Coding Readiness Score (average of maximum scores on unique questions)
-        const questionBestScores = {};
-        const langCounts = {};
-        
-        codingSubmissions.forEach(sub => {
-            if (!sub || !sub.questionId || !sub.questionId._id) return;
-            const qId = sub.questionId._id.toString();
-            const topic = sub.questionId.topic || "General";
-            const score = typeof sub.overallScore === "number" ? sub.overallScore : 0;
-            
-            if (!questionBestScores[qId]) {
-                questionBestScores[qId] = { score, topic };
-            } else if (score > questionBestScores[qId].score) {
-                questionBestScores[qId].score = score;
-            }
-            
-            if (sub.language) {
-                const lang = sub.language;
-                langCounts[lang] = (langCounts[lang] || 0) + 1;
-            }
-        });
-
-        const uniqueAttempts = Object.values(questionBestScores);
-        let sumUniqueBest = 0;
-        uniqueAttempts.forEach(attempt => sumUniqueBest += attempt.score);
-        codingReadinessScore = uniqueAttempts.length > 0
-            ? Math.round(sumUniqueBest / uniqueAttempts.length)
-            : 0;
-
-        // 2. Top Languages (sorted by count)
-        const sortedLangs = Object.entries(langCounts)
-            .sort((a, b) => b[1] - a[1])
-            .map(([lang]) => lang.charAt(0).toUpperCase() + lang.slice(1));
-        topLanguagesStr = sortedLangs.slice(0, 3).join(", ") || "None";
-
-        // 3. Strong & Weak Topics (based on unique question average)
-        const topicBestAggregate = {};
-        uniqueAttempts.forEach(attempt => {
-            const topic = attempt.topic;
-            if (!topicBestAggregate[topic]) {
-                topicBestAggregate[topic] = { sum: 0, count: 0 };
-            }
-            topicBestAggregate[topic].sum += attempt.score;
-            topicBestAggregate[topic].count += 1;
-        });
-
-        const strongTopics = [];
-        const weakTopics = [];
-        Object.entries(topicBestAggregate).forEach(([topic, data]) => {
-            const avg = Math.round(data.sum / data.count);
-            if (avg >= 75) {
-                strongTopics.push(`${topic} (${avg}%)`);
-            } else {
-                weakTopics.push(`${topic} (${avg}%)`);
-            }
-        });
-
-        strongTopicsStr = strongTopics.join(", ") || "None";
-        weakTopicsStr = weakTopics.join(", ") || "None";
-    }
     
     if (!report) {
         throw new Error("Interview Report not found.");
@@ -251,11 +179,6 @@ async function generatePerformancePdf({ reportId, userId }) {
         strengthItems,
         weaknessItems,
         roadmapSteps,
-        hasCodingStats,
-        codingReadinessScore,
-        topLanguagesStr,
-        strongTopicsStr,
-        weakTopicsStr,
         repoResult
     });
 

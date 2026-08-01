@@ -100,50 +100,7 @@
     </div>
   </div>
 
-  <!-- PAGE 4: CODING TRIAL (Optional) -->
-  <% if (hasCodingStats) { %>
-    <div class="page">
-      <%- include('partials/header', { title: 'CareerPrep Performance Report' }) %>
-      
-      <div class="section-title">Coding Performance Summary</div>
-      <p class="summary-text" style="margin-bottom: 30px;">
-        Below is the comprehensive evaluation of the candidate's coding interview preparation. Scores are compiled from code challenges completed using the Monaco editor workspace across various technical topics.
-      </p>
 
-      <div class="score-cards-container" style="margin-bottom: 40px;">
-        <div class="score-card">
-          <h3>Coding Readiness Score</h3>
-          <div class="score" style="color: #27ae60;"><%= codingReadinessScore %><span>%</span></div>
-          <div class="status" style="color: #27ae60;">
-            <%= codingReadinessScore >= 80 ? "EXCELLENT READY STATUS" : codingReadinessScore >= 60 ? "MODERATE PRACTICE STATUS" : "UNPREPARED STATUS" %>
-          </div>
-        </div>
-        <div class="score-card">
-          <h3>Top Programming Languages</h3>
-          <div style="font-size: 20px; font-weight: 700; color: #111111; margin-top: 15px; text-transform: uppercase;">
-            <%= topLanguagesStr %>
-          </div>
-          <div class="status">Prepped Languages</div>
-        </div>
-      </div>
-
-      <div class="section-title">Coding Topic Competency Analysis</div>
-      <div class="heatmap-summary">
-        <div class="heatmap-column">
-          <h4 style="color: #27ae60; font-size: 13px; text-transform: uppercase;">✓ Strong Topics (Score &ge; 75%)</h4>
-          <p style="font-size: 13px; color: #555555; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #27ae60;">
-            <%= strongTopicsStr %>
-          </p>
-        </div>
-        <div class="heatmap-column">
-          <h4 style="color: #d35400; font-size: 13px; text-transform: uppercase;">⚠ Needs Review (Score &lt; 75%)</h4>
-          <p style="font-size: 13px; color: #555555; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 6px; border-left: 4px solid #d35400;">
-            <%= weakTopicsStr %>
-          </p>
-        </div>
-      </div>
-    </div>
-  <% } %>
 
   <!-- PAGE 5: GITHUB PROJECT DEFENSE (Optional) -->
   <% if (typeof repoResult !== 'undefined' && repoResult && repoResult.scores && repoResult.feedback && Array.isArray(repoResult.feedback.strengths) && Array.isArray(repoResult.feedback.recommendations)) { %>

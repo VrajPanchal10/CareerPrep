@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middlewares/auth.middleware");
 const gateway = require("../services/aiGateway.service");
-const { checkHealth: checkJudge0Health } = require("../services/execution/judge0.provider");
 const { checkGmailConnection } = require("../services/auth/email.service");
 const { getRateLimit } = require("../services/github/githubApi.service");
 const userModel = require("../models/user.model");
@@ -36,8 +35,7 @@ async function resolveUserToken(userId) {
 router.get("/health", authMiddleware.authUser, async (req, res, next) => {
     try {
         // Execute checks concurrently using Promise.allSettled to prevent one failure from blocking others.
-        const [judge0Result, gmailResult, githubToken] = await Promise.all([
-            checkJudge0Health().catch(err => ({ healthy: false, error: err.message })),
+        const [gmailResult, githubToken] = await Promise.all([
             checkGmailConnection().catch(err => ({ connected: false, error: err.message })),
             resolveUserToken(req.user.id)
         ]);
@@ -88,9 +86,6 @@ router.get("/health", authMiddleware.authUser, async (req, res, next) => {
                 groq: normalizeAiStatus("groq"),
                 openrouter: normalizeAiStatus("openrouter"),
                 sarvam: normalizeAiStatus("sarvam"),
-                judge0: judge0Result.healthy 
-                    ? { status: "healthy", ...judge0Result } 
-                    : { status: "unhealthy", error: judge0Result.error || "Execution engine unreachable" },
                 github: githubStatus,
                 gmail: gmailResult.connected 
                     ? { status: "healthy", email: gmailResult.email } 

@@ -9,7 +9,7 @@ class DevLogger {
         const logEntry = {
             id: Date.now() + Math.random().toString(),
             timestamp: new Date().toLocaleTimeString(),
-            category, // "Resume Parsing", "ATS Analysis", "Repository Analysis", "Voice Interview", "Coding Evaluation"
+            category, // "Resume Parsing", "ATS Analysis", "Repository Analysis", "Voice Interview"
             details: typeof details === "object" ? JSON.stringify(details, null, 2) : String(details)
         };
         DevLogger.logs.push(logEntry);

@@ -65,12 +65,8 @@ module.exports = {
         githubRepositoryAnalysis: "gemini",
         projectDefense: "gemini",
         pdfReportGeneration: "gemini",
-        codeMentorAnalysis: "gemini",   // Judge0 → Gemini coaching pipeline
         liveVoiceInterview: "groq",
         voiceFollowup: "groq",
-        codingExplanations: "groq",
-        monacoFeedback: "groq",
-        semanticCodeEvaluation: "groq",
         speechToText: "sarvam",
         textToSpeech: "sarvam"
     },

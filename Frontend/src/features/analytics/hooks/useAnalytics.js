@@ -3,7 +3,6 @@ import {
     fetchAtsReports, 
     fetchInterviewPlans, 
     fetchInterviewSessions, 
-    fetchCodingProgress, 
     fetchVoiceProgress, 
     fetchGithubProgress 
 } from "../services/analytics.service";
@@ -22,10 +21,9 @@ export function useAnalytics(initialFilters = { dateRange: "all", role: "all", t
     const loadAllMetrics = useCallback(async () => {
         setLoading(true);
         try {
-            const [ats, plans, coding, voice, github] = await Promise.all([
+            const [ats, plans, voice, github] = await Promise.all([
                 fetchAtsReports(),
                 fetchInterviewPlans(),
-                fetchCodingProgress(),
                 fetchVoiceProgress(),
                 fetchGithubProgress()
             ]);
@@ -73,21 +71,7 @@ export function useAnalytics(initialFilters = { dateRange: "all", role: "all", t
                 });
             }
 
-            // 3. Normalizing Coding Attempts
-            if (coding && Array.isArray(coding.recentAttempts)) {
-                coding.recentAttempts.forEach(attempt => {
-                    unifiedAttempts.push({
-                        id: attempt._id || attempt.id,
-                        type: "code",
-                        title: attempt.title || attempt.challengeTitle || "Coding Assessor",
-                        overallScore: attempt.overallScore || attempt.score || 0,
-                        strongAreas: attempt.language ? [attempt.language] : [],
-                        weakAreas: coding.weakTopics ? coding.weakTopics.map(t => t.topic) : [],
-                        date: attempt.createdAt || attempt.submittedAt || attempt.date || Date.now(),
-                        role: "Algorithm Tech"
-                    });
-                });
-            }
+
 
             // 4. Normalizing Verbal Mock Sessions
             if (voice && Array.isArray(voice.recentSessions)) {

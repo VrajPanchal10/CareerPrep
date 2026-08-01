@@ -65,10 +65,6 @@ const DashboardLayout = () => {
                         <span className="icon"><Icons.Ats /></span>
                         ATS Match & Heatmap
                     </NavLink>
-                    <NavLink to="/code" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                        <span className="icon"><Icons.Code /></span>
-                        Coding Workspace
-                    </NavLink>
                     <NavLink to="/analytics" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                         <span className="icon"><Icons.Analytics /></span>
                         Performance Analytics
@@ -114,7 +110,6 @@ const DashboardLayout = () => {
                             ) :
                             location.pathname.includes('/github') ? 'GitHub Project Defense' :
                             location.pathname.includes('/ats') ? 'ATS Match & Heatmap' :
-                            location.pathname.includes('/code') ? 'Coding Workspace' :
                             location.pathname.includes('/analytics') ? 'Performance Analytics' :
                             location.pathname.includes('/settings') ? 'Settings' :
                             'Interview Coach'

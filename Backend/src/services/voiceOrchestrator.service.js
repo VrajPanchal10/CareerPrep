@@ -213,6 +213,14 @@ async function processVoiceAnswer({ sessionId, userId, questionIndex, userAnswer
     // Save MongoDB session
     await session.save();
 
+    // Fire & Forget: Background pre-translation for next questions in session
+    if (session.questions && questionIndex < session.questions.length - 1) {
+        const remainingQuestions = session.questions.slice(questionIndex + 1);
+        translationService.preGenerateTranslationsAsync(session._id, remainingQuestions).catch(err => {
+            logger.warn(`[Voice Orchestrator] Background pre-translation for next questions failed: ${err.message}`);
+        });
+    }
+
     return {
         evaluation: evaluationObj,
         followUpQuestion,

@@ -158,7 +158,7 @@ const GlobalAnalytics = () => {
                                     <ComparisonCard 
                                         attempts={filteredInterviews} 
                                         title="AI Coach Interview Progression" 
-                                        actionUrl="/mock-interview"
+                                        actionUrl="/voice-interview"
                                         actionText="Start Mock Interview"
                                     />
                                 </ErrorBoundary>

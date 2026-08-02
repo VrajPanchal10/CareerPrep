@@ -492,6 +492,54 @@ async function textToSpeech(req, res, next) {
     }
 }
 
+/**
+ * @description On-demand fast translation endpoint for questions or feedback text.
+ */
+async function translateOnDemand(req, res, next) {
+    try {
+        const { text, targetLanguage, sessionId, questionIndex } = req.body;
+        if (!text || !targetLanguage) {
+            return res.status(400).json({
+                success: false,
+                message: "Text and targetLanguage are required."
+            });
+        }
+
+        const translatedText = await translationService.translateText(text, targetLanguage);
+
+        // If sessionId and questionIndex provided, persist translation to MongoDB session
+        if (sessionId && questionIndex !== undefined && mongoose.Types.ObjectId.isValid(sessionId)) {
+            const session = await voiceSessionModel.findById(sessionId);
+            if (session && session.questions && session.questions[questionIndex]) {
+                const questionObj = session.questions[questionIndex];
+                if (!questionObj.translations) {
+                    questionObj.translations = new Map();
+                }
+                const transObj = questionObj.translations instanceof Map 
+                    ? questionObj.translations 
+                    : new Map(Object.entries(questionObj.translations || {}));
+                
+                transObj.set(targetLanguage, { status: "completed", text: translatedText });
+                questionObj.translations = transObj;
+                await session.save().catch(e => logger.warn(`[OnDemandTranslation] Save failed: ${e.message}`));
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            sourceText: text,
+            targetLanguage,
+            translatedText
+        });
+    } catch (error) {
+        logger.error("[Voice Controller] Error in translateOnDemand:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Translation failed."
+        });
+    }
+}
+
 
 module.exports = {
     startSession,
@@ -501,5 +549,7 @@ module.exports = {
     getSessionById,
     getSessions,
     transcribeAudio,
-    textToSpeech
+    textToSpeech,
+    translateOnDemand
 };
+

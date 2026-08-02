@@ -60,7 +60,7 @@ const VoiceInterviewRoomContent = () => {
         setStatus("IDLE");
     });
 
-    const { displayQuestion, displayEvaluation, displayFollowUpNotification } = useTranslation(session, currentQIndex, voiceLanguage);
+    const { displayQuestion, displayEvaluation, displayFollowUpNotification, isTranslating } = useTranslation(session, currentQIndex, voiceLanguage);
     const { timer, startTimer, pauseTimer, resetTimer } = useTimer();
 
     const { playQuestion, stopPlayback, pausePlayback, resumePlayback, preloadNext, currentAudio } = usePlayback();
@@ -274,6 +274,7 @@ const VoiceInterviewRoomContent = () => {
                         intention={currentQ.intention}
                         voiceLanguage={voiceLanguage}
                         interviewState={status}
+                        isTranslating={isTranslating}
                     >
                         <AudioControls 
                             interviewState={status}

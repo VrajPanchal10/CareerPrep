@@ -72,6 +72,7 @@ const Interview = () => {
     const [ answerText, setAnswerText ] = useState("")
     const [ localEvaluating, setLocalEvaluating ] = useState(false)
     const [ isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
+    const [ showLeaveModal, setShowLeaveModal ] = useState(false)
     const { addToast } = useToast()
 
     useEffect(() => {
@@ -117,7 +118,7 @@ const Interview = () => {
 
     const handleSubmitAnswer = async () => {
         if (!answerText || answerText.trim() === "") {
-            alert("Please type your answer first.")
+            addToast("Please type your answer response first.", "warning");
             return
         }
         setLocalEvaluating(true)
@@ -146,156 +147,235 @@ const Interview = () => {
 
     // Render session UI if started
     if (activeSession && activeSession.status === "started") {
+        const wordsCount = answerText.trim() ? answerText.trim().split(/\s+/).length : 0;
+        const charsCount = answerText.length;
+        const speakingTimeSec = Math.ceil((wordsCount / 130) * 60);
+        const answeredCount = activeSession.answers?.length || 0;
+        const totalCount = flatQuestions.length;
+        const progressPct = Math.round((answeredCount / totalCount) * 100);
+        const remainingCount = totalCount - answeredCount;
+
         return (
-            <div style={{ minHeight: "100vh" }}>
+            <div style={{ minHeight: "100vh", background: "var(--theme-bg, #0b0f19)" }}>
                 <Navbar />
-                <div className="interview-page">
-                    <div className="session-wizard-card">
-                        
-                        {/* Progress Bar Header */}
-                        <div className="wizard-progress-header">
-                            <button className="exit-session-btn" onClick={() => navigate(0)}>
-                                ❌ Exit Practice Session
-                            </button>
-                            <div className="progress-bar-container">
-                                <div className="progress-bar-label">
-                                    <span>Practice Progress</span>
-                                    <span>{Math.round(((activeSession.answers?.length || 0) / flatQuestions.length) * 100)}%</span>
+                
+                <div className="practice-workspace-container">
+                    
+                    {/* Header Bar */}
+                    <header className="practice-workspace-header">
+                        <div className="header-meta">
+                            <span className="practice-badge">Text-Based Practice Mode</span>
+                            <h1 className="header-title">{report.title || "Interactive Mock Session"}</h1>
+                            <div className="header-stats-row">
+                                <span className="meta-pill">
+                                    📄 Q{currentQIndex + 1} of {totalCount}
+                                </span>
+                                <span className="meta-pill">
+                                    🕒 {remainingCount} Remaining
+                                </span>
+                                <span className="meta-pill accent-pill">
+                                    {progressPct}% Completed
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="header-controls">
+                            <div className="workspace-progress-box">
+                                <div className="progress-label">
+                                    <span>Session Progress</span>
+                                    <span>{progressPct}%</span>
                                 </div>
-                                <div className="progress-bar-track">
-                                    <div 
-                                        className="progress-bar-fill" 
-                                        style={{ width: `${((activeSession.answers?.length || 0) / flatQuestions.length) * 100}%` }} 
-                                    />
+                                <div className="progress-track">
+                                    <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+                                </div>
+                            </div>
+
+                            <button className="leave-practice-btn" onClick={() => setShowLeaveModal(true)}>
+                                🚪 Leave Practice
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Main Workspace Grid */}
+                    <div className="practice-workspace-body">
+                        
+                        {/* Question Card */}
+                        <div className="practice-card question-card">
+                            <div className="q-card-header">
+                                <div className="q-tags">
+                                    <span className={`q-type-tag q-type-tag--${currentQ?.type}`}>
+                                        {(currentQ?.type || '').toUpperCase()} QUESTION
+                                    </span>
+                                    <span className="q-topic-tag">
+                                        Topic: {currentQ?.topic || (currentQ?.type === 'technical' ? 'General Technical' : 'Behavioral')}
+                                    </span>
+                                </div>
+                                <span className="q-number-badge">Q{currentQIndex + 1} of {totalCount}</span>
+                            </div>
+
+                            <h2 className="q-text">{currentQ?.question}</h2>
+                            
+                            <div className="q-intention-box">
+                                <span className="intention-icon">💡</span>
+                                <div>
+                                    <strong>Interviewer Intention:</strong>
+                                    <p>{currentQ?.intention}</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Question Panel */}
-                        <div className="wizard-question-panel">
-                            <div className="q-badge-row">
-                                <span className={`q-type-badge q-type-badge--${currentQ?.type}`}>
-                                    {(currentQ?.type || '').toUpperCase()} QUESTION
-                                </span>
-                                <span className="q-topic-badge">
-                                    Topic: {currentQ?.topic || (currentQ?.type === 'technical' ? 'General Technical' : 'Behavioral')}
-                                </span>
-                                <span className="q-index-badge">
-                                    {currentQIndex + 1} of {flatQuestions.length}
-                                </span>
+                        {/* Polished Answer Editor Card */}
+                        <div className="practice-card answer-card">
+                            <div className="answer-card-header">
+                                <label htmlFor="userAnswer">Your Answer Response</label>
+                                {answerText.trim() && (
+                                    <span className="autosave-badge">
+                                        <span className="dot" /> Draft Active
+                                    </span>
+                                )}
                             </div>
 
-                            <h2 className="session-question-text">{currentQ?.question}</h2>
-                            <p className="session-question-intention">💡 <strong>Interviewer Intention:</strong> {currentQ?.intention}</p>
-
-                            <div className="answer-input-container">
-                                <label htmlFor="userAnswer">Your Answer Response:</label>
+                            <div className="answer-editor-wrapper">
                                 <textarea
                                     id="userAnswer"
                                     value={answerText}
                                     onChange={(e) => setAnswerText(e.target.value)}
-                                    placeholder="Type your answer in detail here..."
+                                    placeholder="Type your answer in detail here... Use structured points (STAR method: Situation, Task, Action, Result) for clarity."
                                     disabled={localEvaluating}
+                                    className="polished-answer-textarea"
                                 />
-                            </div>
-
-                            {/* Actions Row */}
-                            <div className="wizard-actions">
-                                <button 
-                                    className="eval-btn" 
-                                    onClick={handleSubmitAnswer}
-                                    disabled={localEvaluating || !answerText.trim()}
-                                >
-                                    {localEvaluating ? "AI Evaluating..." : activeAnswer ? "🔄 Re-Evaluate Answer" : "✨ Submit & Evaluate"}
-                                </button>
-                            </div>
-
-                            {/* Evaluation Display */}
-                            {activeAnswer && (
-                                <div className="evaluation-feedback-box">
-                                    <h3>Interviewer Evaluation Summary</h3>
-                                    
-                                    <div className="eval-scores-grid">
-                                        <div className="eval-score-item">
-                                            <span className="score-num">{activeAnswer.evaluation.overall}%</span>
-                                            <span className="score-lbl">Overall Score</span>
-                                        </div>
-                                        <div className="eval-score-item">
-                                            <span className="score-num">{activeAnswer.evaluation.accuracy}%</span>
-                                            <span className="score-lbl">Accuracy</span>
-                                        </div>
-                                        <div className="eval-score-item">
-                                            <span className="score-num">{activeAnswer.evaluation.depth}%</span>
-                                            <span className="score-lbl">Technical Depth</span>
-                                        </div>
-                                        <div className="eval-score-item">
-                                            <span className="score-num">{activeAnswer.evaluation.clarity}%</span>
-                                            <span className="score-lbl">Clarity</span>
-                                        </div>
-                                        <div className="eval-score-item">
-                                            <span className="score-num">{activeAnswer.evaluation.explanationQuality}%</span>
-                                            <span className="score-lbl">Explanation Quality</span>
-                                        </div>
+                                
+                                <div className="editor-stats-bar">
+                                    <div className="stats-group">
+                                        <span><strong>{wordsCount}</strong> Words</span>
+                                        <span className="dot-sep">•</span>
+                                        <span><strong>{charsCount}</strong> Chars</span>
+                                        <span className="dot-sep">•</span>
+                                        <span><strong>~{speakingTimeSec}s</strong> Verbal Read Time</span>
                                     </div>
 
-                                    <div className="feedback-bullets-row">
-                                        <div className="feedback-list strengths">
-                                            <h4>✔️ Strengths</h4>
-                                            <ul>
-                                                {activeAnswer.evaluation.feedback?.strengths?.map((str, idx) => (
-                                                    <li key={idx}>{str}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                        <div className="feedback-list weaknesses">
-                                            <h4>⚠️ Gaps & Areas to Improve</h4>
-                                            <ul>
-                                                {activeAnswer.evaluation.feedback?.weaknesses?.map((weak, idx) => (
-                                                    <li key={idx}>{weak}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-
-                                    {/* Expandable Model Answer */}
-                                    <details className="model-answer-expand">
-                                        <summary>💡 View Ideal Reference Answer Guide</summary>
-                                        <div className="model-answer-content">
-                                            <p>{currentQ?.answer}</p>
-                                        </div>
-                                    </details>
+                                    <button 
+                                        className="submit-eval-btn" 
+                                        onClick={handleSubmitAnswer}
+                                        disabled={localEvaluating || !answerText.trim()}
+                                    >
+                                        {localEvaluating ? (
+                                            <>
+                                                <span className="btn-spinner" /> AI Evaluating...
+                                            </>
+                                        ) : activeAnswer ? (
+                                            "🔄 Re-Evaluate Answer"
+                                        ) : (
+                                            "✨ Submit & Evaluate"
+                                        )}
+                                    </button>
                                 </div>
-                            )}
-
+                            </div>
                         </div>
 
-                        {/* Navigation Footer */}
-                        <div className="wizard-navigation-footer">
-                            <button 
-                                className="nav-btn prev"
-                                onClick={() => setCurrentQIndex(idx => Math.max(0, idx - 1))}
-                                disabled={currentQIndex === 0}
-                            >
-                                ⬅ Previous Question
-                            </button>
+                        {/* Evaluation Display Card */}
+                        {activeAnswer && (
+                            <div className="practice-card evaluation-card">
+                                <div className="eval-card-header">
+                                    <h3><i className="fi fi-rr-chart-pie-alt" style={{ color: "#d20d3b" }}></i> Interviewer Evaluation Summary</h3>
+                                    <div className="eval-score-badge">
+                                        <span>Overall:</span> <strong>{activeAnswer.evaluation.overall}%</strong>
+                                    </div>
+                                </div>
+                                
+                                <div className="eval-scores-row">
+                                    <div className="score-tile">
+                                        <span className="val">{activeAnswer.evaluation.overall}%</span>
+                                        <span className="lbl">Overall</span>
+                                    </div>
+                                    <div className="score-tile">
+                                        <span className="val">{activeAnswer.evaluation.accuracy}%</span>
+                                        <span className="lbl">Accuracy</span>
+                                    </div>
+                                    <div className="score-tile">
+                                        <span className="val">{activeAnswer.evaluation.depth}%</span>
+                                        <span className="lbl">Tech Depth</span>
+                                    </div>
+                                    <div className="score-tile">
+                                        <span className="val">{activeAnswer.evaluation.clarity}%</span>
+                                        <span className="lbl">Clarity</span>
+                                    </div>
+                                    <div className="score-tile">
+                                        <span className="val">{activeAnswer.evaluation.explanationQuality}%</span>
+                                        <span className="lbl">Explanation</span>
+                                    </div>
+                                </div>
 
-                            {activeSession.answers?.length > 0 && (
-                                <button className="complete-session-btn" onClick={handleCompleteSession}>
-                                    🏁 Complete Mock Session & View Dashboard
-                                </button>
-                            )}
+                                <div className="eval-feedback-grid">
+                                    <div className="feedback-col strengths-col">
+                                        <h4>✔️ Key Strengths</h4>
+                                        <ul>
+                                            {activeAnswer.evaluation.feedback?.strengths?.map((str, idx) => (
+                                                <li key={idx}>{str}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div className="feedback-col weaknesses-col">
+                                        <h4>⚠️ Areas for Improvement</h4>
+                                        <ul>
+                                            {activeAnswer.evaluation.feedback?.weaknesses?.map((weak, idx) => (
+                                                <li key={idx}>{weak}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
 
-                            <button 
-                                className="nav-btn next"
-                                onClick={() => setCurrentQIndex(idx => Math.min(flatQuestions.length - 1, idx + 1))}
-                                disabled={currentQIndex === flatQuestions.length - 1}
-                            >
-                                Next Question ➡
-                            </button>
-                        </div>
+                                <details className="reference-answer-expand">
+                                    <summary>💡 View Ideal Reference Answer Guide</summary>
+                                    <div className="reference-content">
+                                        <p>{currentQ?.answer}</p>
+                                    </div>
+                                </details>
+                            </div>
+                        )}
 
                     </div>
+
+                    {/* Navigation Bar Footer */}
+                    <div className="practice-footer-nav">
+                        <button 
+                            className="nav-btn prev-btn"
+                            onClick={() => setCurrentQIndex(idx => Math.max(0, idx - 1))}
+                            disabled={currentQIndex === 0}
+                        >
+                            ← Previous Question
+                        </button>
+
+                        {activeSession.answers?.length > 0 && (
+                            <button className="complete-btn" onClick={handleCompleteSession}>
+                                🏁 Complete Mock Session & View Dashboard
+                            </button>
+                        )}
+
+                        <button 
+                            className="nav-btn next-btn"
+                            onClick={() => setCurrentQIndex(idx => Math.min(flatQuestions.length - 1, idx + 1))}
+                            disabled={currentQIndex === flatQuestions.length - 1}
+                        >
+                            Next Question →
+                        </button>
+                    </div>
+
                 </div>
+
+                {/* Exit Confirmation Modal */}
+                {showLeaveModal && (
+                    <div className="leave-modal-overlay">
+                        <div className="leave-modal-card">
+                            <h3>Leave Practice Session?</h3>
+                            <p>Your submitted question evaluations are saved in history. Any unsaved typed response in the editor will be discarded.</p>
+                            <div className="modal-actions">
+                                <button className="btn-cancel" onClick={() => setShowLeaveModal(false)}>Cancel</button>
+                                <button className="btn-confirm-leave" onClick={() => navigate(0)}>Leave Practice</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         )
     }

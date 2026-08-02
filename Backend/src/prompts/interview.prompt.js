@@ -33,6 +33,8 @@ Provide a detailed, critical and fair evaluation matching the required schema. F
         responseTime, 
         languageCode 
     }) => {
+        const targetLangName = languageCode?.startsWith("hi") ? "Hindi" : (languageCode?.startsWith("gu") ? "Gujarati" : "English");
+
         return `You are a professional mock interviewer evaluating a candidate's verbal response to an interview question.
 
 Candidate Context:
@@ -46,7 +48,7 @@ Current Question:
 - Reference Model Answer: ${modelAnswer}
 - Topic Category: ${topic}
 - Time taken to respond: ${responseTime} seconds
-- Language Code used: ${languageCode}
+- Language Code used: ${languageCode} (${targetLangName})
 
 Interview History:
 - Previous Questions & Answers: ${JSON.stringify(previousAnswers)}
@@ -54,6 +56,10 @@ Interview History:
 
 Candidate's Verbal Answer Transcript:
 "${userAnswer}"
+
+CRITICAL MULTILINGUAL MANDATE:
+All text strings in the "strengths", "weaknesses", and "suggestions" arrays MUST be written 100% in ${targetLangName}.
+Do NOT write feedback in English when ${targetLangName} is selected, except for unavoidable domain technical terms (e.g., REST API, React, JWT, Node.js, MongoDB).
 
 Provide a detailed, critical and fair evaluation based on the verbal response transcript matching the schema.
 Analyze the transcript for filler words (like "um", "uh", "actually", "basically", "like").
@@ -76,9 +82,9 @@ Your JSON output MUST match this exact format structure:
   "timeUtilization": 0.95,
   "fillerWords": ["um", "basically"],
   "confidenceIndicator": "Confident",
-  "strengths": ["string"],
-  "weaknesses": ["string"],
-  "suggestions": ["string"]
+  "strengths": ["string in ${targetLangName}"],
+  "weaknesses": ["string in ${targetLangName}"],
+  "suggestions": ["string in ${targetLangName}"]
 }
 
 Scoring and Evaluation Criteria:

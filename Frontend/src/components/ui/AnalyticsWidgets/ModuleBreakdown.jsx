@@ -5,7 +5,6 @@ const ModuleBreakdown = ({ counts, averages }) => {
     const modules = [
         { key: "ats", label: "ATS Resume Audits", icon: "📄" },
         { key: "interview", label: "Mock Interviews", icon: "🎯" },
-        { key: "code", label: "Coding Challenges", icon: "💻" },
         { key: "voice", label: "Verbal Sessions", icon: "🎙️" },
         { key: "github", label: "Project Defenses", icon: "🛡️" }
     ];

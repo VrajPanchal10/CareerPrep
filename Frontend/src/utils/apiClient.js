@@ -161,6 +161,16 @@ apiClient.interceptors.response.use(
                 processQueue(refreshError);
                 isRefreshing = false;
                 window.dispatchEvent(new Event("session-expired"));
+
+                // Ensure refreshError is normalized with userMessage and string message
+                if (refreshError && typeof refreshError === "object") {
+                    refreshError.userMessage = refreshError.userMessage || refreshError.response?.data?.message || "Session expired. Please log in again.";
+                    refreshError.errorCode = refreshError.errorCode || refreshError.response?.data?.code || "SESSION_EXPIRED";
+                    if (!refreshError.message || refreshError.message === "[object Object]") {
+                        refreshError.message = refreshError.userMessage;
+                    }
+                }
+
                 return Promise.reject(refreshError);
             }
         }

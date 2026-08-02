@@ -74,27 +74,30 @@ const ComparisonCard = ({ attempts = [], title = "Assessment Run Comparison", ac
             </div>
             
             <div className="card-body-scrollable">
-                <div className="comparison-card__grid">
-                    {/* Score differences block */}
-                    <div className="comparison-card__scores">
-                        <div className="score-block">
-                            <span className="label">Initial Score</span>
-                            <span className="value">{initialScore}%</span>
-                        </div>
-                        <div className="score-divider">➔</div>
-                        <div className="score-block">
-                            <span className="label">Latest Score</span>
-                            <span className="value">{latestScore}%</span>
-                        </div>
-                        <div className={`score-delta score-delta--${deltaClass}`}>
-                            <span className="label">Progress Delta</span>
-                            <span className="value">{deltaSign}{scoreDiff}%</span>
-                        </div>
+                {/* 4-Card Equal Metric Grid Header */}
+                <div className="comparison-card__metrics-grid">
+                    <div className="metric-box">
+                        <span className="metric-label">Initial Score</span>
+                        <span className="metric-value">{initialScore}%</span>
                     </div>
+                    <div className="metric-box">
+                        <span className="metric-label">Latest Score</span>
+                        <span className="metric-value">{latestScore}%</span>
+                    </div>
+                    <div className={`metric-box metric-box--${deltaClass}`}>
+                        <span className="metric-label">Progress Delta</span>
+                        <span className="metric-value">{deltaSign}{scoreDiff}%</span>
+                    </div>
+                    <div className="metric-box">
+                        <span className="metric-label">Total Attempts</span>
+                        <span className="metric-value">{count} Runs</span>
+                    </div>
+                </div>
 
-                    {/* Progression attempts index */}
-                    <div className="comparison-card__timeline">
-                        <h4>Session Attempts Sequence ({count})</h4>
+                {/* Session Attempts Timeline Trail */}
+                {progression && progression.length > 0 && (
+                    <div className="comparison-card__timeline-bar">
+                        <span className="timeline-title">Attempt History:</span>
                         <div className="timeline-trail">
                             {progression.map((item, idx) => (
                                 <div key={idx} className="timeline-node">
@@ -107,29 +110,37 @@ const ComparisonCard = ({ attempts = [], title = "Assessment Run Comparison", ac
                             ))}
                         </div>
                     </div>
-                </div>
+                )}
 
-                {/* Diffs: Strengths and gaps resolutions */}
+                {/* Diffs: Gained Strengths & Resolved Weaknesses (Equal height & padding) */}
                 <div className="comparison-card__details">
                     <div className="detail-column">
                         <h4 className="gained-header">💪 Gained Strengths ({gainedStrengths.length})</h4>
                         {gainedStrengths.length > 0 ? (
-                            <ul>
+                            <ul className="scrollable-list">
                                 {gainedStrengths.map((str, i) => <li key={i}>{str}</li>)}
                             </ul>
                         ) : (
-                            <p className="none-text">No new strengths logged yet.</p>
+                            <div className="empty-section-state">
+                                <span className="empty-icon">💪</span>
+                                <span className="empty-text">No new strengths logged yet</span>
+                                <span className="empty-subtext">Complete further sessions to track progress milestones.</span>
+                            </div>
                         )}
                     </div>
 
                     <div className="detail-column">
                         <h4 className="resolved-header">✅ Resolved Weaknesses ({resolvedWeaknesses.length})</h4>
                         {resolvedWeaknesses.length > 0 ? (
-                            <ul>
+                            <ul className="scrollable-list">
                                 {resolvedWeaknesses.map((wk, i) => <li key={i}>{wk}</li>)}
                             </ul>
                         ) : (
-                            <p className="none-text">No weaknesses resolved yet.</p>
+                            <div className="empty-section-state">
+                                <span className="empty-icon">✅</span>
+                                <span className="empty-text">No weaknesses resolved yet</span>
+                                <span className="empty-subtext">Identified gaps will appear here as you resolve them.</span>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -144,3 +155,4 @@ const ComparisonCard = ({ attempts = [], title = "Assessment Run Comparison", ac
 };
 
 export default ComparisonCard;
+

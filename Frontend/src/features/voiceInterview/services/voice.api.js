@@ -87,9 +87,24 @@ export const fetchVoiceSession = async (sessionId, lang) => {
 };
 
 /**
+ * Request instant on-demand translation for a question or text snippet.
+ * @param {Object} payload { text, targetLanguage, sessionId, questionIndex }
+ */
+export const requestOnDemandTranslation = async ({ text, targetLanguage, sessionId, questionIndex }) => {
+    const response = await api.post("/api/voice-session/translate-on-demand", {
+        text,
+        targetLanguage,
+        sessionId,
+        questionIndex
+    });
+    return response.data;
+};
+
+/**
  * Get all user voice interview sessions.
  */
 export const fetchVoiceSessions = async () => {
     const response = await api.get("/api/voice-session/");
     return response.data;
 };
+

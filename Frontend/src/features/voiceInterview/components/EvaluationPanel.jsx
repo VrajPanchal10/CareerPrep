@@ -1,7 +1,36 @@
 import React, { memo } from 'react';
 
-export const EvaluationPanel = memo(({ evaluation, voiceLanguage }) => {
+const UI_STRINGS = {
+    "hi-IN": {
+        strengthsTitle: "उत्तर की शक्तियाँ",
+        weaknessesTitle: "उत्तर की कमजोरियाँ",
+        suggestionsTitle: "सुधार के लिए सुझाव",
+        noStrengths: "कोई विशेष शक्ति दर्ज नहीं की गई।",
+        noWeaknesses: "कोई विशेष कमजोरी नहीं पाई गई।",
+        noSuggestions: "कोई विशेष सुझाव नहीं।"
+    },
+    "gu-IN": {
+        strengthsTitle: "જવાબની શક્તિઓ",
+        weaknessesTitle: "જવાબની નબળાઈઓ",
+        suggestionsTitle: "સુધારણા માટે સૂચનો",
+        noStrengths: "કોઈ મુખ્ય શક્તિઓ મળી નથી.",
+        noWeaknesses: "કોઈ વિશેષ નબળાઈઓ મળી નથી.",
+        noSuggestions: "કોઈ ખાસ સૂચનો નથી."
+    },
+    "en-IN": {
+        strengthsTitle: "Answer Strengths",
+        weaknessesTitle: "Answer Weaknesses",
+        suggestionsTitle: "Suggestions for Improvement",
+        noStrengths: "No strengths identified.",
+        noWeaknesses: "No weaknesses identified.",
+        noSuggestions: "No specific suggestions."
+    }
+};
+
+export const EvaluationPanel = memo(({ evaluation, voiceLanguage = "en-IN" }) => {
     if (!evaluation) return null;
+
+    const labels = UI_STRINGS[voiceLanguage] || UI_STRINGS["en-IN"];
 
     const renderProgressBar = (label, score, colorClass = "default") => {
         const barColor = colorClass === "red" ? "#e74c3c" : colorClass === "yellow" ? "#f1c40f" : "#2ecc71";
@@ -193,22 +222,22 @@ export const EvaluationPanel = memo(({ evaluation, voiceLanguage }) => {
             {/* Strengths & Weaknesses Cards */}
             <div className="summary-bullets-grid" style={{ marginBottom: "1.5rem" }}>
                 <div className="bullet-card strong">
-                    <h3><i className="fi fi-rr-thumbs-up"></i> Answer Strengths</h3>
+                    <h3><i className="fi fi-rr-thumbs-up"></i> {labels.strengthsTitle}</h3>
                     <ul>
                         {evaluation.strengths && evaluation.strengths.length > 0 ? (
                             evaluation.strengths.map((s, idx) => <li key={idx}>{s}</li>)
                         ) : (
-                            <li>No strengths identified.</li>
+                            <li>{labels.noStrengths}</li>
                         )}
                     </ul>
                 </div>
                 <div className="bullet-card weak">
-                    <h3><i className="fi fi-rr-thumbs-down"></i> Answer Weaknesses</h3>
+                    <h3><i className="fi fi-rr-thumbs-down"></i> {labels.weaknessesTitle}</h3>
                     <ul>
                         {evaluation.weaknesses && evaluation.weaknesses.length > 0 ? (
                             evaluation.weaknesses.map((w, idx) => <li key={idx}>{w}</li>)
                         ) : (
-                            <li>No weaknesses identified.</li>
+                            <li>{labels.noWeaknesses}</li>
                         )}
                     </ul>
                 </div>
@@ -217,13 +246,13 @@ export const EvaluationPanel = memo(({ evaluation, voiceLanguage }) => {
             {/* Actionable Coach Advice */}
             <div className="summary-stats-box" style={{ marginTop: "1.5rem" }}>
                 <h3 style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "0.5rem" }}>
-                    <i className="fi fi-rr-lightbulb-on" style={{ color: "#f1c40f" }}></i> Suggestions for Improvement
+                    <i className="fi fi-rr-lightbulb-on" style={{ color: "#f1c40f" }}></i> {labels.suggestionsTitle}
                 </h3>
                 <ul style={{ paddingLeft: "1.2rem", color: "rgba(255,255,255,0.78)", fontSize: "0.88rem", lineHeight: "1.6", margin: 0 }}>
                     {evaluation.suggestions && evaluation.suggestions.length > 0 ? (
                         evaluation.suggestions.map((s, idx) => <li key={idx} style={{ marginBottom: "0.5rem" }}>{s}</li>)
                     ) : (
-                        <li>No specific suggestions.</li>
+                        <li>{labels.noSuggestions}</li>
                     )}
                 </ul>
             </div>

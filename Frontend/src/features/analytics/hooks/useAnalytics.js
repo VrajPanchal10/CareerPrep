@@ -130,8 +130,8 @@ export function useAnalytics(initialFilters = { dateRange: "all", role: "all", t
     const summary = useMemo(() => {
         const scores = filtered.map(item => item.overallScore);
         
-        const moduleCounts = { ats: 0, interview: 0, code: 0, voice: 0, github: 0 };
-        const moduleScoreSums = { ats: 0, interview: 0, code: 0, voice: 0, github: 0 };
+        const moduleCounts = { ats: 0, interview: 0, voice: 0, github: 0 };
+        const moduleScoreSums = { ats: 0, interview: 0, voice: 0, github: 0 };
         const weakAreaCounts = {};
 
         filtered.forEach(item => {
@@ -151,7 +151,6 @@ export function useAnalytics(initialFilters = { dateRange: "all", role: "all", t
         const moduleAverages = {
             ats: moduleCounts.ats > 0 ? Math.round(moduleScoreSums.ats / moduleCounts.ats) : 0,
             interview: moduleCounts.interview > 0 ? Math.round(moduleScoreSums.interview / moduleCounts.interview) : 0,
-            code: moduleCounts.code > 0 ? Math.round(moduleScoreSums.code / moduleCounts.code) : 0,
             voice: moduleCounts.voice > 0 ? Math.round(moduleScoreSums.voice / moduleCounts.voice) : 0,
             github: moduleCounts.github > 0 ? Math.round(moduleScoreSums.github / moduleCounts.github) : 0
         };

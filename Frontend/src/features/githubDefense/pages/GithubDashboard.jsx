@@ -310,7 +310,7 @@ const GithubDashboard = () => {
                         <p>Audit repository structures and defend architectural decisions in tough technical mock simulations.</p>
                     </div>
                     <div className="header-right">
-                        <button className="back-btn-ghost" onClick={() => navigate("/dashboard")} id="exitGithubDefenseBtn">
+                        <button className="back-btn-ghost" onClick={() => navigate("/")} id="exitGithubDefenseBtn">
                             <ArrowLeft size={16} />
                             <span className="btn-text-full">Exit GitHub Defense</span>
                             <span className="btn-text-short">Exit</span>

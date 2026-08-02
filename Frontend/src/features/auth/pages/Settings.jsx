@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { getMe, enableMfa, confirmMfa, disableMfa } from '../services/auth.api';
+import { getMe } from '../services/auth.api';
 import { fetchSystemHealth } from '../services/system.api';
 import { useToast } from '../../../context/ToastContext';
 import { LoadingButton } from '../../../components/ui';

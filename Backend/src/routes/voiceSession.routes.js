@@ -31,6 +31,7 @@ router.use(authUser);
 // Speech & Voice Actions — aiLimiter prevents Sarvam API quota abuse
 router.post("/transcribe", aiLimiter, upload.single("file"), voiceController.transcribeAudio);
 router.post("/speak", aiLimiter, voiceController.textToSpeech);
+router.post("/translate-on-demand", aiLimiter, voiceController.translateOnDemand);
 
 // Session Actions
 router.post("/", csrfProtection, voiceController.startSession);

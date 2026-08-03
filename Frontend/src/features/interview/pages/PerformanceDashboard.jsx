@@ -1,351 +1,57 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router'
-import Navbar from '../../ats/components/Navbar'
-import { useInterview } from '../hooks/useInterview.js'
-import '../style/performanceDashboard.scss'
-import { Tooltip, ScrollToTop, ErrorBoundary, PdfPreview, useToast, EmptyState } from '../../../components/ui'
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router';
+import Navbar from '../../ats/components/Navbar';
+import { useInterview } from '../hooks/useInterview.js';
+import '../style/performanceDashboard.scss';
+import { ScrollToTop, ErrorBoundary, useToast, EmptyState } from '../../../components/ui';
 
-// ── Pure SVG Radar Chart Component ──────────────────────────────────────────
-const RadarChart = ({ 
-    scores = {}, 
-    strongAreas = [], 
-    weakAreas = [], 
-    studyPlan = {}, 
-    answers = [] 
-}) => {
-    // 1. Sanitize and validate inputs defensively to prevent crashes
-    const sanitizedScores = {};
-    const sanitizedTopics = [];
-    
-    if (scores && typeof scores === 'object') {
-        Object.entries(scores).forEach(([key, val]) => {
-            if (key && typeof key === 'string' && !sanitizedTopics.includes(key)) {
-                const parsedVal = parseFloat(val);
-                sanitizedScores[key] = isNaN(parsedVal) ? 0 : Math.max(0, parsedVal);
-                sanitizedTopics.push(key);
-            }
-        });
-    }
-
-    // Default topics fallback
-    const topics = sanitizedTopics.length > 0 
-        ? sanitizedTopics 
-        : ["React", "JavaScript", "Node.js", "MongoDB", "Authentication", "Communication", "DSA"];
-    
-    const finalScores = {};
-    topics.forEach(t => {
-        finalScores[t] = sanitizedScores[t] !== undefined ? sanitizedScores[t] : 30;
-    });
-
-    const width = 360;
-    const height = 300;
-    const cx = width / 2;
-    const cy = height / 2;
-    const R = 90; // max radius
-
-    const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, content: null });
-
-    // 2. Dynamic Score Scaling: Calculate min/max bounds and grid steps dynamically
-    const scoreValues = Object.values(finalScores);
-    const minVal = scoreValues.length > 0 ? Math.max(0, Math.min(...scoreValues) - 10) : 0;
-    const maxVal = scoreValues.length > 0 ? Math.max(100, Math.max(...scoreValues) + 10) : 100;
-    const range = maxVal - minVal;
-
-    const gridLevels = [
-        minVal + range * 0.2,
-        minVal + range * 0.4,
-        minVal + range * 0.6,
-        minVal + range * 0.8,
-        maxVal
-    ];
-    const angleStep = (2 * Math.PI) / topics.length;
-
-    const candidatePoints = [];
-    topics.forEach((topic, i) => {
-        const angle = i * angleStep - Math.PI / 2;
-        const score = finalScores[topic];
-        const normalizedScore = range > 0 ? ((score - minVal) / range) * 100 : 30;
-        const radius = R * (normalizedScore / 100);
-        const x = cx + radius * Math.cos(angle);
-        const y = cy + radius * Math.sin(angle);
-        candidatePoints.push(`${x},${y}`);
-    });
-
-    const candidatePolygon = candidatePoints.join(" ");
-
-    // 3. Data-Driven Tooltips: Extract feedback directly from AI results
-    const handleNodeHover = (e, topic, score) => {
-        const svgElement = e.target.ownerSVGElement;
-        if (!svgElement) return;
-
-        const svgRect = svgElement.getBoundingClientRect();
-        const circleRect = e.target.getBoundingClientRect();
-
-        const x = circleRect.left - svgRect.left + circleRect.width / 2;
-        const y = circleRect.top - svgRect.top;
-
-        let performanceLevel = "Critical Review Required";
-        if (score >= 80) performanceLevel = "Strong Mastery";
-        else if (score >= 60) performanceLevel = "Needs Improvement";
-
-        // Filter actual answer feedback matching this topic
-        const matchedAnswers = answers.filter(
-            a => a.topic?.toLowerCase() === topic.toLowerCase()
-        );
-        const matchedStrengths = matchedAnswers.flatMap(a => a.evaluation?.feedback?.strengths || []);
-        const matchedWeaknesses = matchedAnswers.flatMap(a => a.evaluation?.feedback?.weaknesses || []);
-
-        const roadmapEntry = studyPlan.improvementRoadmap?.find(
-            r => r.topic?.toLowerCase() === topic.toLowerCase()
-        );
-
-        const tooltipContent = (
-            <div className="radar-tooltip-content">
-                <div className="tooltip-title">{topic}</div>
-                <div className="tooltip-score">{score}% Accuracy ({performanceLevel})</div>
-                <div className="tooltip-desc">
-                    <p style={{ margin: "4px 0" }}>
-                        <strong>Strength:</strong> {matchedStrengths.length > 0 ? matchedStrengths.slice(0, 2).join(". ") : `Competent baseline performance in ${topic}.`}
-                    </p>
-                    <p style={{ margin: "4px 0" }}>
-                        <strong>Weakness:</strong> {matchedWeaknesses.length > 0 ? matchedWeaknesses.slice(0, 2).join(". ") : `No critical gaps flagged for ${topic}.`}
-                    </p>
-                    <p style={{ margin: "4px 0" }}>
-                        <strong>Recommendation:</strong> {roadmapEntry?.steps?.length > 0 ? roadmapEntry.steps.join(". ") : `Continue practice mock runs to compile guidance.`}
-                    </p>
-                </div>
-            </div>
-        );
-
-        setTooltip({
-            visible: true,
-            x,
-            y,
-            content: tooltipContent
-        });
-    };
-
-    const handleNodeLeave = () => {
-        setTooltip({ visible: false, x: 0, y: 0, content: null });
-    };
-
-    return (
-        <div className="radar-chart-container" style={{ position: "relative" }}>
-            <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="radar-chart-svg">
-                {/* Grid Rings */}
-                {gridLevels.map((level, idx) => {
-                    const ringPoints = [];
-                    topics.forEach((_, i) => {
-                        const angle = i * angleStep - Math.PI / 2;
-                        const r = range > 0 ? R * ((level - minVal) / range) : R * (level / 100);
-                        const x = cx + r * Math.cos(angle);
-                        const y = cy + r * Math.sin(angle);
-                        ringPoints.push(`${x},${y}`);
-                    });
-                    return (
-                        <polygon 
-                            key={idx} 
-                            points={ringPoints.join(" ")} 
-                            fill="none" 
-                            stroke="rgba(255, 255, 255, 0.08)" 
-                            strokeWidth="1" 
-                            className="radar-ring"
-                        />
-                    );
-                })}
-
-                {/* Axis Lines & Labels */}
-                {topics.map((topic, i) => {
-                    const angle = i * angleStep - Math.PI / 2;
-                    const outerX = cx + R * Math.cos(angle);
-                    const outerY = cy + R * Math.sin(angle);
-                    const labelX = cx + (R + 24) * Math.cos(angle);
-                    const labelY = cy + (R + 12) * Math.sin(angle);
-                    
-                    return (
-                        <g key={i}>
-                            <line 
-                                x1={cx} 
-                                y1={cy} 
-                                x2={outerX} 
-                                y2={outerY} 
-                                stroke="rgba(255, 255, 255, 0.12)" 
-                                strokeWidth="1" 
-                                className="radar-axis"
-                            />
-                            <text 
-                                x={labelX} 
-                                y={labelY} 
-                                textAnchor="middle" 
-                                alignmentBaseline="middle"
-                                fill="rgba(255,255,255,0.6)"
-                                fontSize="10"
-                                fontWeight="600"
-                                className="radar-label"
-                            >
-                                {topic}
-                            </text>
-                        </g>
-                    );
-                })}
-
-                {/* Candidate Filled Area */}
-                {candidatePoints.length > 0 && (
-                    <polygon 
-                        points={candidatePolygon} 
-                        fill="rgba(210, 13, 59, 0.22)" 
-                        stroke="#d20d3b" 
-                        strokeWidth="2.5" 
-                    />
-                )}
-
-                {/* Interactive circles/nodes over polygon endpoints */}
-                {topics.map((topic, i) => {
-                    const angle = i * angleStep - Math.PI / 2;
-                    const score = finalScores[topic];
-                    const normalizedScore = range > 0 ? ((score - minVal) / range) * 100 : 30;
-                    const radius = R * (normalizedScore / 100);
-                    const x = cx + radius * Math.cos(angle);
-                    const y = cy + radius * Math.sin(angle);
-                    return (
-                        <circle
-                            key={i}
-                            cx={x}
-                            cy={y}
-                            r="5"
-                            fill="#ffffff"
-                            stroke="#d20d3b"
-                            strokeWidth="2.5"
-                            style={{ cursor: "pointer", transition: "all 0.15s ease" }}
-                            onMouseEnter={(e) => handleNodeHover(e, topic, score)}
-                            onMouseLeave={handleNodeLeave}
-                            onFocus={(e) => handleNodeHover(e, topic, score)}
-                            onBlur={handleNodeLeave}
-                            tabIndex="0"
-                            aria-label={`${topic} score: ${score}%`}
-                        />
-                    );
-                })}
-            </svg>
-
-            {/* Reusable Tooltip Component */}
-            <Tooltip 
-                visible={tooltip.visible} 
-                x={tooltip.x} 
-                y={tooltip.y} 
-                content={tooltip.content} 
-            />
-        </div>
-    );
-};
-
-// ── Pure SVG Progress Line Chart Component ──────────────────────────────────
-const ProgressLineChart = ({ progress = [] }) => {
-    if (!progress || progress.length === 0) {
-        return <p className="no-progress-data">Answer mock questions to render attempts progression history.</p>;
-    }
-
-    const width = 500;
-    const height = 180;
-    const padding = 30;
-    const points = [];
-    const stepX = (width - 2 * padding) / Math.max(1, progress.length - 1);
-    
-    progress.forEach((snap, idx) => {
-        const x = padding + idx * stepX;
-        const y = height - padding - ((snap.overallScore / 100) * (height - 2 * padding));
-        points.push(`${x},${y}`);
-    });
-
-    return (
-        <div className="progress-chart-container">
-            <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="progress-line-svg">
-                {/* Horizontal Grid Bounds */}
-                <line x1={padding} y1={padding} x2={width - padding} y2={padding} stroke="rgba(255,255,255,0.04)" className="chart-grid-light" />
-                <line x1={padding} y1={height/2} x2={width - padding} y2={height/2} stroke="rgba(255,255,255,0.04)" className="chart-grid-light" />
-                <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="rgba(255,255,255,0.08)" className="chart-grid-axis" />
-
-                {/* Line Path */}
-                <polyline 
-                    fill="none" 
-                    stroke="#d20d3b" 
-                    strokeWidth="3.5" 
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    points={points.join(" ")} 
-                />
-
-                {/* Nodes & Data Text */}
-                {progress.map((snap, idx) => {
-                    const [x, y] = points[idx].split(",");
-                    return (
-                        <g key={idx}>
-                            <circle cx={x} cy={y} r="5.5" fill="#ffffff" stroke="#d20d3b" strokeWidth="2.5" />
-                            <text x={x} y={parseFloat(y) - 12} textAnchor="middle" fill="#ffffff" fontSize="10.5" fontWeight="700" className="chart-data-text">
-                                {snap.overallScore}%
-                            </text>
-                            <text x={x} y={height - 8} textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="9" className="chart-label">
-                                Attempt {idx + 1}
-                            </text>
-                        </g>
-                    );
-                })}
-            </svg>
-        </div>
-    );
-};
-
-// ── Main Dashboard Component ────────────────────────────────────────────────
 const PerformanceDashboard = () => {
-    const { interviewId } = useParams()
-    const navigate = useNavigate()
-    const [searchParams] = useSearchParams()
-    const sessionId = searchParams.get("session")
+    const { interviewId } = useParams();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const sessionId = searchParams.get("session");
 
     const { 
-        report, getReportById, activeSession, loadSessionById, progressHistory, loadProgress, loading, downloadReportPdf, generateReport 
-    } = useInterview()
-    const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false)
-    const { addToast } = useToast()
+        report, getReportById, activeSession, loadSessionById, progressHistory, loadProgress, loading 
+    } = useInterview();
+    
+    const [openQuestions, setOpenQuestions] = useState({ 0: true });
+    const [filterCategory, setFilterCategory] = useState("all");
+    const { addToast } = useToast();
 
     useEffect(() => {
         const loadDashboardData = async () => {
             if (interviewId) {
-                await getReportById(interviewId)
-                const prog = await loadProgress(interviewId)
+                await getReportById(interviewId);
+                const prog = await loadProgress(interviewId);
                 
                 if (sessionId) {
-                    await loadSessionById(sessionId)
+                    await loadSessionById(sessionId);
                 } else if (prog && prog.length > 0) {
                     // Default to latest completed session
-                    await loadSessionById(prog[prog.length - 1].interviewId)
+                    await loadSessionById(prog[prog.length - 1].interviewId);
                 }
             }
-        }
-        loadDashboardData()
-    }, [interviewId, sessionId])
+        };
+        loadDashboardData();
+    }, [interviewId, sessionId]);
 
     if (loading || !report) {
         return (
             <div className="ats-app-container">
                 <Navbar />
                 <div className="ats-dashboard-page">
-                    <header className="dashboard-header-ats">
-                        <div className="skeleton-line" style={{ height: "32px", width: "350px", background: "var(--theme-border, rgba(255,255,255,0.06))", borderRadius: "4px", marginBottom: "0.5rem" }} />
-                        <div className="skeleton-line" style={{ height: "16px", width: "550px", background: "var(--theme-border, rgba(255,255,255,0.03))", borderRadius: "4px" }} />
-                    </header>
-                    <div className="dashboard-grid-main">
-                        <div className="ats-metric-card score-panel skeleton-card-pulse" style={{ height: "350px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-                            <div className="skeleton-circle" style={{ height: "130px", width: "130px", borderRadius: "50%", background: "var(--theme-border, rgba(255,255,255,0.05))", marginBottom: "1.5rem" }} />
-                            <div className="skeleton-line" style={{ height: "16px", width: "60%", background: "var(--theme-border, rgba(255,255,255,0.05))", borderRadius: "4px" }} />
-                        </div>
-                        <div className="ats-metric-card radar-panel skeleton-card-pulse" style={{ height: "350px", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                            <div className="skeleton-line" style={{ height: "200px", width: "200px", borderRadius: "8px", background: "var(--theme-border, rgba(255,255,255,0.04))" }} />
+                    <div className="session-review-container">
+                        <div className="skeleton-line" style={{ height: "40px", width: "450px", background: "rgba(255,255,255,0.06)", borderRadius: "8px", marginBottom: "1.5rem" }} />
+                        <div className="session-metrics-grid">
+                            {[1, 2, 3, 4, 5, 6, 7].map(i => (
+                                <div key={i} className="skeleton-card-pulse" style={{ height: "110px", background: "rgba(255,255,255,0.03)", borderRadius: "14px" }} />
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
-        )
+        );
     }
 
     if (!activeSession) {
@@ -353,279 +59,549 @@ const PerformanceDashboard = () => {
             <div className="ats-app-container">
                 <Navbar />
                 <div className="ats-dashboard-page">
-                    <button className="back-btn" onClick={() => navigate(`/interview/${interviewId}`)}>
-                        ⬅ Back to Preparation Plan
-                    </button>
-                    <EmptyState 
-                        title="No Completed Mock Practice Sessions Found"
-                        description="You need to start and complete a mock interview practice session first to compile weakness analytics and topic heatmaps."
-                        primaryAction={{
-                            label: "🎙 Start Session Now",
-                            onClick: () => navigate(`/interview/${interviewId}`)
-                        }}
-                    />
+                    <div className="session-review-container">
+                        <button className="back-btn-ghost" onClick={() => navigate(`/interview/${interviewId}`)}>
+                            ← Back to Preparation Plan
+                        </button>
+                        <EmptyState 
+                            title="No Completed Interview Session Found"
+                            description="Start and complete a mock interview practice session to view your detailed question-by-question review."
+                            primaryAction={{
+                                label: "🎙 Start Text-Based Practice",
+                                onClick: () => navigate(`/interview/${interviewId}`)
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
-        )
+        );
     }
 
-    const {
-        overallScore = 0,
-        topicScores = {},
-        strongAreas = [],
-        weakAreas = [],
-        topicBreakdown = [],
-        heatmapData = [],
-        studyPlan = {}
-    } = activeSession
+    // Determine flat questions list
+    const flatQuestions = [
+        ...(report.technicalQuestions || []).map((q, idx) => ({ ...q, type: 'technical', idx })),
+        ...(report.behavioralQuestions || []).map((q, idx) => ({ ...q, type: 'behavioral', idx }))
+    ];
 
-    // Convert mongoose Map structure safely
-    const normalizedTopicScores = topicScores instanceof Map 
-        ? Object.fromEntries(topicScores) 
-        : topicScores;
+    const answers = activeSession.answers || [];
+    const answeredCount = answers.length;
+    const totalCount = flatQuestions.length || 1;
+    const completionRate = Math.round((answeredCount / totalCount) * 100);
 
-    const readinessColorClass = overallScore >= 80 ? 'high' : overallScore >= 60 ? 'mid' : 'low'
+    // Compute attempt metadata
+    const currentAttemptIdx = (progressHistory || []).findIndex(p => p.interviewId === activeSession._id);
+    const attemptNumber = currentAttemptIdx !== -1 ? currentAttemptIdx + 1 : progressHistory?.length || 1;
+
+    // Scores computation
+    const overallScore = activeSession.overallScore || 0;
+    
+    const techAnswers = answers.filter(a => a.questionType === 'technical');
+    const commAnswers = answers.filter(a => a.questionType === 'behavioral');
+
+    const avgScore = (arr, key) => {
+        if (!arr || arr.length === 0) return null;
+        const sum = arr.reduce((acc, curr) => acc + (curr.evaluation?.[key] || curr.evaluation?.overall || 0), 0);
+        return Math.round(sum / arr.length);
+    };
+
+    const technicalScore = avgScore(techAnswers, 'accuracy') ?? avgScore(answers, 'accuracy') ?? overallScore;
+    const communicationScore = avgScore(commAnswers, 'clarity') ?? avgScore(answers, 'clarity') ?? overallScore;
+    const confidenceScore = avgScore(answers, 'explanationQuality') ?? avgScore(answers, 'depth') ?? overallScore;
+
+    // Duration formatting
+    const formatDuration = (start, end) => {
+        if (!start || !end) return "12m 30s";
+        const diffMs = Math.max(0, new Date(end).getTime() - new Date(start).getTime());
+        const totalSecs = Math.floor(diffMs / 1000);
+        const mins = Math.floor(totalSecs / 60);
+        const secs = totalSecs % 60;
+        return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    };
+
+    const durationText = formatDuration(activeSession.createdAt, activeSession.updatedAt);
+    const startedAtFormatted = activeSession.createdAt ? new Date(activeSession.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A";
+    const dateFormatted = activeSession.createdAt ? new Date(activeSession.createdAt).toLocaleDateString() : new Date().toLocaleDateString();
+
+    // Topics covered
+    const topicsCovered = Array.from(new Set([
+        ...(report.technicalQuestions || []).map(q => q.topic || 'Technical'),
+        ...(report.behavioralQuestions || []).map(q => q.topic || 'Behavioral'),
+        ...answers.map(a => a.topic).filter(Boolean)
+    ])).filter(Boolean);
+
+    if (topicsCovered.length === 0) {
+        topicsCovered.push("React", "JavaScript", "Node.js", "MongoDB", "REST API", "System Design");
+    }
+
+    // Extracted Insights
+    const strengthsList = Array.from(new Set([
+        ...(activeSession.strongAreas || []),
+        ...answers.flatMap(a => a.evaluation?.feedback?.strengths || [])
+    ])).filter(Boolean);
+
+    const weaknessesList = Array.from(new Set([
+        ...(activeSession.weakAreas || []),
+        ...answers.flatMap(a => a.evaluation?.feedback?.weaknesses || [])
+    ])).filter(Boolean);
+
+    const suggestionsList = Array.from(new Set([
+        ...(activeSession.studyPlan?.recommendedTopics?.map(t => `Focus topic study on ${t}`) || []),
+        ...answers.flatMap(a => a.evaluation?.feedback?.suggestions || [])
+    ])).filter(Boolean);
+
+    // AI Summary text
+    const aiSummaryText = activeSession.aiSummary || (
+        `During Attempt #${attemptNumber}, you demonstrated a ${overallScore >= 80 ? 'high level of technical mastery' : overallScore >= 60 ? 'solid baseline performance' : 'developing proficiency'} across the ${totalCount} target interview questions. ` +
+        `You completed ${answeredCount} out of ${totalCount} questions (${completionRate}% completion rate). ` +
+        (strengthsList.length > 0 ? `Key strengths highlighted in this run include ${strengthsList.slice(0, 3).join(', ')}. ` : '') +
+        (weaknessesList.length > 0 ? `Areas needing further review involve ${weaknessesList.slice(0, 3).join(', ')}.` : 'Continue practicing STAR-based structured responses to elevate your overall readiness.')
+    );
+
+    // Accordion Toggle Handlers
+    const toggleQuestion = (idx) => {
+        setOpenQuestions(prev => ({ ...prev, [idx]: !prev[idx] }));
+    };
+
+    const expandAll = () => {
+        const all = {};
+        flatQuestions.forEach((_, idx) => { all[idx] = true; });
+        setOpenQuestions(all);
+    };
+
+    const collapseAll = () => {
+        setOpenQuestions({});
+    };
+
+    // Filter questions for display
+    const filteredQuestions = flatQuestions.filter(q => {
+        if (filterCategory === 'technical') return q.type === 'technical';
+        if (filterCategory === 'behavioral') return q.type === 'behavioral';
+        return true;
+    });
 
     return (
         <ErrorBoundary>
             <div className="ats-app-container">
                 <Navbar />
-            <div className="ats-dashboard-page">
-                {/* Back Link */}
-                <button className="back-btn" onClick={() => navigate(`/interview/${interviewId}`)}>
-                    ⬅ Back to Preparation Plan
-                </button>
+                
+                <div className="ats-dashboard-page">
+                    <div className="session-review-container">
 
-                {/* Dashboard Header */}
-                <header className="dashboard-header-ats" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div>
-                        <h1>Readiness & Weakness Analytics Dashboard</h1>
-                        <p className="subtitle">Mock Interview Session Attempts analysis, Skill Radar mapping, and AI study guidelines.</p>
-                    </div>
-                    <button 
-                        onClick={() => setIsPdfPreviewOpen(true)}
-                        className="button primary-button"
-                        style={{ margin: 0, padding: "0.6rem 1.25rem", borderRadius: "8px", background: "#10b981", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}
-                    >
-                        <span>🤖 AI Performance Analysis & Career Coach</span>
-                    </button>
-                </header>
+                        {/* Top Back Navigation Bar */}
+                        <div className="top-nav-bar">
+                            <button className="back-btn-ghost" onClick={() => navigate(`/interview/${interviewId}`)}>
+                                ← Back to Preparation Plan
+                            </button>
+                        </div>
 
-                {/* Row 1: Readiness Score & Radar Skill Graph */}
-                <div className="dashboard-grid-main">
-                    
-                    {/* Overall Readiness Card */}
-                    <div className="ats-metric-card score-panel">
-                        <h2>Interview Readiness</h2>
-                        <div className="score-ring-container">
-                            <svg className="score-ring" viewBox="0 0 120 120">
-                                <circle className="score-ring__bg" cx="60" cy="60" r="54" />
-                                <circle 
-                                    className={`score-ring__fill ${readinessColorClass}`} 
-                                    cx="60" 
-                                    cy="60" 
-                                    r="54" 
-                                    strokeDasharray={2 * Math.PI * 54}
-                                    strokeDashoffset={2 * Math.PI * 54 * (1 - overallScore / 100)}
-                                />
-                            </svg>
-                            <div className="score-text">
-                                <span className="score-value">{overallScore}</span>
-                                <span className="score-percent">%</span>
+                        {/* 1. PAGE HEADER CARD */}
+                        <header className="session-review-header">
+                            {/* Badges Row */}
+                            <div className="header-badge-row">
+                                <span className="attempt-badge">Attempt #{attemptNumber}</span>
+                                <span className="attempt-id-badge">ID: #{activeSession._id?.slice(-6)}</span>
+                                <span className={`status-pill status-pill--${activeSession.status === 'completed' ? 'completed' : 'progress'}`}>
+                                    {activeSession.status === 'completed' ? '✓ Completed' : '⏳ In Progress'}
+                                </span>
                             </div>
-                        </div>
-                        <p className="score-status-text">
-                            {overallScore >= 80 ? "Fully Prepared for Technical Sprints!" : overallScore >= 60 ? "Moderate Performance. Practice Gaps." : "Critical Review Needed. Focus on Roadmap."}
-                        </p>
-                        
-                        <div className="session-selection-box">
-                            <label htmlFor="sessionSelect">Viewing Practice Run:</label>
-                            <select 
-                                id="sessionSelect"
-                                value={activeSession._id}
-                                onChange={(e) => navigate(`/interview/${interviewId}/dashboard?session=${e.target.value}`)}
-                            >
-                                {progressHistory.map((snap, idx) => (
-                                    <option key={snap.interviewId} value={snap.interviewId}>
-                                        Attempt #{idx + 1} ({snap.overallScore}%) - {new Date(snap.date).toLocaleDateString()}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
 
-                    {/* Skill Radar Chart Card */}
-                    <div className="ats-metric-card radar-panel">
-                        <h2>Skills Radar Matrix</h2>
-                        <ErrorBoundary>
-                            <RadarChart 
-                                scores={normalizedTopicScores} 
-                                strongAreas={strongAreas}
-                                weakAreas={weakAreas}
-                                studyPlan={studyPlan}
-                                answers={activeSession.answers || []}
-                            />
-                        </ErrorBoundary>
-                    </div>
+                            {/* Title */}
+                            <h1 className="header-title">{report.title || "Interactive Mock Interview Session"}</h1>
 
-                </div>
-
-                {/* Row 2: Weakness Heatmap Grid */}
-                <div className="ats-metric-card heatmap-card">
-                    <div className="heatmap-header">
-                        <h2>Topic weakness Heatmap</h2>
-                        <div className="heatmap-legend">
-                            <span className="legend-item strong">Strong (80+)</span>
-                            <span className="legend-item moderate">Moderate (60-79)</span>
-                            <span className="legend-item weak">Weak (40-59)</span>
-                            <span className="legend-item critical">Critical (&lt;40)</span>
-                        </div>
-                    </div>
-
-                    <div className="heatmap-grid">
-                        {heatmapData && heatmapData.length > 0 ? (
-                            heatmapData.map((item, idx) => (
-                                <div key={idx} className={`heatmap-item status--${item.status}`}>
-                                    <span className="keyword-name">{item.topic}</span>
-                                    <span className="keyword-score">{item.score}%</span>
+                            {/* Metadata Grid */}
+                            <div className="header-meta-grid">
+                                <div className="meta-item meta-item--role">
+                                    <span className="meta-icon">🎯</span>
+                                    <span className="meta-label">Role:</span>
+                                    <span className="meta-value">{report.title}</span>
                                 </div>
-                            ))
-                        ) : (
-                            <EmptyState 
-                                title="No Topic Heatmap Data Available"
-                                description="Complete mock questions in this practice run to compile weakness analytics."
-                            />
-                        )}
-                    </div>
-                </div>
 
-                {/* Row 3: Breakdown Table & Progress History */}
-                <div className="dashboard-grid-main">
-                    
-                    {/* Breakdown Table */}
-                    <div className="ats-metric-card breakdown-table-card">
-                        <h2>Topic Performance Logs</h2>
-                        <table className="breakdown-table">
-                            <thead>
-                                <tr>
-                                    <th>Topic Category</th>
-                                    <th>Questions Attempted</th>
-                                    <th>Average Rating Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {topicBreakdown.map((row, idx) => (
-                                    <tr key={idx}>
-                                        <td className="bold">{row.topic}</td>
-                                        <td>{row.questionsAttempted}</td>
-                                        <td>
-                                            <span className={`pill status--${row.averageScore >= 80 ? 'matched' : row.averageScore >= 60 ? 'extra' : 'missing'}`}>
-                                                {row.averageScore}%
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                <div className="meta-item meta-item--type">
+                                    <span className="meta-icon">📝</span>
+                                    <span className="meta-label">Type:</span>
+                                    <span className="meta-value">Text Practice Mode</span>
+                                </div>
 
-                    {/* Progress Chart */}
-                    <div className="ats-metric-card progress-chart-card">
-                        <h2>Session Score Growth path</h2>
-                        <ErrorBoundary>
-                            <ProgressLineChart progress={progressHistory} />
-                        </ErrorBoundary>
-                    </div>
+                                <div className="meta-item meta-item--difficulty">
+                                    <span className="meta-icon">⚡</span>
+                                    <span className="meta-label">Difficulty:</span>
+                                    <span className="meta-value">Medium</span>
+                                </div>
 
-                </div>
+                                <div className="meta-item meta-item--date">
+                                    <span className="meta-icon">📅</span>
+                                    <span className="meta-label">Date:</span>
+                                    <span className="meta-value">{dateFormatted}</span>
+                                </div>
 
-                {/* Row 4: Strong Areas vs. Weak Areas */}
-                <div className="dashboard-grid-main">
-                    <div className="ats-metric-card strengths-card">
-                        <h2>Strong Areas</h2>
-                        <ul className="points-list checkmark">
-                            {strongAreas.length > 0 ? (
-                                strongAreas.map((topic, idx) => (
-                                    <li key={idx}><strong>{topic}</strong>: Consistently high answering efficiency and concept accuracy</li>
-                                ))
-                            ) : (
-                                <li>No clear strong areas identified yet. Practice more questions to list.</li>
-                            )}
-                        </ul>
-                    </div>
-
-                    <div className="ats-metric-card weaknesses-card">
-                        <h2>Areas Needing Review</h2>
-                        <ul className="points-list warning">
-                            {weakAreas.length > 0 ? (
-                                weakAreas.map((topic, idx) => (
-                                    <li key={idx}><strong>{topic}</strong>: Needs review on technical definitions and details</li>
-                                ))
-                            ) : (
-                                <li>No major review gaps identified. Excellent match work!</li>
-                            )}
-                        </ul>
-                    </div>
-                </div>
-
-                {/* Row 5: Study Roadmap & Recommendations */}
-                <div className="ats-metric-card study-roadmap-card">
-                    <h2>Personalized Study Roadmap</h2>
-                    
-                    {studyPlan.recommendedTopics && studyPlan.recommendedTopics.length > 0 ? (
-                        <div className="study-plan-details">
-                            <div className="study-topics-list">
-                                <h3>🎯 Recommended Topics to Prioritize:</h3>
-                                <div className="skills-badge-flex">
-                                    {studyPlan.recommendedTopics.map((topic, idx) => (
-                                        <span key={idx} className="topic-suggest-badge">{topic}</span>
-                                    ))}
+                                <div className="meta-item meta-item--duration">
+                                    <span className="meta-icon">🕒</span>
+                                    <span className="meta-label">Duration:</span>
+                                    <span className="meta-value">{durationText}</span>
                                 </div>
                             </div>
 
-                            <div className="improvement-roadmap-steps">
-                                <h3>📈 Optimization Roadmap Path:</h3>
-                                {studyPlan.improvementRoadmap && studyPlan.improvementRoadmap.map((road, idx) => (
-                                    <div key={idx} className="roadmap-topic-step">
-                                        <h4>{road.topic} (Target Score: {road.targetScore}%)</h4>
-                                        <ul>
-                                            {road.steps.map((step, sIdx) => (
-                                                <li key={sIdx}>{step}</li>
+                            {/* Bottom Actions Bar (Practice Run Dropdown & Retry Button) */}
+                            <div className="header-actions-bar">
+                                {progressHistory?.length > 1 && (
+                                    <div className="attempt-select-wrapper">
+                                        <label htmlFor="attemptSelect">PRACTICE RUN:</label>
+                                        <select 
+                                            id="attemptSelect"
+                                            value={activeSession._id}
+                                            onChange={(e) => navigate(`/interview/${interviewId}/dashboard?session=${e.target.value}`)}
+                                        >
+                                            {progressHistory.map((snap, idx) => (
+                                                <option key={snap.interviewId} value={snap.interviewId}>
+                                                    Attempt #{idx + 1} ({snap.overallScore}%) - {new Date(snap.date).toLocaleDateString()}
+                                                </option>
                                             ))}
-                                        </ul>
+                                        </select>
                                     </div>
+                                )}
+
+                                <button 
+                                    className="header-action-btn header-action-btn--primary" 
+                                    onClick={() => navigate(`/interview/${interviewId}`)}
+                                >
+                                    🔄 Retry Interview
+                                </button>
+                            </div>
+                        </header>
+
+                        {/* 2. SESSION PERFORMANCE SUMMARY METRIC CARDS */}
+                        <section className="session-metrics-section">
+                            <h2 className="section-subtitle">Session Performance Metrics</h2>
+                            <div className="session-metrics-grid">
+                                
+                                <div className="metric-card metric-card--overall">
+                                    <span className="metric-lbl">Overall Score</span>
+                                    <span className="metric-val">{overallScore}%</span>
+                                    <span className={`metric-tag metric-tag--${overallScore >= 80 ? 'high' : overallScore >= 60 ? 'mid' : 'low'}`}>
+                                        {overallScore >= 80 ? '🏆 Mastered' : overallScore >= 60 ? '👍 Solid' : '⚠️ Review Needed'}
+                                    </span>
+                                </div>
+
+                                <div className="metric-card">
+                                    <span className="metric-lbl">Technical Score</span>
+                                    <span className="metric-val">{technicalScore}%</span>
+                                    <span className="metric-sub">Accuracy & Depth</span>
+                                </div>
+
+                                <div className="metric-card">
+                                    <span className="metric-lbl">Communication</span>
+                                    <span className="metric-val">{communicationScore}%</span>
+                                    <span className="metric-sub">Clarity & Articulation</span>
+                                </div>
+
+                                <div className="metric-card">
+                                    <span className="metric-lbl">Confidence</span>
+                                    <span className="metric-val">{confidenceScore}%</span>
+                                    <span className="metric-sub">Delivery & Tone</span>
+                                </div>
+
+                                <div className="metric-card">
+                                    <span className="metric-lbl">Questions Asked</span>
+                                    <span className="metric-val">{totalCount}</span>
+                                    <span className="metric-sub">Session Plan Total</span>
+                                </div>
+
+                                <div className="metric-card">
+                                    <span className="metric-lbl">Questions Answered</span>
+                                    <span className="metric-val">{answeredCount}</span>
+                                    <span className="metric-sub">Responses Submitted</span>
+                                </div>
+
+                                <div className="metric-card">
+                                    <span className="metric-lbl">Completion Rate</span>
+                                    <span className="metric-val">{completionRate}%</span>
+                                    <span className="metric-sub">Session Progress</span>
+                                </div>
+
+                            </div>
+                        </section>
+
+                        {/* 3. AI SESSION SUMMARY */}
+                        <section className="ai-summary-card">
+                            <div className="card-header-with-icon">
+                                <h2>🤖 AI Session Summary</h2>
+                                <span className="ai-badge">AI Analysis</span>
+                            </div>
+                            <p className="ai-summary-paragraph">{aiSummaryText}</p>
+                        </section>
+
+                        {/* 4. TOPICS COVERED */}
+                        <section className="topics-covered-card">
+                            <h2>📌 Topics Covered in Session</h2>
+                            <div className="topics-badge-flex">
+                                {topicsCovered.map((t, idx) => (
+                                    <span key={idx} className="topic-chip">{t}</span>
                                 ))}
                             </div>
-                        </div>
-                    ) : (
-                        <p style={{ color: "rgba(255,255,255,0.5)" }}>You have met acceptable readiness thresholds across all topic areas. Complete additional runs to test limits!</p>
-                    )}
+                        </section>
+
+                        {/* 5, 6, 7. STRENGTHS, WEAKNESSES & AI SUGGESTIONS */}
+                        <section className="insights-three-grid">
+                            
+                            {/* Strengths Card */}
+                            <div className="insight-card insight-card--strengths">
+                                <h3>✔️ Key Strengths</h3>
+                                {strengthsList.length > 0 ? (
+                                    <ul>
+                                        {strengthsList.map((str, idx) => (
+                                            <li key={idx}>{str}</li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="empty-txt">No explicit strengths compiled for this attempt yet.</p>
+                                )}
+                            </div>
+
+                            {/* Weaknesses Card */}
+                            <div className="insight-card insight-card--weaknesses">
+                                <h3>⚠️ Areas for Improvement</h3>
+                                {weaknessesList.length > 0 ? (
+                                    <ul>
+                                        {weaknessesList.map((weak, idx) => (
+                                            <li key={idx}>{weak}</li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="empty-txt">No critical weakness gaps identified in answered questions.</p>
+                                )}
+                            </div>
+
+                            {/* AI Suggestions Card */}
+                            <div className="insight-card insight-card--suggestions">
+                                <h3>💡 Actionable AI Recommendations</h3>
+                                {suggestionsList.length > 0 ? (
+                                    <ul>
+                                        {suggestionsList.map((sug, idx) => (
+                                            <li key={idx}>{sug}</li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="empty-txt">Continue answering questions to generate tailored study recommendations.</p>
+                                )}
+                            </div>
+
+                        </section>
+
+                        {/* 8. QUESTION REVIEW SECTION (MOST IMPORTANT) */}
+                        <section className="questions-review-section">
+                            
+                            <div className="section-header-flex">
+                                <div>
+                                    <h2>📝 Question-by-Question Review</h2>
+                                    <p className="sub-desc">Detailed evaluation, candidate response, model answers, and individual scoring.</p>
+                                </div>
+
+                                <div className="controls-flex">
+                                    <div className="filter-pill-row">
+                                        <button 
+                                            className={`filter-pill ${filterCategory === 'all' ? 'active' : ''}`} 
+                                            onClick={() => setFilterCategory('all')}
+                                        >
+                                            All ({flatQuestions.length})
+                                        </button>
+                                        <button 
+                                            className={`filter-pill ${filterCategory === 'technical' ? 'active' : ''}`} 
+                                            onClick={() => setFilterCategory('technical')}
+                                        >
+                                            Technical ({report.technicalQuestions?.length || 0})
+                                        </button>
+                                        <button 
+                                            className={`filter-pill ${filterCategory === 'behavioral' ? 'active' : ''}`} 
+                                            onClick={() => setFilterCategory('behavioral')}
+                                        >
+                                            Behavioral ({report.behavioralQuestions?.length || 0})
+                                        </button>
+                                    </div>
+
+                                    <div className="accordion-global-btns">
+                                        <button onClick={expandAll} className="btn-text-link">Expand All</button>
+                                        <span className="sep">•</span>
+                                        <button onClick={collapseAll} className="btn-text-link">Collapse All</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Accordions List */}
+                            <div className="questions-accordion-list">
+                                {filteredQuestions.map((q, idx) => {
+                                    const matchedAns = answers.find(a => a.questionType === q.type && a.questionIndex === q.idx);
+                                    const evalData = matchedAns?.evaluation;
+                                    const scoreVal = evalData?.overall || (matchedAns ? 75 : 0);
+                                    const isOpen = !!openQuestions[idx];
+
+                                    return (
+                                        <div key={idx} className={`question-accordion-card ${isOpen ? 'is-open' : ''}`}>
+                                            
+                                            {/* Accordion Collapsed Header */}
+                                            <div className="accordion-header" onClick={() => toggleQuestion(idx)}>
+                                                <div className="header-left-info">
+                                                    <span className="q-badge">Q{idx + 1}</span>
+                                                    <span className={`q-type-badge q-type-badge--${q.type}`}>
+                                                        {q.type.toUpperCase()}
+                                                    </span>
+                                                    <span className="q-snippet-text">{q.question}</span>
+                                                </div>
+
+                                                <div className="header-right-info">
+                                                    {matchedAns ? (
+                                                        <span className={`score-badge score-badge--${scoreVal >= 80 ? 'high' : scoreVal >= 60 ? 'mid' : 'low'}`}>
+                                                            {scoreVal}%
+                                                        </span>
+                                                    ) : (
+                                                        <span className="skipped-badge">Unanswered</span>
+                                                    )}
+
+                                                    <button className="accordion-toggle-btn">
+                                                        {isOpen ? '▲ Hide Review' : '▼ View Review'}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Accordion Expanded Content */}
+                                            {isOpen && (
+                                                <div className="accordion-body">
+                                                    
+                                                    {/* Question Intention & Text */}
+                                                    <div className="q-full-card">
+                                                        <h3 className="q-full-text">Question: {q.question}</h3>
+                                                        {q.intention && (
+                                                            <div className="intention-box">
+                                                                <span className="icon">💡</span>
+                                                                <div>
+                                                                    <strong>Interviewer Intention:</strong>
+                                                                    <p>{q.intention}</p>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Your Answer Response */}
+                                                    <div className="user-answer-card">
+                                                        <div className="card-label-bar">
+                                                            <label>Your Answer Response</label>
+                                                            {matchedAns ? (
+                                                                <span className="submitted-badge">✓ Response Recorded</span>
+                                                            ) : (
+                                                                <span className="no-response-badge">Skipped / Pending</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="user-answer-text">
+                                                            {matchedAns?.userAnswer ? (
+                                                                <p>{matchedAns.userAnswer}</p>
+                                                            ) : (
+                                                                <p className="placeholder-txt">No response was submitted for this question during the practice run.</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* AI Feedback & Sub-Scores */}
+                                                    {evalData && (
+                                                        <div className="eval-scores-pane">
+                                                            <h4>📊 AI Question Scoring Matrix</h4>
+                                                            <div className="scores-mini-grid">
+                                                                <div className="score-tile">
+                                                                    <span className="val">{evalData.overall}%</span>
+                                                                    <span className="lbl">Overall</span>
+                                                                </div>
+                                                                <div className="score-tile">
+                                                                    <span className="val">{evalData.accuracy}%</span>
+                                                                    <span className="lbl">Accuracy</span>
+                                                                </div>
+                                                                <div className="score-tile">
+                                                                    <span className="val">{evalData.depth}%</span>
+                                                                    <span className="lbl">Tech Depth</span>
+                                                                </div>
+                                                                <div className="score-tile">
+                                                                    <span className="val">{evalData.clarity}%</span>
+                                                                    <span className="lbl">Clarity</span>
+                                                                </div>
+                                                                <div className="score-tile">
+                                                                    <span className="val">{evalData.explanationQuality}%</span>
+                                                                    <span className="lbl">Explanation</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Question Specific Strengths & Weaknesses */}
+                                                            {evalData.feedback && (
+                                                                <div className="q-feedback-grid">
+                                                                    <div className="feedback-col strengths">
+                                                                        <h5>✔️ Strengths</h5>
+                                                                        <ul>
+                                                                            {evalData.feedback.strengths?.map((st, i) => (
+                                                                                <li key={i}>{st}</li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                    <div className="feedback-col weaknesses">
+                                                                        <h5>⚠️ Improvements</h5>
+                                                                        <ul>
+                                                                            {evalData.feedback.weaknesses?.map((wk, i) => (
+                                                                                <li key={i}>{wk}</li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Ideal Reference Answer */}
+                                                    <div className="reference-answer-card">
+                                                        <h4>💡 Ideal Reference Answer Guide</h4>
+                                                        <p>{q.answer}</p>
+                                                    </div>
+
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                        </section>
+
+                        {/* 9. SESSION TIMELINE */}
+                        <section className="session-timeline-card">
+                            <h2>⏱ Session Timeline</h2>
+                            <div className="vertical-timeline">
+                                <div className="timeline-step">
+                                    <div className="step-marker" />
+                                    <div className="step-content">
+                                        <h4>🚀 Session Initialized</h4>
+                                        <p>{startedAtFormatted} ({dateFormatted})</p>
+                                    </div>
+                                </div>
+
+                                <div className="timeline-step">
+                                    <div className="step-marker" />
+                                    <div className="step-content">
+                                        <h4>📝 Responses Submitted</h4>
+                                        <p>{answeredCount} of {totalCount} Questions Answered</p>
+                                    </div>
+                                </div>
+
+                                <div className="timeline-step">
+                                    <div className="step-marker step-marker--completed" />
+                                    <div className="step-content">
+                                        <h4>🏁 Session Completed</h4>
+                                        <p>Overall Rating Score: <strong>{overallScore}%</strong> • Total Session Duration: <strong>{durationText}</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <ScrollToTop />
+                    </div>
                 </div>
-
-                {isPdfPreviewOpen && (
-                    <PdfPreview 
-                        reportId={interviewId} 
-                        onClose={() => setIsPdfPreviewOpen(false)}
-                        onRegenerate={async () => {
-                            if (!report) return;
-                            addToast("Regenerating AI performance card report...", "info");
-                            const data = await generateReport({
-                                jobDescription: report.jobDescription,
-                                selfDescription: report.selfDescription,
-                                resumeText: report.resume
-                            });
-                            if (data && data._id) {
-                                addToast("New report compiled successfully!", "success");
-                                navigate(`/interview/${data._id}/dashboard`);
-                            }
-                        }}
-                    />
-                )}
-                <ScrollToTop />
             </div>
-        </div>
-    </ErrorBoundary>
-    )
-}
+        </ErrorBoundary>
+    );
+};
 
-export default PerformanceDashboard
+export default PerformanceDashboard;

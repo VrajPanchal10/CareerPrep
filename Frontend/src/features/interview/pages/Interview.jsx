@@ -135,7 +135,8 @@ const Interview = () => {
     const handleCompleteSession = async () => {
         const completed = await completeSession(activeSession._id)
         if (completed) {
-            navigate(`/interview/${report._id}/dashboard?session=${completed._id}`)
+            addToast("Mock interview session completed successfully! Redirecting to Performance Analytics.", "success")
+            navigate("/analytics")
         }
     }
 
@@ -156,7 +157,7 @@ const Interview = () => {
         const remainingCount = totalCount - answeredCount;
 
         return (
-            <div style={{ minHeight: "100vh", background: "var(--theme-bg, #0b0f19)" }}>
+            <div className="practice-dashboard-page">
                 <Navbar />
                 
                 <div className="practice-workspace-container">

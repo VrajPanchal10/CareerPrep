@@ -44,6 +44,9 @@ $severity-low: #3fb950;
     border: 1px solid $border-color;
     border-radius: 1rem;
     justify-content: space-between;
+    // Fixed-height dashboard: no column dictates card height
+    height: calc(100vh - 3rem);
+    overflow: hidden;
 }
 
 .interview-divider {
@@ -61,6 +64,12 @@ $severity-low: #3fb950;
     flex-direction: column;
     justify-content: space-between;
     gap: 0.25rem;
+    // Independent scroll within fixed-height layout
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar { display: none; }
 
 
 
@@ -117,22 +126,14 @@ $severity-low: #3fb950;
 .interview-content {
     flex: 1;
     padding: 1.75rem 2rem;
-    overflow-y: auto;
-    min-height: initial;
-    max-height: calc(100vh - 3rem);
-    padding-bottom: 5rem;
+    padding-bottom: 2rem;
     align-items: flex-start;
-
-
-
-
-
-
-
-
-    section {
-        min-height: 100%;
-    }
+    // Independent scroll within fixed-height layout
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar { display: none; }
 }
 
 .content-header {
@@ -364,6 +365,12 @@ $severity-low: #3fb950;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    // Independent scroll within fixed-height layout
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar { display: none; }
 }
 
 .sidebar-divider {
@@ -1109,6 +1116,8 @@ $bp-sm: 480px;
         margin-bottom: 1rem;
         gap: 1.5rem;
         align-items: flex-start;
+        height: auto;
+        overflow-y: visible;
         
         .sidebar-divider { display: none; }
         
@@ -1159,6 +1168,8 @@ $bp-sm: 480px;
         padding: 1.5rem;
         margin-bottom: 1rem;
         max-height: none;
+        height: auto;
+        overflow-y: visible;
     }
     
     .nav-actions {

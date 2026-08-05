@@ -39,7 +39,7 @@
 
 Most interview prep tools solve one problem in isolation. CareerPrep thread-connects candidate resumes, target Job Descriptions (JD), verbal communication skills, and real GitHub software codebases into an end-to-end placement readiness platform.
 
-Upload your resume, paste a target job description, and CareerPrep provides an **ATS compatibility score**, a **tailored mock interview plan**, a **voice-to-voice verbal simulation**, and an **architectural defense of your actual GitHub repositories**. Everything aggregates into a unified performance dashboard and downloads as a multi-page A4 PDF scorecard.
+Upload your resume, paste a target job description, and CareerPrep provides an **ATS compatibility score**, a **tailored mock interview plan**, a **voice-to-voice verbal simulation**, and an **architectural defense of your actual GitHub repositories**. Everything aggregates into a unified performance dashboard.
 
 ---
 
@@ -50,7 +50,6 @@ Upload your resume, paste a target job description, and CareerPrep provides an *
 - **🎤 Native Indian Voice AI:** Integrated Sarvam AI (`saaras:v3` STT & `bulbul:v3` TTS) for natural voice-to-voice verbal mock interviews.
 - **📄 Interactive ATS Heatmaps:** Detailed side-by-side gap comparison tables matching candidate skills, projects, and work experience against JDs.
 - **🔒 Enterprise Security:** Stateless CSRF header verification, AES-256-GCM OAuth token encryption, dynamic CSP nonces, and JWT in httpOnly cookies.
-- **📑 Server-Side A4 PDF Exports:** Polished multi-page PDF performance scorecards compiled server-side via Puppeteer.
 - **🌐 Full Production Deployment:** Live frontend on Vercel, backend on Render, and database on MongoDB Atlas.
 
 ---
@@ -62,7 +61,6 @@ Upload your resume, paste a target job description, and CareerPrep provides an *
 - Calculates an overall ATS match score (0–100%) broken down by technical skills, experience alignment, education, project relevance, and keyword density.
 - Interactive keyword heatmap — Matched, Missing, and Extra keywords at a glance.
 - Side-by-side gap comparison tables for Skills, Projects, and Work Experience.
-- Generates a downloadable ATS-optimized resume PDF via server-side Puppeteer rendering.
 
 ### 🎯 Mock Interview Coach
 - AI-generates technical and behavioral questions derived directly from resume + job description.
@@ -83,10 +81,8 @@ Upload your resume, paste a target job description, and CareerPrep provides an *
 - Interactive Defense Room: AI interviewer challenges design choices, evaluates responses on accuracy, depth, and justification, asks follow-ups, and compiles a Project Mastery Scorecard.
 - Zero-Empty-Card Guarantee: Sanitizes AI outputs with context-aware fallback data structures so UI components are never blank.
 
-### 📊 Performance Analytics & PDF Exports
+### 📊 Performance Analytics
 - Aggregates ATS scores, mock interview grades, verbal ratings, and GitHub defense masteries into a global placement readiness metric.
-- Multi-page A4 PDF reports generated server-side via Puppeteer.
-- Individual PDF exports for ATS audits, mock interview sessions, and GitHub defense scorecards.
 
 ---
 
@@ -151,7 +147,6 @@ CareerPrep runs a custom multi-LLM AI gateway (`Backend/src/services/aiGateway.s
 | **Backend** | Node.js, Express, Mongoose (MongoDB ODM) |
 | **AI Gateway** | `@google/genai` (Official Gemini SDK), Groq REST, OpenRouter REST |
 | **Voice AI** | Sarvam AI REST API (`saaras:v3` STT & `bulbul:v3` TTS) |
-| **PDF Rendering** | Puppeteer (Server-side headless Chrome pool) |
 | **Security & Auth** | JWT, bcryptjs, AES-256-GCM encryption, Helmet, CSRF Middleware, Zod |
 
 ---
@@ -189,7 +184,6 @@ CareerPrep uses MongoDB Atlas with optimized indexes across 7 primary collection
 - **Circuit Breaker Pattern:** Automatically bypasses primary AI models when threshold failures occur (<5ms failover).
 - **SHA-256 Prompt Caching:** Caches non-conversational AI results for 1 hour using SHA-256 prompt hashes.
 - **Zod Response Validation:** Enforces strict JSON schema parsing before state updates.
-- **Singleton Puppeteer Pool:** Reusable headless Chrome browser instance for server-side PDF generation.
 - **MongoDB Connection Pooling:** Persistent connection pool across API handlers.
 
 ---
@@ -210,7 +204,6 @@ CareerPrep/
 │       ├── routes/                 # Express API routes
 │       ├── services/               # Core business logic, AI Gateway, & provider adapters
 │       │   └── providers/          # Gemini, Groq, OpenRouter, & Sarvam adapters
-│       └── templates/pdf/          # EJS templates for Puppeteer PDF rendering
 │
 └── Frontend/
     ├── index.html                  # HTML template

@@ -175,7 +175,7 @@ const SecurityCard = () => {
                         </LoadingButton>
                     )}
                 </div>
-                <div className="card-body" style={{ marginTop: '1rem' }}>
+                <div className="card-body devices-list" style={{ marginTop: '1rem' }}>
                     {securityData.devices.map(dev => {
                         const isCurrent = dev.isCurrentDevice;
                         const deviceId = dev.sessionId || dev._id;

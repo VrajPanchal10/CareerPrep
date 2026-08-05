@@ -4,12 +4,12 @@ import { AuthProvider } from "./features/auth/auth.context.jsx"
 import { InterviewProvider } from "./features/interview/interview.context.jsx"
 import { AtsProvider } from "./features/ats/ats.context.jsx"
 import { ToastProvider } from "./context/ToastContext"
-import { ThemeProvider } from "./context/ThemeContext"
+
 
 function App() {
 
   return (
-    <ThemeProvider>
+    <>
       <ToastProvider>
         <AuthProvider>
           <InterviewProvider>
@@ -19,7 +19,7 @@ function App() {
           </InterviewProvider>
         </AuthProvider>
       </ToastProvider>
-    </ThemeProvider>
+    </>
   )
 }
 

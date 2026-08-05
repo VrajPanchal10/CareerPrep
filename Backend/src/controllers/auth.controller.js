@@ -9,6 +9,43 @@ const { sendResetPasswordEmail, sendPasswordChangedEmail } = require("../service
 const { validatePasswordPolicy } = require("../services/auth/passwordReset.service")
 
 /**
+ * Upserts a device session into user.refreshSessions, capping at 10 devices.
+ * Uses browser + OS to identify existing devices.
+ */
+function upsertDeviceSession(user, req, sessionId) {
+    const { os, browser, deviceType } = parseUserAgent(req.headers["user-agent"]);
+    const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+    const deviceInfo = req.headers["user-agent"] || "Generic Web Client";
+
+    const existingIndex = user.refreshSessions.findIndex(s => s.browser === browser && s.os === os);
+
+    if (existingIndex > -1) {
+        user.refreshSessions[existingIndex].sessionId = sessionId;
+        user.refreshSessions[existingIndex].ip = clientIp;
+        user.refreshSessions[existingIndex].deviceInfo = deviceInfo;
+        user.refreshSessions[existingIndex].deviceType = deviceType;
+        user.refreshSessions[existingIndex].loginAt = new Date();
+        user.refreshSessions[existingIndex].lastActivity = new Date();
+    } else {
+        user.refreshSessions.push({
+            sessionId,
+            deviceInfo,
+            browser,
+            os,
+            deviceType,
+            ip: clientIp,
+            loginAt: new Date(),
+            lastActivity: new Date()
+        });
+    }
+
+    user.refreshSessions.sort((a, b) => b.lastActivity - a.lastActivity);
+    if (user.refreshSessions.length > 10) {
+        user.refreshSessions = user.refreshSessions.slice(0, 10);
+    }
+}
+
+/**
  * @name registerUserController
  * @description Register a new user, expects username, email and password in the request body
  * @access Public
@@ -69,19 +106,7 @@ async function registerUserController(req, res) {
     })
 
     const sessionId = crypto.randomUUID();
-    const { os, browser, deviceType } = parseUserAgent(req.headers["user-agent"]);
-    const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
-
-    user.refreshSessions.push({
-        sessionId,
-        deviceInfo: req.headers["user-agent"] || "Generic Web Client",
-        browser,
-        os,
-        deviceType,
-        ip: clientIp,
-        loginAt: new Date(),
-        lastActivity: new Date()
-    });
+    upsertDeviceSession(user, req, sessionId);
     user.sessionMetadata = {
         lastLogin: new Date(),
         lastActivity: new Date()
@@ -193,18 +218,7 @@ async function loginUserController(req, res) {
 
     // Generate unique session and store structured session record
     const sessionId = crypto.randomUUID();
-    const { os, browser, deviceType } = parseUserAgent(req.headers["user-agent"]);
-
-    user.refreshSessions.push({
-        sessionId,
-        deviceInfo: req.headers["user-agent"] || "Generic Web Client",
-        browser,
-        os,
-        deviceType,
-        ip: clientIp,
-        loginAt: new Date(),
-        lastActivity: new Date()
-    });
+    upsertDeviceSession(user, req, sessionId);
     user.sessionMetadata = {
         lastLogin: new Date(),
         lastActivity: new Date()
@@ -269,7 +283,7 @@ async function logoutUserController(req, res) {
                 if (decoded.sessionId) {
                     const user = await userModel.findById(decoded.id);
                     if (user) {
-                        user.refreshSessions = user.refreshSessions.filter(s => s.token !== decoded.sessionId);
+                        user.refreshSessions = user.refreshSessions.filter(s => s.sessionId !== decoded.sessionId);
                         await user.save();
                     }
                 }
@@ -779,11 +793,7 @@ async function verifyMfaController(req, res) {
 
         // Standard Session login sequence
         const sessionId = crypto.randomUUID();
-        user.refreshSessions.push({
-            token: sessionId,
-            deviceInfo: req.headers["user-agent"] || "Generic Web Client",
-            lastActivity: new Date()
-        });
+        upsertDeviceSession(user, req, sessionId);
         user.sessionMetadata = {
             lastLogin: new Date(),
             lastActivity: new Date()

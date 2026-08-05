@@ -22,7 +22,7 @@ export { default as AnalyticsFilters } from "./AnalyticsFilters/AnalyticsFilters
 export { default as ProgressTimeline } from "./ProgressTimeline/ProgressTimeline";
 export { default as GlobalErrorBoundary } from "./ErrorBoundary/GlobalErrorBoundary";
 export { default as ErrorBoundaryPage } from "./ErrorBoundary/ErrorBoundaryPage";
-export { default as ThemeToggle } from "./ThemeToggle/ThemeToggle";
+
 export { default as VolumeIndicator } from "./VolumeIndicator/VolumeIndicator";
 export { default as RepositoryHistory } from "./RepositoryHistory/RepositoryHistory";
 export { default as RecordingControls } from "./RecordingControls/RecordingControls";

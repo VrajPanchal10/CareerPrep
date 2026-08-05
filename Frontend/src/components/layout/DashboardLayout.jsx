@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, Outlet } from 'react-router';
 import { useAuth } from '../../features/auth/hooks/useAuth';
-import { ThemeToggle } from '../ui';
+
 import './DashboardLayout.scss';
 
 // SVG Icons
@@ -117,7 +117,6 @@ const DashboardLayout = () => {
                     </div>
 
                     <div className="header-actions">
-                        <ThemeToggle />
                     </div>
                 </header>
 

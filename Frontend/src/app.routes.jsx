@@ -1,7 +1,7 @@
 import { createBrowserRouter, Outlet, useLocation } from "react-router";
 import React, { useEffect, lazy, Suspense } from "react";
 import Protected from "./features/auth/components/Protected";
-import { ErrorBoundaryPage, ThemeToggle, DeveloperLogs } from "./components/ui";
+import { ErrorBoundaryPage, DeveloperLogs } from "./components/ui";
 import SessionExpiredModal from "./components/ui/SessionExpiredModal/SessionExpiredModal";
 import DashboardLayout from "./components/layout/DashboardLayout";
 
@@ -70,7 +70,6 @@ const LayoutWrapper = () => {
             </Suspense>
             {!showSidebar && (
                 <div style={{ position: "fixed", top: "18px", right: "24px", zIndex: 1200 }}>
-                    <ThemeToggle />
                 </div>
             )}
             <DeveloperLogs />

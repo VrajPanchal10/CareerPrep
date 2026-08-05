@@ -314,5 +314,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 ---
 
 <div align="center">
-  <sub>Built with React, Node.js, Express, MongoDB, and Multi-LLM AI Services.</sub>
+  <sub>If this project helped you, consider giving it a ⭐ and sharing it with others.</sub>
+  <br>
+  <sub>Contributions, suggestions, and feedback are always welcome.</sub>
 </div>

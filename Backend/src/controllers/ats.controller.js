@@ -161,41 +161,6 @@ async function getAtsReportByIdController(req, res, next) {
 }
 
 /**
- * @description Stream/download a resume file from storage.
- */
-async function getResumeFileController(req, res, next) {
-    try {
-        const { atsId } = req.params;
-        const atsReport = await atsReportModel.findOne({ _id: atsId, user: req.user.id });
-
-        if (!atsReport || !atsReport.relativePath) {
-            return res.status(404).json({
-                success: false,
-                message: "Resume file not found or has no physical storage mapping."
-            });
-        }
-
-        try {
-            const stream = storageService.getFileStream(atsReport.relativePath);
-            
-            res.set({
-                "Content-Type": atsReport.resumeMimetype || "application/pdf",
-                "Content-Disposition": `inline; filename="${atsReport.resumeName || "resume.pdf"}"`
-            });
-
-            stream.pipe(res);
-        } catch (streamErr) {
-            logger.error("Stream reading error:", streamErr);
-            return res.status(404).json({
-                success: false,
-                message: "Resume file could not be found on storage media."
-            });
-        }
-    } catch (error) {
-        logger.error("Error in getResumeFileController:", error);
-        next(error);
-    }
-}
 
 /**
  * @description Controller to delete an ATS report by ID for the logged-in user.
@@ -250,6 +215,5 @@ module.exports = {
     analyzeAtsController,
     getAllAtsReportsController,
     getAtsReportByIdController,
-    getResumeFileController,
     deleteAtsReportController
 };

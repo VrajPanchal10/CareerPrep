@@ -4,6 +4,7 @@ import { getMe } from '../services/auth.api';
 import { fetchSystemHealth } from '../services/system.api';
 import { useToast } from '../../../context/ToastContext';
 import { LoadingButton } from '../../../components/ui';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal/ConfirmationModal';
 import Navbar from '../../ats/components/Navbar';
 import "./settings.scss";
 
@@ -22,6 +23,7 @@ const Settings = () => {
     const [setupActive, setSetupActive] = useState(false);
     const [recoveryCodes, setRecoveryCodes] = useState([]);
     const [actionLoading, setActionLoading] = useState(false);
+    const [showDisableMfaModal, setShowDisableMfaModal] = useState(false);
 
     // Health state
     const [health, setHealth] = useState(null);
@@ -164,19 +166,22 @@ const Settings = () => {
         }
     };
 
-    const handleDisableMfa = async () => {
-        if (!window.confirm("Are you sure you want to disable Multi-Factor Authentication? This will reduce your account security.")) {
-            return;
-        }
+    const handleDisableMfa = () => {
+        setShowDisableMfaModal(true);
+    };
+
+    const confirmDisableMfa = async () => {
         setActionLoading(true);
         setRecoveryCodes([]);
         try {
+            const { disableMfa } = require('../services/auth.api');
             await disableMfa();
             setMfaStatus(false);
             setUser(prev => ({ ...prev, mfaEnabled: false }));
+            setShowDisableMfaModal(false);
             addToast("MFA has been disabled successfully.", "info");
         } catch (err) {
-            console.error("Disable MFA failed:", err);
+            console.error("Failed to disable MFA:", err);
             addToast(err?.response?.data?.message || "Failed to disable MFA.", "error");
         } finally {
             setActionLoading(false);
@@ -398,6 +403,18 @@ const Settings = () => {
                 </div>
             </div>
         </div>
+
+            <ConfirmationModal
+                open={showDisableMfaModal}
+                variant="danger"
+                title="Disable Multi-Factor Authentication?"
+                description="This will significantly reduce your account security. Are you sure you want to proceed?"
+                confirmText="Disable MFA"
+                cancelText="Cancel"
+                loading={actionLoading}
+                onConfirm={confirmDisableMfa}
+                onCancel={() => setShowDisableMfaModal(false)}
+            />
     );
 };
 

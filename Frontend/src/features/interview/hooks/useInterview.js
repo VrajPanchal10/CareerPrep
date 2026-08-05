@@ -3,7 +3,6 @@ import {
     generateInterviewReport, 
     getInterviewReportById, 
     deleteInterviewReport,
-    generateResumePdf,
     startInterviewSession,
     completeInterviewSession,
     getInterviewSessionById,
@@ -86,27 +85,7 @@ export const useInterview = () => {
         return Array.isArray(response?.interviewReports) ? response.interviewReports : []
     }
 
-    const getResumePdf = async (interviewReportId) => {
-        setLoading(true)
-        let response = null
-        try {
-            response = await generateResumePdf({ interviewReportId })
-            const blob = new Blob([ response ], { type: "application/pdf" })
-            const url = window.URL.createObjectURL(blob)
-            const link = document.createElement("a")
-            link.href = url
-            link.setAttribute("download", `resume_${interviewReportId}.pdf`)
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            window.URL.revokeObjectURL(url)
-        }
-        catch (error) {
-            console.error("Error in useInterview getResumePdf:", error)
-        } finally {
-            setLoading(false)
-        }
-    }
+
 
     /* --- SESSION & DASHBOARD LOGIC --- */
 
@@ -254,7 +233,7 @@ export const useInterview = () => {
 
     return { 
         loading, report, reports, activeSession, progressHistory, 
-        generateReport, getReportById, getReports, deleteReport, getResumePdf,
+        generateReport, getReportById, getReports, deleteReport, 
         startSession, submitAnswer, completeSession, loadSessionById, loadProgress,
         downloadReportPdf
     }

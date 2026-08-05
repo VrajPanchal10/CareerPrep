@@ -35,13 +35,6 @@ interviewRouter.delete("/:interviewId", authMiddleware.authUser, authMiddleware.
  */
 interviewRouter.get("/", authMiddleware.authUser, interviewController.getAllInterviewReportsController)
 
-/**
- * @route GET /api/interview/resume/pdf
- * @description generate resume pdf on the basis of user self description, resume content and job description.
- * @access private
- */
-interviewRouter.post("/resume/pdf/:interviewReportId", authMiddleware.authUser, authMiddleware.csrfProtection, authMiddleware.aiLimiter, interviewController.generateResumePdfController)
-
 /* --- MOCK INTERVIEW SESSIONS & EVALUATIONS --- */
 
 /**
@@ -107,12 +100,7 @@ interviewRouter.get("/progress/:id", authMiddleware.authUser, sessionController.
  */
 interviewRouter.get("/study-plan/:id", authMiddleware.authUser, sessionController.getStudyPlanController)
 
-/**
- * @route GET /api/interview/report/pdf/:reportId
- * @description download complete PDF performance card report.
- * @access private
- */
-interviewRouter.get("/report/pdf/:reportId", authMiddleware.authUser, interviewController.exportPerformancePdfController)
+
 
 module.exports = interviewRouter
 

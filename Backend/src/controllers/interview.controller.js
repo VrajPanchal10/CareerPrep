@@ -1,6 +1,6 @@
 const mongoose = require("mongoose")
-const { generateInterviewReport, generateResumePdf } = require("../services/ai.service")
-const { generatePerformancePdf } = require("../services/performancePdf.service")
+const { generateInterviewReport } = require("../services/ai.service")
+
 const interviewReportModel = require("../models/interviewReport.model")
 const interviewSessionModel = require("../models/interviewSession.model")
 const upload = require("../middlewares/file.middleware")
@@ -42,7 +42,8 @@ async function generateInterViewReportController(req, res, next) {
         const interViewReportByAi = await generateInterviewReport({
             resume: resumeContentText,
             selfDescription,
-            jobDescription
+            jobDescription,
+            userId: req.user.id
         });
 
         const interviewReport = await interviewReportModel.create({
@@ -129,70 +130,6 @@ async function getAllInterviewReportsController(req, res, next) {
     }
 }
 
-
-/**
- * @description Controller to generate resume PDF based on user self description, resume and job description.
- */
-async function generateResumePdfController(req, res, next) {
-    try {
-        const { interviewReportId } = req.params
-
-        const interviewReport = await interviewReportModel.findById(interviewReportId)
-
-        if (!interviewReport) {
-            return res.status(404).json({
-                success: false,
-                message: "Interview report not found."
-            })
-        }
-
-        const { resume, jobDescription, selfDescription } = interviewReport
-
-        let pdfBuffer;
-        try {
-            pdfBuffer = await generateResumePdf({ resume, jobDescription, selfDescription })
-        } catch (error) {
-            logger.error("Error in generateResumePdf AI call:", error);
-            if (error.model || error.status) {
-                const isUnavailable = [503, "UNAVAILABLE"].includes(error.status);
-                return res.status(isUnavailable ? 503 : 502).json({
-                    success: false,
-                    message: isUnavailable 
-                        ? "The AI service is currently experiencing high demand and is temporarily unavailable. Please try again in a few moments." 
-                        : "The AI service encountered an error while generating your resume. Please try again.",
-                    error: {
-                        code: isUnavailable ? "AI_SERVICE_UNAVAILABLE" : "AI_SERVICE_ERROR",
-                        status: error.status,
-                        model: error.model,
-                        timestamp: error.timestamp
-                    }
-                });
-            }
-            throw error; // Propagate to outer catch
-        }
-
-        if (!pdfBuffer || pdfBuffer.length === 0) {
-            return res.status(500).json({
-                success: false,
-                message: "Resume PDF generation produced an empty file."
-            });
-        }
-
-        res.set({
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename=resume_${interviewReportId}.pdf`
-        })
-
-        return res.send(pdfBuffer)
-    } catch (error) {
-        logger.error("Error in generateResumePdfController:", error);
-        return res.status(500).json({
-            success: false,
-            message: "An internal server error occurred while processing your resume PDF.",
-            error: { code: "INTERNAL_SERVER_ERROR" }
-        });
-    }
-}
 
 /**
  * @description Controller to download a candidate's complete Performance Report PDF.
@@ -318,7 +255,6 @@ module.exports = {
     generateInterViewReportController, 
     getInterviewReportByIdController, 
     getAllInterviewReportsController, 
-    generateResumePdfController,
-    exportPerformancePdfController,
+
     deleteInterviewReportController
 }

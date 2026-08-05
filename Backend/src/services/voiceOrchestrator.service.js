@@ -3,6 +3,7 @@ const translationService = require("./translation.service");
 const transcriptService = require("./transcript.service");
 const evaluationService = require("./evaluation.service");
 const analyticsService = require("./analytics.service");
+const aiMemory = require("./aiMemory.service");
 const { logger } = require("../utils/securityLogger");
 
 /**
@@ -53,6 +54,7 @@ async function processVoiceAnswer({ sessionId, userId, questionIndex, userAnswer
     });
 
     const conversationMemory = session.conversationMemory || [];
+    const userContext = await aiMemory.getUserContext(userId);
 
     // 6. Execute Advanced Answer Evaluation via Sub-Service
     logger.debug(`[Voice Orchestrator] Evaluating voice response for question index ${questionIndex}...`);
@@ -67,22 +69,26 @@ async function processVoiceAnswer({ sessionId, userId, questionIndex, userAnswer
         topic: question.topic,
         previousAnswers,
         conversationMemory,
+        userContext,
         responseTime,
         languageCode
     });
 
-    // Normalize scoring defaults in case AI gateway fluctuates
-    const overallScore = evalResult.overallScore ?? 70;
-    const communicationScore = evalResult.communicationScore ?? 70;
-    const clarityScore = evalResult.clarityScore ?? 70;
-    const technicalScore = evalResult.technicalScore ?? 70;
-    const explanationScore = evalResult.explanationScore ?? 70;
-    const technicalDepth = evalResult.technicalDepth ?? 70;
-    const completeness = evalResult.completeness ?? 70;
-    const relevance = evalResult.relevance ?? 70;
-    const communicationFlow = evalResult.communicationFlow ?? 70;
-    const grammarScore = evalResult.grammarScore ?? 70;
-    const fluencyScore = evalResult.fluencyScore ?? 70;
+    if (!evalResult || typeof evalResult.overallScore !== "number") {
+        throw new Error("Evaluation failed: AI could not evaluate the voice response.");
+    }
+
+    const overallScore = evalResult.overallScore;
+    const communicationScore = evalResult.communicationScore;
+    const clarityScore = evalResult.clarityScore;
+    const technicalScore = evalResult.technicalScore;
+    const explanationScore = evalResult.explanationScore;
+    const technicalDepth = evalResult.technicalDepth;
+    const completeness = evalResult.completeness;
+    const relevance = evalResult.relevance;
+    const communicationFlow = evalResult.communicationFlow;
+    const grammarScore = evalResult.grammarScore;
+    const fluencyScore = evalResult.fluencyScore;
     const responseStructure = evalResult.responseStructure || "STAR";
     const timeUtilization = evalResult.timeUtilization ?? 1.0;
     const fillerWords = evalResult.fillerWords || [];

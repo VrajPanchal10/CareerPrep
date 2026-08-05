@@ -77,7 +77,7 @@ export const useGithubOAuth = ({ addToast } = {}) => {
             
             refreshStatus().then(() => {
                 if (addToast) {
-                    addToast("✅ GitHub account connected successfully!", "success");
+                    addToast("GitHub account connected successfully!", "success");
                 }
                 setIsConnecting(false);
             });

@@ -98,7 +98,7 @@ const SessionExpiredModal = () => {
                 addToast("Your unsaved input progress has been cached locally.", "info");
             }
         } catch (err) {
-            console.warn("Failed to cache unsaved work state:", err);
+            
         }
     };
 

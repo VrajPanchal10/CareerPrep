@@ -5,13 +5,16 @@
     padding: 1.25rem;
     box-shadow: var(--theme-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.4));
     color: #e2e8f0;
-    height: 400px;
+    height: 460px;
+    max-height: 460px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    overflow: hidden;
 
     @media (max-width: 767px) {
         height: auto;
+        max-height: none;
         min-height: 380px;
     }
 

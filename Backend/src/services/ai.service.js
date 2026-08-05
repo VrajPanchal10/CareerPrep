@@ -1,11 +1,13 @@
 const { z } = require("zod");
-const puppeteer = require("puppeteer");
+
 const gateway = require("./aiGateway.service");
 
 // Import centralized prompt templates
 const atsPrompts = require("../prompts/ats.prompt");
 const interviewPrompts = require("../prompts/interview.prompt");
-const pdfPrompts = require("../prompts/pdf.prompt");
+
+const atsDeterministic = require("./atsDeterministic.service");
+const aiMemory = require("./aiMemory.service");
 
 // Zod schema definitions
 const interviewReportSchema = z.object({
@@ -122,8 +124,10 @@ async function generatePdfFromHtml(htmlContent) {
 /**
  * Generate interview preparation guide.
  */
-async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
-    const prompt = interviewPrompts.generateInterviewReportPrompt({ resume, selfDescription, jobDescription });
+async function generateInterviewReport({ resume, selfDescription, jobDescription, userId }) {
+    const deterministicData = atsDeterministic.evaluate(resume, jobDescription);
+    const userContext = userId ? await aiMemory.getUserContext(userId) : "";
+    const prompt = interviewPrompts.generateInterviewReportPrompt({ resume, selfDescription, jobDescription, deterministicData, userContext });
     const response = await gateway.routeTask("resumeSuggestions", { prompt }, {
         jsonMode: true,
         responseSchema: interviewReportSchema.toJSONSchema()
@@ -134,26 +138,14 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 /**
  * Generate resume PDF.
  */
-async function generateResumePdf({ resume, selfDescription, jobDescription }) {
-    const resumePdfSchema = z.object({
-        html: z.string().describe("The HTML content of the resume which can be converted to PDF using any library like puppeteer")
-    });
 
-    const prompt = pdfPrompts.generateResumePdfPrompt({ resume, selfDescription, jobDescription });
-    const response = await gateway.routeTask("pdfReportGeneration", { prompt }, {
-        jsonMode: true,
-        responseSchema: resumePdfSchema.toJSONSchema()
-    });
-
-    const pdfBuffer = await generatePdfFromHtml(response.output.html);
-    return pdfBuffer;
-}
 
 /**
  * Generate ATS optimization report.
  */
 async function generateAtsReport({ resume, jobDescription }) {
-    const prompt = atsPrompts.generateAtsReportPrompt({ resume, jobDescription });
+    const deterministicData = atsDeterministic.evaluate(resume, jobDescription);
+    const prompt = atsPrompts.generateAtsReportPrompt({ resume, jobDescription, deterministicData });
     const response = await gateway.routeTask("atsResumeAnalysis", { prompt }, {
         jsonMode: true,
         responseSchema: atsReportSchema.toJSONSchema()
@@ -164,10 +156,11 @@ async function generateAtsReport({ resume, jobDescription }) {
 /**
  * Evaluate standard mock interview answer.
  */
-async function evaluateUserAnswer({ question, intention, modelAnswer, userAnswer }) {
-    const prompt = interviewPrompts.evaluateUserAnswerPrompt({ question, intention, modelAnswer, userAnswer });
+async function evaluateUserAnswer({ question, intention, modelAnswer, userAnswer, userId }) {
+    const userContext = userId ? await aiMemory.getUserContext(userId) : "";
+    const prompt = interviewPrompts.evaluateUserAnswerPrompt({ question, intention, modelAnswer, userAnswer, userContext });
     // evaluateUserAnswer uses gemini for complex structural feedback
-    const response = await gateway.routeTask("resumeSuggestions", { prompt }, {
+    const response = await gateway.routeTask("interviewEvaluation", { prompt }, {
         jsonMode: true,
         responseSchema: answerEvaluationSchema.toJSONSchema()
     });
@@ -213,7 +206,6 @@ async function generateVoiceSessionSummaryRecommendation({ evaluations }) {
 
 module.exports = {
     generateInterviewReport,
-    generateResumePdf,
     generateAtsReport,
     evaluateUserAnswer,
     evaluateVoiceAnswer,

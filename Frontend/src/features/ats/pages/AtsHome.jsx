@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar'
 import { useAts } from '../hooks/useAts'
 import '../style/atsHome.scss'
 import { useToast, ProgressBar, LoadingButton, SkeletonDashboard, EmptyState, ScrollToTop, ErrorBoundary, HelpTooltip } from '../../../components/ui'
+import ConfirmationModal from '../../../components/ui/ConfirmationModal/ConfirmationModal'
 import DevLogger from '../../../utils/devLogger'
 import { formatErrorMessage } from '../../../utils/apiClient'
 
@@ -18,6 +19,22 @@ const AtsHome = () => {
     const [uploadStatus, setUploadStatus] = useState("uploading")
     const resumeInputRef = useRef()
     const navigate = useNavigate()
+
+    const [confirmation, setConfirmation] = useState(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    const handleConfirmDelete = async () => {
+        if (!confirmation) return;
+        setIsDeleting(true);
+        try {
+            await deleteReport(confirmation);
+            setConfirmation(null);
+        } catch (err) {
+            console.error("Failed to delete ATS scan.", err);
+        } finally {
+            setIsDeleting(false);
+        }
+    }
 
     const handleFileChange = (e) => {
         const file = e.target.files[0]
@@ -265,11 +282,9 @@ const AtsHome = () => {
                                         <button
                                             type="button"
                                             className='delete-card-btn'
-                                            onClick={async (e) => {
+                                            onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (window.confirm("Are you sure you want to delete this historical ATS match scan?")) {
-                                                    await deleteReport(report._id);
-                                                }
+                                                setConfirmation(report._id);
                                             }}
                                             title="Delete ATS Scan History"
                                         >
@@ -284,7 +299,6 @@ const AtsHome = () => {
                                             <h3>{previewTitle}</h3>
                                             <p className='date'>Scanned on {new Date(report.createdAt).toLocaleDateString()}</p>
                                         </div>
-                                        <div className='report-card-ats__arrow'>➡️</div>
                                     </div>
                                 )
                             })}
@@ -306,6 +320,18 @@ const AtsHome = () => {
                 )}
 
                 <ScrollToTop />
+
+                <ConfirmationModal
+                    open={!!confirmation}
+                    variant="danger"
+                    title="Delete ATS Report?"
+                    description="This action cannot be undone. Are you sure you want to delete this historical ATS match scan?"
+                    confirmText="Delete"
+                    cancelText="Cancel"
+                    loading={isDeleting}
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setConfirmation(null)}
+                />
             </div>
         </div>
     </ErrorBoundary>

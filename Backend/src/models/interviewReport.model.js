@@ -13,6 +13,9 @@ const technicalQuestionSchema = new mongoose.Schema({
     answer: {
         type: String,
         required: [ true, "Answer is required" ]
+    },
+    topic: {
+        type: String
     }
 }, {
     _id: false
@@ -30,6 +33,9 @@ const behavioralQuestionSchema = new mongoose.Schema({
     answer: {
         type: String,
         required: [ true, "Answer is required" ]
+    },
+    topic: {
+        type: String
     }
 }, {
     _id: false

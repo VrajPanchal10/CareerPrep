@@ -93,26 +93,7 @@ const AtsDashboard = () => {
         }
     };
 
-    // Download/fetch stream helper using credentials and CSRF
-    const handleDownloadResume = async () => {
-        try {
-            const response = await api.get(`/api/ats/report/${atsId}/resume`, {
-                responseType: "blob"
-            });
-            const blob = new Blob([response.data], { type: report.resumeMimetype || "application/pdf" });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", report.resumeName || "resume.pdf");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        } catch (err) {
-            console.error("Failed to download resume file stream:", err);
-            addToast("Unable to download resume file.", "error");
-        }
-    };
+
 
     return (
         <ErrorBoundary>
@@ -140,7 +121,6 @@ const AtsDashboard = () => {
                                 fileName={report.resumeName || "resume.pdf"}
                                 pageNumber={pdfPageNumber}
                                 onPageChange={setPdfPageNumber}
-                                onDownload={handleDownloadResume}
                             />
 
                             {/* Dev diagnostics pane */}

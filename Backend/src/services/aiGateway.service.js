@@ -53,10 +53,18 @@ function logGatewayEvent({ success, task, provider, model, latency, cacheStatus 
  */
 async function routeTask(taskName, payload, options = {}) {
     const startTime = Date.now();
-    const primaryProvider = aiConfig.routingTable[taskName];
+    const routeConfig = aiConfig.routingTable[taskName];
 
-    if (!primaryProvider) {
+    if (!routeConfig) {
         throw new Error(`No provider configuration mapped for task '${taskName}'.`);
+    }
+
+    const primaryProvider = typeof routeConfig === "string" ? routeConfig : routeConfig.provider;
+    const taskTemperature = typeof routeConfig === "string" ? undefined : routeConfig.temperature;
+    
+    // Inject task-level temperature into options if not overridden
+    if (taskTemperature !== undefined && options.temperature === undefined) {
+        options.temperature = taskTemperature;
     }
 
     // 1. Caching Layer Check

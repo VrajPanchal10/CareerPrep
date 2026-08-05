@@ -2,21 +2,62 @@
  * Interview Prompt Templates
  */
 module.exports = {
-    generateInterviewReportPrompt: ({ resume, selfDescription, jobDescription }) => {
-        return `Generate an interview report for a candidate with the following details:
+    generateInterviewReportPrompt: ({ resume, selfDescription, jobDescription, deterministicData, userContext }) => {
+        return `Generate a comprehensive interview report and preparation plan for a candidate based on the provided details.
+
+Input Data:
 Resume: ${resume}
 Self Description: ${selfDescription}
-Job Description: ${jobDescription}`;
+Job Description: ${jobDescription}
+
+Deterministic Score Data (MUST USE EXACTLY):
+- matchScore: ${deterministicData.baseScore}
+- missingKeywords (Skill Gaps): [${deterministicData.missingKeywords.join(", ")}]
+
+${userContext}
+
+Constraints & Anti-Hallucination:
+- You MUST output the "matchScore" EXACTLY as provided above (${deterministicData.baseScore}). Do NOT invent your own score.
+- Every technical question MUST reference a specific technology or concept from the candidate's resume or the JD. Do NOT generate generic CS trivia.
+- Skill gaps MUST be drawn primarily from the missingKeywords list provided. Do NOT invent skill gaps.
+- You MUST analyze the Historical Context provided above.
+- If the user has a historical weakness, generate technical questions that explicitly test that weakness.
+- DO NOT generate generic templates (e.g. Day 1: Learn React). Instead, if the Historical Context shows they already know a skill, skip it. If they failed a previous interview on a topic, you MUST make that topic the primary focus of the preparation plan.
+
+Explanation Requirement (CRITICAL):
+- You MUST explain why the matchScore is ${deterministicData.baseScore}.
+- Since there is no dedicated explanation field, provide this explanation by appending it to the "title" string.
+- Example: "Software Engineer (Match Score: ${deterministicData.baseScore} - Strong alignment with React, but missing ${deterministicData.missingKeywords[0] || 'AWS'})"
+
+Return a detailed JSON matching the required schema exactly.`;
     },
 
-    evaluateUserAnswerPrompt: ({ question, intention, modelAnswer, userAnswer }) => {
+    evaluateUserAnswerPrompt: ({ question, intention, modelAnswer, userAnswer, userContext }) => {
         return `You are a technical interviewer evaluating a candidate's response to an interview question.
+
+Input Data:
 Question: ${question}
 Interviewer's Intention: ${intention}
 Reference Model Answer: ${modelAnswer}
 Candidate's Answer: ${userAnswer}
 
-Provide a detailed, critical and fair evaluation matching the required schema. Focus on assessing explanation quality and technical accuracy instead of confidence. Keep the feedback practical and constructive.`;
+${userContext}
+
+Scoring Methodology & Rubric:
+- 0-20: No relevant content or completely empty answer.
+- 21-40: Mentions topic but major gaps.
+- 41-60: Partially correct with missing depth.
+- 61-80: Good coverage with minor gaps.
+- 81-100: Comprehensive, detailed, technically accurate.
+- overall score MUST be calculated as: 0.30*accuracy + 0.25*depth + 0.25*explanationQuality + 0.20*clarity.
+- If the candidate's answer is empty, blank, or irrelevant, all scores MUST be below 20. Do not give artificially high scores (no flattery).
+
+Explanation Requirement (CRITICAL):
+- Strengths and weaknesses MUST cite or quote specific phrases from the candidate's answer to justify the scores.
+- Explain the scores inside the strengths and weaknesses arrays using distinct bullet points.
+- Tailor your feedback recognizing their past attempts found in the Historical Context. If they show improvement in a Historical Weakness, praise it. If they fail again, be stricter.
+
+Provide a detailed, critical and fair evaluation matching the required JSON schema exactly.`;
     },
 
     evaluateVoiceAnswerPrompt: ({ 
@@ -30,6 +71,7 @@ Provide a detailed, critical and fair evaluation matching the required schema. F
         topic, 
         previousAnswers = [], 
         conversationMemory = [], 
+        userContext,
         responseTime, 
         languageCode 
     }) => {
@@ -53,6 +95,8 @@ Current Question:
 Interview History:
 - Previous Questions & Answers: ${JSON.stringify(previousAnswers)}
 - Active Conversation Memory (prior weak areas): ${JSON.stringify(conversationMemory)}
+
+${userContext}
 
 Candidate's Verbal Answer Transcript:
 "${userAnswer}"

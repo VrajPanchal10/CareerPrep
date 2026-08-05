@@ -12,8 +12,7 @@ const PdfViewer = ({
     pdfUrl, 
     fileName = "resume.pdf", 
     pageNumber = 1, 
-    onPageChange, 
-    onDownload 
+    onPageChange
 }) => {
     const [numPages, setNumPages] = useState(null);
     const [scale, setScale] = useState(1.0);
@@ -159,20 +158,7 @@ const PdfViewer = ({
         });
     };
 
-    const handleDownload = () => {
-        if (onDownload) {
-            onDownload();
-            return;
-        }
-        if (pdfUrl) {
-            const link = document.createElement("a");
-            link.href = pdfUrl;
-            link.setAttribute("download", fileName);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    };
+
 
     const handleOpenTab = () => {
         if (pdfUrl) {
@@ -217,9 +203,6 @@ const PdfViewer = ({
                 <div className="toolbar-group exports">
                     <button onClick={handleOpenTab} disabled={isLoading} className="btn-action" title="Open PDF in new tab" aria-label="Open tab">
                         ↗️
-                    </button>
-                    <button onClick={handleDownload} disabled={isLoading} className="btn-text primary" title="Save PDF document" aria-label="Download PDF">
-                        💾 Download
                     </button>
                 </div>
             </div>

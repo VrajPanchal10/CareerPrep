@@ -102,7 +102,8 @@ async function evaluateAnswerController(req, res, next) {
                 question: question.question,
                 intention: question.intention,
                 modelAnswer: question.answer,
-                userAnswer
+                userAnswer,
+                userId: req.user.id
             });
         } catch (aiErr) {
             logger.error("Error evaluating answer with Gemini:", aiErr);

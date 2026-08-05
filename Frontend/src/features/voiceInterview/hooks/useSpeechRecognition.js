@@ -92,7 +92,7 @@ export function useSpeechRecognition({
                     }
                 };
                 
-                recognition.onerror = (e) => console.debug("Speech Recognition Error:", e.error || e);
+                // Intentionally swallowed
                 try { recognition.start(); } catch(e) {}
             }
 
@@ -119,7 +119,7 @@ export function useSpeechRecognition({
                 const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
                 const duration = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 : 0;
 
-                console.debug(`[useSpeechRecognition] Recording completed. size=${audioBlob.size} bytes, type=${audioBlob.type}, duration=${duration.toFixed(2)}s`);
+                
 
                 if (audioBlob.size < 500 && duration < 0.5) {
                     const hasBrowserText = liveTranscriptRef.current.trim().length > 0;
@@ -154,7 +154,7 @@ export function useSpeechRecognition({
                     // Fallback to browser transcript if backend STT fails
                     const hasBrowserText = liveTranscriptRef.current.trim().length > 0;
                     if (hasBrowserText) {
-                        console.warn("[useSpeechRecognition] Backend STT failed. Falling back to Browser SpeechRecognition transcript.");
+                        
                     } else {
                         if (isMountedRef.current && onError) onError("Voice STT service unavailable. Fallback to typed text.");
                     }

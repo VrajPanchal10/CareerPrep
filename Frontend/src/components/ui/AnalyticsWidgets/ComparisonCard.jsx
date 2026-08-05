@@ -71,10 +71,8 @@ const ComparisonCard = ({ attempts = [], title = "Assessment Run Comparison", ac
         <div className="comparison-card" role="region" aria-label="Attempts comparison stats">
             <div className="card-header-fixed">
                 <h3 className="comparison-card__title">{title}</h3>
-            </div>
-            
-            <div className="card-body-scrollable">
-                {/* 4-Card Equal Metric Grid Header */}
+                
+                {/* 4-Card Equal Metric Grid Header (Fixed in Header) */}
                 <div className="comparison-card__metrics-grid">
                     <div className="metric-box">
                         <span className="metric-label">Initial Score</span>
@@ -93,7 +91,9 @@ const ComparisonCard = ({ attempts = [], title = "Assessment Run Comparison", ac
                         <span className="metric-value">{count} Runs</span>
                     </div>
                 </div>
-
+            </div>
+            
+            <div className="card-body-scrollable">
                 {/* Session Attempts Timeline Trail */}
                 {progression && progression.length > 0 && (
                     <div className="comparison-card__timeline-bar">

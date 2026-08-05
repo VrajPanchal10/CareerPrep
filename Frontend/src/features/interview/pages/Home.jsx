@@ -4,6 +4,7 @@ import { useInterview } from '../hooks/useInterview.js';
 import { useNavigate } from 'react-router';
 import Navbar from '../../ats/components/Navbar';
 import { useToast, ProgressBar, LoadingButton, EmptyState, ScrollToTop, ErrorBoundary } from '../../../components/ui';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal/ConfirmationModal';
 
 // Vector SVGs matching Target Reference 1:1
 const SVG = {
@@ -50,6 +51,10 @@ const Home = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadStatus, setUploadStatus] = useState("uploading");
+    
+    const [confirmation, setConfirmation] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const resumeInputRef = useRef();
     const navigate = useNavigate();
 
@@ -156,10 +161,21 @@ const Home = () => {
         }
     };
 
-    const handleRemovePlan = async (reportId, e) => {
+    const handleRemovePlan = (reportId, e) => {
         e.stopPropagation();
-        if (window.confirm("Are you sure you want to remove this interview plan?")) {
-            await deleteReport(reportId);
+        setConfirmation(reportId);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!confirmation) return;
+        setIsDeleting(true);
+        try {
+            await deleteReport(confirmation);
+            setConfirmation(null);
+        } catch (err) {
+            addToast("Failed to delete interview plan.", "error");
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -385,6 +401,18 @@ const Home = () => {
                 </div>
 
                 <ScrollToTop />
+
+                <ConfirmationModal
+                    open={!!confirmation}
+                    variant="danger"
+                    title="Delete Interview Plan?"
+                    description="This action cannot be undone. Are you sure you want to remove this interview plan?"
+                    confirmText="Delete"
+                    cancelText="Cancel"
+                    loading={isDeleting}
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setConfirmation(null)}
+                />
             </div>
         </ErrorBoundary>
     );

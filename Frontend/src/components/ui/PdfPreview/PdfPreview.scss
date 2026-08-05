@@ -220,54 +220,14 @@
             align-items: flex-start;
         }
 
-        .score-ring-box {
-            width: 76px;
-            height: 76px;
-            border-radius: 50%;
-            border: 3px solid #10b981;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.3);
-            flex-shrink: 0;
 
-            .score-val {
-                font-size: 1.45rem;
-                font-weight: 800;
-                color: #ffffff;
-                line-height: 1;
-
-                span {
-                    font-size: 0.85rem;
-                    color: rgba(255, 255, 255, 0.6);
-                }
-            }
-
-            .score-lbl {
-                font-size: 0.58rem;
-                font-weight: 700;
-                color: rgba(255, 255, 255, 0.5);
-                text-transform: uppercase;
-                margin-top: 2px;
-            }
-        }
 
         .verdict-meta {
             display: flex;
             flex-direction: column;
             gap: 4px;
 
-            .verdict-tag {
-                align-self: flex-start;
-                font-size: 0.65rem;
-                font-weight: 800;
-                padding: 2px 6px;
-                border-radius: 4px;
-                border: 1px solid transparent;
-                text-transform: uppercase;
-                letter-spacing: 0.4px;
-            }
+
 
             h3 {
                 margin: 0;
@@ -294,106 +254,10 @@
         }
     }
 
-    .verdict-meters-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        background: rgba(0, 0, 0, 0.25);
-        padding: 10px 12px;
-        border-radius: 8px;
 
-        @media (max-width: 600px) {
-            grid-template-columns: 1fr;
-        }
-
-        .meter-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-
-            .meter-header {
-                display: flex;
-                justify-content: space-between;
-                font-size: 0.76rem;
-                font-weight: 600;
-                color: rgba(255, 255, 255, 0.8);
-            }
-
-            .meter-track {
-                height: 6px;
-                background: rgba(255, 255, 255, 0.08);
-                border-radius: 3px;
-                overflow: hidden;
-
-                .meter-fill {
-                    height: 100%;
-                    border-radius: 3px;
-                    transition: width 0.5s ease;
-                }
-            }
-        }
-    }
 }
 
-/* Triple Scores Grid */
-.scores-trio-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
 
-    @media (max-width: 650px) {
-        grid-template-columns: 1fr;
-    }
-
-    .trio-card {
-        background: #141a26;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 10px 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        &--highlight {
-            border-color: rgba(16, 185, 129, 0.35);
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(20, 26, 38, 1) 100%);
-        }
-
-        .trio-icon {
-            font-size: 1.3rem;
-            flex-shrink: 0;
-        }
-
-        .trio-info {
-            display: flex;
-            flex-direction: column;
-
-            h4 {
-                margin: 0;
-                font-size: 0.72rem;
-                color: rgba(255, 255, 255, 0.6);
-                font-weight: 500;
-            }
-
-            .trio-val {
-                font-size: 1.2rem;
-                font-weight: 800;
-                color: #ffffff;
-            }
-        }
-
-        .trio-status {
-            margin-left: auto;
-            font-size: 0.64rem;
-            font-weight: 700;
-            color: #10b981;
-            background: rgba(16, 185, 129, 0.12);
-            padding: 2px 5px;
-            border-radius: 4px;
-            white-space: nowrap;
-        }
-    }
-}
 
 /* Two Column Insights */
 .insights-two-col {
@@ -450,61 +314,7 @@
     }
 }
 
-/* Interview Round Readiness Badges */
-.readiness-badges-section {
-    background: #141a26;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    padding: 12px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
 
-    h3 {
-        margin: 0;
-        font-size: 0.88rem;
-        font-weight: 700;
-        color: #ffffff;
-    }
-
-    .badges-flex {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-
-        .round-badge {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 5px 9px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-
-            &--ready {
-                background: rgba(16, 185, 129, 0.12);
-                border: 1px solid rgba(16, 185, 129, 0.25);
-                color: #10b981;
-            }
-
-            &--warning {
-                background: rgba(245, 166, 35, 0.12);
-                border: 1px solid rgba(245, 166, 35, 0.25);
-                color: #f5a623;
-            }
-
-            .badge-check {
-                font-size: 0.82rem;
-            }
-
-            .badge-score {
-                font-size: 0.7rem;
-                opacity: 0.85;
-                margin-left: 2px;
-            }
-        }
-    }
-}
 
 /* AI Mentor Panel (2-Column Preset Chips Grid) */
 .ai-mentor-panel {

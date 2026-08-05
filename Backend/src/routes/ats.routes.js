@@ -26,12 +26,7 @@ atsRouter.get("/", authMiddleware.authUser, atsController.getAllAtsReportsContro
  */
 atsRouter.get("/report/:atsId", authMiddleware.authUser, atsController.getAtsReportByIdController)
 
-/**
- * @route GET /api/ats/report/:atsId/resume
- * @description stream/download original resume pdf file.
- * @access private
- */
-atsRouter.get("/report/:atsId/resume", authMiddleware.authUser, atsController.getResumeFileController)
+
 
 /**
  * @route DELETE /api/ats/report/:atsId

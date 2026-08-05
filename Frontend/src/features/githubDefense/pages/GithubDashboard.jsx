@@ -15,6 +15,7 @@ import {
     AnalyticsFilters,
     RepositoryHistory
 } from "../../../components/ui";
+import ConfirmationModal from "../../../components/ui/ConfirmationModal/ConfirmationModal";
 import GitHubStatusBar from "../components/GitHubStatusBar";
 import GitHubConnectPanel from "../components/GitHubConnectPanel";
 import RepositoryPicker from "../components/RepositoryPicker";
@@ -101,6 +102,9 @@ const GithubDashboard = () => {
         return true;
     });
 
+    const [showDisconnectModal, setShowDisconnectModal] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
+
     useEffect(() => {
         const initDashboard = async () => {
             await loadDashboard();
@@ -109,10 +113,20 @@ const GithubDashboard = () => {
         initDashboard();
     }, [loadDashboard]);
 
-    const handleConfirmDisconnect = async () => {
-        if (window.confirm("Disconnect GitHub account?\n\nYou will need to reconnect before analyzing private repositories.")) {
+    const handleConfirmDisconnect = () => {
+        setShowDisconnectModal(true);
+    };
+
+    const confirmDisconnect = async () => {
+        setActionLoading(true);
+        try {
             await disconnect();
-            addToast("✅ GitHub account disconnected.", "info");
+            setShowDisconnectModal(false);
+            addToast("GitHub account disconnected.", "success");
+        } catch (err) {
+            addToast("Failed to disconnect GitHub account.", "error");
+        } finally {
+            setActionLoading(false);
         }
     };
 
@@ -935,6 +949,18 @@ const GithubDashboard = () => {
                     {/* end git-grid */}
                 </main>
                 <ScrollToTop />
+                
+                <ConfirmationModal
+                    open={showDisconnectModal}
+                    variant="warning"
+                    title="Disconnect GitHub account?"
+                    description="You will need to reconnect before analyzing private repositories."
+                    confirmText="Disconnect"
+                    cancelText="Cancel"
+                    loading={actionLoading}
+                    onConfirm={confirmDisconnect}
+                    onCancel={() => setShowDisconnectModal(false)}
+                />
             </div>
         </ErrorBoundary>
     );

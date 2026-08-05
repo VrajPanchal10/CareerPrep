@@ -58,17 +58,18 @@ module.exports = {
 
     // Task to primary provider mapping
     routingTable: {
-        atsResumeAnalysis: "gemini",
-        resumeSuggestions: "gemini",
-        weaknessHeatmap: "gemini",
-        skillBreakdown: "gemini",
-        githubRepositoryAnalysis: "gemini",
-        projectDefense: "gemini",
-        pdfReportGeneration: "gemini",
-        liveVoiceInterview: "groq",
-        voiceFollowup: "groq",
-        speechToText: "sarvam",
-        textToSpeech: "sarvam"
+        atsResumeAnalysis: { provider: "gemini", temperature: 0.0 },
+        resumeSuggestions: { provider: "gemini", temperature: 0.1 },
+        interviewEvaluation: { provider: "gemini", temperature: 0.0 },
+        weaknessHeatmap: { provider: "gemini", temperature: 0.1 },
+        skillBreakdown: { provider: "gemini", temperature: 0.1 },
+        githubRepositoryAnalysis: { provider: "gemini", temperature: 0.1 },
+        projectDefense: { provider: "gemini", temperature: 0.1 },
+        pdfReportGeneration: { provider: "gemini", temperature: 0.3 },
+        liveVoiceInterview: { provider: "groq", temperature: 0.1 },
+        voiceFollowup: { provider: "groq", temperature: 0.2 },
+        speechToText: { provider: "sarvam", temperature: 0.1 },
+        textToSpeech: { provider: "sarvam", temperature: 0.1 }
     },
 
     // Optional Response Cache settings

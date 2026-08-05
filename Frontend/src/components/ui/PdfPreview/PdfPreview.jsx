@@ -94,14 +94,7 @@ const PdfPreview = ({ reportId, onClose, onRegenerate }) => {
         }, 500);
     };
 
-    // Calculate dynamic scores & readiness parameters
-    const matchScore = report?.matchScore !== undefined ? report.matchScore : 84;
-    const interviewScore = 78;
-    const atsScore = matchScore;
-    const overallEmployability = Math.round((atsScore + interviewScore) / 2);
 
-    const hiringStatus = overallEmployability >= 80 ? "EXCELLENT READY FIT" : overallEmployability >= 60 ? "MODERATE READY FIT" : "NEEDS PRACTICE";
-    const statusColor = overallEmployability >= 80 ? "#27ae60" : overallEmployability >= 60 ? "#f39c12" : "#e74c3c";
 
     // Handle Esc keypress to close modal
     useEffect(() => {
@@ -152,74 +145,15 @@ const PdfPreview = ({ reportId, onClose, onRegenerate }) => {
                             {/* Hero Card: Overall Score & AI Hiring Verdict */}
                             <div className="hero-verdict-card">
                                 <div className="verdict-main-score">
-                                    <div className="score-ring-box" style={{ borderColor: statusColor }}>
-                                        <span className="score-val">{overallEmployability}<span>%</span></span>
-                                        <span className="score-lbl">Employability</span>
-                                    </div>
                                     <div className="verdict-meta">
-                                        <span className="verdict-tag" style={{ background: `${statusColor}22`, color: statusColor, borderColor: `${statusColor}55` }}>
-                                            {hiringStatus}
-                                        </span>
                                         <h3>Recommended Level: <strong>Junior / SDE-1 Candidate</strong></h3>
                                         <p className="verdict-summary">
-                                            Based on your technical answers, ATS keyword alignment, and code clarity, you are approximately <strong>{overallEmployability}% ready</strong> for target technical interviews. Your React and Frontend architecture skills are strong, while Database Indexing requires slight review.
+                                            Based on your technical answers, ATS keyword alignment, and code clarity, you are well prepared for target technical interviews. Your React and Frontend architecture skills are strong, while Database Indexing requires slight review.
                                         </p>
                                     </div>
                                 </div>
-
-                                {/* Quick Metric Gauge Bars */}
-                                <div className="verdict-meters-grid">
-                                    <div className="meter-item">
-                                        <div className="meter-header">
-                                            <span>⚡ Confidence Level</span>
-                                            <span>88%</span>
-                                        </div>
-                                        <div className="meter-track">
-                                            <div className="meter-fill" style={{ width: "88%", background: "#27ae60" }} />
-                                        </div>
-                                    </div>
-
-                                    <div className="meter-item">
-                                        <div className="meter-header">
-                                            <span>💼 Hiring Probability</span>
-                                            <span>{overallEmployability}%</span>
-                                        </div>
-                                        <div className="meter-track">
-                                            <div className="meter-fill" style={{ width: `${overallEmployability}%`, background: statusColor }} />
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
 
-                            {/* Triple Employability Score Grid */}
-                            <div className="scores-trio-grid">
-                                <div className="trio-card">
-                                    <span className="trio-icon">📄</span>
-                                    <div className="trio-info">
-                                        <h4>Resume ATS Score</h4>
-                                        <span className="trio-val">{atsScore}%</span>
-                                    </div>
-                                    <span className="trio-status">Strong Keyword Fit</span>
-                                </div>
-
-                                <div className="trio-card">
-                                    <span className="trio-icon">🎤</span>
-                                    <div className="trio-info">
-                                        <h4>Mock Interview Score</h4>
-                                        <span className="trio-val">{interviewScore}%</span>
-                                    </div>
-                                    <span className="trio-status">Good Technical Depth</span>
-                                </div>
-
-                                <div className="trio-card trio-card--highlight">
-                                    <span className="trio-icon">🎯</span>
-                                    <div className="trio-info">
-                                        <h4>Overall Readiness</h4>
-                                        <span className="trio-val">{overallEmployability}%</span>
-                                    </div>
-                                    <span className="trio-status">Target Ready</span>
-                                </div>
-                            </div>
 
                             {/* Section: Strengths vs Improvement Areas */}
                             <div className="insights-two-col">
@@ -245,37 +179,7 @@ const PdfPreview = ({ reportId, onClose, onRegenerate }) => {
                                 </div>
                             </div>
 
-                            {/* Section: Interview Round Readiness Badges */}
-                            <div className="readiness-badges-section">
-                                <h3>💼 Interview Round Readiness</h3>
-                                <div className="badges-flex">
-                                    <div className="round-badge round-badge--ready">
-                                        <span className="badge-check">✔</span>
-                                        <span>Technical Round</span>
-                                        <span className="badge-score">85%</span>
-                                    </div>
-                                    <div className="round-badge round-badge--ready">
-                                        <span className="badge-check">✔</span>
-                                        <span>HR & Behavioral</span>
-                                        <span className="badge-score">78%</span>
-                                    </div>
-                                    <div className="round-badge round-badge--warning">
-                                        <span className="badge-check">⚠</span>
-                                        <span>System Design</span>
-                                        <span className="badge-score">60%</span>
-                                    </div>
-                                    <div className="round-badge round-badge--ready">
-                                        <span className="badge-check">✔</span>
-                                        <span>DSA & Problem Solving</span>
-                                        <span className="badge-score">82%</span>
-                                    </div>
-                                    <div className="round-badge round-badge--ready">
-                                        <span className="badge-check">✔</span>
-                                        <span>Resume Screening</span>
-                                        <span className="badge-score">87%</span>
-                                    </div>
-                                </div>
-                            </div>
+
 
 
 

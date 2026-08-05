@@ -229,7 +229,8 @@ async function startRepositoryInterviewController(req, res, next) {
         logger.debug(`[Repo Interview] Generating ${limit} questions for ${analysis.repoName}...`);
         const rawQuestions = await generateRepoQuestions({
             knowledgeGraph: analysis.knowledgeGraph,
-            limit
+            limit,
+            userId: req.user.id
         });
 
         const formattedQuestions = rawQuestions.map(q => ({
@@ -310,7 +311,8 @@ async function submitRepositoryAnswerController(req, res, next) {
         const evaluation = await evaluateRepoAnswer({
             question: question.questionText,
             referenceAnswer: question.referenceAnswer,
-            userAnswer
+            userAnswer,
+            userId: req.user.id
         });
 
         // Save candidate's answer and evaluation details

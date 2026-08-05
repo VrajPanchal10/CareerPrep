@@ -1,6 +1,7 @@
 const { z } = require("zod");
 const gateway = require("./aiGateway.service");
 const repoPrompts = require("../prompts/repository.prompt");
+const aiMemory = require("./aiMemory.service");
 
 // Zod schema definitions
 const repoAnalysisSchema = z.object({
@@ -192,8 +193,9 @@ async function generateRepoAnalysis({ repoUrl, repoName, owner, filesContext, fo
 /**
  * Generate project defense questions.
  */
-async function generateRepoQuestions({ knowledgeGraph, limit = 5 }) {
-    const prompt = repoPrompts.generateRepoQuestionsPrompt({ knowledgeGraph, limit });
+async function generateRepoQuestions({ knowledgeGraph, limit = 5, userId }) {
+    const userContext = userId ? await aiMemory.getUserContext(userId) : "";
+    const prompt = repoPrompts.generateRepoQuestionsPrompt({ knowledgeGraph, limit, userContext });
     try {
         const response = await gateway.routeTask("projectDefense", { prompt }, {
             jsonMode: true,
@@ -245,8 +247,9 @@ async function generateRepoQuestions({ knowledgeGraph, limit = 5 }) {
 /**
  * Evaluate project defense answer.
  */
-async function evaluateRepoAnswer({ question, referenceAnswer, userAnswer }) {
-    const prompt = repoPrompts.evaluateRepoAnswerPrompt({ question, referenceAnswer, userAnswer });
+async function evaluateRepoAnswer({ question, referenceAnswer, userAnswer, userId }) {
+    const userContext = userId ? await aiMemory.getUserContext(userId) : "";
+    const prompt = repoPrompts.evaluateRepoAnswerPrompt({ question, referenceAnswer, userAnswer, userContext });
     try {
         const response = await gateway.routeTask("projectDefense", { prompt }, {
             jsonMode: true,
@@ -281,18 +284,8 @@ async function evaluateRepoAnswer({ question, referenceAnswer, userAnswer }) {
 
         return output;
     } catch (err) {
-        console.error("[Repo AI] evaluateRepoAnswer failed, returning default evaluation:", err.message);
-        return {
-            accuracy: 75,
-            depth: 70,
-            clarity: 80,
-            explanationQuality: 75,
-            overall: 75,
-            feedback: {
-                strengths: ["Demonstrates clear technical understanding of project requirements."],
-                weaknesses: ["Could elaborate further on security and scalability trade-offs."]
-            }
-        };
+        console.error("[Repo AI] evaluateRepoAnswer failed:", err.message);
+        throw new Error("Evaluation failed: AI could not evaluate the project defense answer.");
     }
 }
 

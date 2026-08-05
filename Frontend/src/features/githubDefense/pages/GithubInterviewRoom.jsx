@@ -23,6 +23,7 @@ import {
     Globe,
     Server
 } from "lucide-react";
+import ConfirmationModal from "../../../components/ui/ConfirmationModal/ConfirmationModal";
 import "../style/githubDashboard.scss";
 
 const GithubInterviewRoom = () => {
@@ -579,25 +580,16 @@ const GithubInterviewRoom = () => {
             </main>
 
             {/* Exit Confirmation Modal */}
-            {showExitModal && (
-                <div className="exit-modal-overlay">
-                    <div className="exit-modal-card">
-                        <div className="modal-header">
-                            <AlertTriangle size={24} className="warning-icon" />
-                            <h3>Exit Project Defense Interview?</h3>
-                        </div>
-                        <p>Your session progress will be saved in MongoDB. You can return and resume this defense interview at any time from your dashboard.</p>
-                        <div className="modal-actions">
-                            <button className="btn-cancel" onClick={() => setShowExitModal(false)}>
-                                Continue Interview
-                            </button>
-                            <button className="btn-confirm-exit" onClick={() => navigate("/github-defense")}>
-                                Yes, Exit to Dashboard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmationModal
+                open={showExitModal}
+                variant="warning"
+                title="Exit Project Defense Interview?"
+                description="Your session progress will be saved in MongoDB. You can return and resume this defense interview at any time from your dashboard."
+                confirmText="Yes, Exit to Dashboard"
+                cancelText="Continue Interview"
+                onConfirm={() => navigate("/github-defense")}
+                onCancel={() => setShowExitModal(false)}
+            />
         </div>
     );
 };

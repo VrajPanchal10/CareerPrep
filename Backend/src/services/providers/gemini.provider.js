@@ -53,6 +53,9 @@ async function execute(payload, options = {}) {
         const attemptStart = Date.now();
         try {
             const geminiConfig = {};
+            if (options.temperature !== undefined) {
+                geminiConfig.temperature = options.temperature;
+            }
             if (options.jsonMode) {
                 geminiConfig.responseMimeType = "application/json";
                 if (options.responseSchema) {

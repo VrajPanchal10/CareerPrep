@@ -65,31 +65,44 @@ Generate a comprehensive, highly specific repository analysis as JSON matching t
 DO NOT return empty arrays or generic placeholders. Base all items on the provided source code and repository structure. Return ONLY valid JSON.`;
     },
 
-    generateRepoQuestionsPrompt: ({ knowledgeGraph, limit }) => {
-        return `You are a Technical Interview Designer and Staff Software Engineer.
-Generate exactly ${limit} customized, challenging "Project Defense" interview questions based on this Project Knowledge Graph.
+    generateRepoQuestionsPrompt: ({ knowledgeGraph, limit, userContext }) => {
+        return `You are a Senior Staff Software Engineer interviewing a candidate for a role. You are conducting a "Project Defense" interview where you grill the candidate on their GitHub repository.
 
-Knowledge Graph Details:
+Project Knowledge Graph:
 ${JSON.stringify(knowledgeGraph, null, 2)}
 
-Requirements:
-- Target these 5 core topics in rotation: "Architecture", "Database", "Security", "API Design", "Deployment".
-- Create questions that challenge decisions (e.g. "Why did you select MongoDB over PostgreSQL?", "How would you handle token invalidation in your JWT setup?").
-- Adjust questions to feel like a real technical defense.
-- Provide a detailed referenceAnswer for each question, tailored specifically to this project's stack.
+${userContext || ""}
 
-Output format must be JSON according to the schema.`;
+Constraints & Anti-Hallucination:
+- Generate EXACTLY ${limit} highly challenging technical questions.
+- If the Historical Context identifies any weaknesses (e.g., Docker, SQL), you MUST generate questions specifically probing those weak areas within the context of their codebase.
+- Do NOT generate generic questions (e.g. "What is React?"). Questions must reference specific architectural decisions or stack choices in the Knowledge Graph.
+- Frame the intention and guide answer like a strict grading rubric.
+
+Provide the response in the exact JSON format requested.`;
     },
 
-    evaluateRepoAnswerPrompt: ({ question, referenceAnswer, userAnswer }) => {
-        return `You are a Technical Interviewer conducting a project defense interview.
-Evaluate the candidate's answer for the following question, checking accuracy, depth, clarity, and justification quality.
+    evaluateRepoAnswerPrompt: ({ question, referenceAnswer, userAnswer, userContext }) => {
+        return `You are a Senior Staff Software Engineer grading a candidate's answer during a Project Defense interview.
 
-Question: ${question}
-Ideal Reference Guide Answer: ${referenceAnswer}
-Candidate's Answer: ${userAnswer}
+Question Asked: "${question}"
+Reference Guide Answer: "${referenceAnswer}"
+Candidate's Answer: "${userAnswer}"
 
-Provide scores from 0 to 100 for accuracy, depth, clarity, explanationQuality, and overall score. Write constructive strengths and weaknesses feedback.
+${userContext || ""}
+
+Scoring Methodology & Rubric:
+- 0-20: No relevant content or completely empty answer.
+- 21-40: Mentions topic but major gaps.
+- 41-60: Partially correct with missing depth.
+- 61-80: Good coverage with minor gaps.
+- 81-100: Comprehensive, detailed, technically accurate.
+- overall score MUST be calculated as: 0.30*accuracy + 0.25*depth + 0.25*explanationQuality + 0.20*clarity.
+- If the candidate evades the question or gives an irrelevant response, score below 30. No flattery.
+
+Feedback Rules:
+- Strengths and Weaknesses must explicitly quote or address the candidate's exact words.
+- If the candidate failed to explain a concept that was also listed as a weakness in the Historical Context, be extremely strict in the feedback.
 
 Output format must be JSON according to the schema.`;
     },

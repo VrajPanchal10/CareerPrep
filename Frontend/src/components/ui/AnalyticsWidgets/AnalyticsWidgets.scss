@@ -104,13 +104,16 @@
     max-width: 100%;
     box-sizing: border-box;
     min-width: 0;
-    min-height: 440px;
+    height: 460px;
+    max-height: 460px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    overflow: hidden;
 
     @media (max-width: 767px) {
         height: auto;
+        max-height: none;
         min-height: 420px;
     }
 
@@ -161,6 +164,7 @@
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 0.75rem;
+        margin-top: 0.5rem;
 
         @media (max-width: 1023px) {
             grid-template-columns: repeat(2, 1fr);
@@ -331,9 +335,6 @@
                 list-style: none;
                 padding: 0;
                 margin: 0;
-                max-height: 140px;
-                overflow-y: auto;
-                padding-right: 0.35rem;
                 flex: 1;
 
                 &::-webkit-scrollbar {

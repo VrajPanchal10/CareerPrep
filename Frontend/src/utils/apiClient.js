@@ -2,7 +2,8 @@ import axios from "axios";
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
 export const getApiBaseUrl = () => {
-    return import.meta.env.VITE_API_URL || "http://localhost:3000";
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+    return import.meta.env.PROD ? "" : "http://localhost:3000";
 };
 
 const BASE_URL = getApiBaseUrl();

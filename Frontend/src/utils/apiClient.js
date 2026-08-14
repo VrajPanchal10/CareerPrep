@@ -1,6 +1,9 @@
 import axios from "axios";
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
+// [PROXY FIX] Added for Vercel deployment to fix Incognito/Mobile third-party cookie blocking.
+// If you want to REVERT this fix and use direct API calls, change this back to:
+// return import.meta.env.VITE_API_URL || "http://localhost:3000";
 export const getApiBaseUrl = () => {
     if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
     return import.meta.env.PROD ? "" : "http://localhost:3000";

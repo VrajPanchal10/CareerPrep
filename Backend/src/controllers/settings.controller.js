@@ -2,6 +2,7 @@ const userModel = require("../models/user.model");
 const atsReportModel = require("../models/atsReport.model");
 const interviewReportModel = require("../models/interviewReport.model");
 const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
 const { logger } = require("../utils/securityLogger");
 
 // Helper to log security activity
@@ -144,9 +145,14 @@ async function revokeDeviceController(req, res, next) {
         const { id } = req.params;
         const userId = req.user.id || req.user._id;
 
-        // Pull session matching _id or sessionId
+        // Only query _id if id is a valid MongoDB ObjectId to avoid CastError with UUID strings
+        const pullQuery = mongoose.Types.ObjectId.isValid(id)
+            ? { $or: [{ _id: id }, { sessionId: id }] }
+            : { sessionId: id };
+
+        // Pull session matching query
         await userModel.findByIdAndUpdate(userId, {
-            $pull: { refreshSessions: { $or: [{ _id: id }, { sessionId: id }] } }
+            $pull: { refreshSessions: pullQuery }
         });
         
         await logSecurityActivity(userId, "Device Signed Out", req);

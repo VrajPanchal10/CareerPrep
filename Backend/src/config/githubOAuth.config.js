@@ -40,7 +40,7 @@ function resolveGithubConfig(req = null) {
         clientId = process.env.GITHUB_CLIENT_ID;
         clientSecret = process.env.GITHUB_CLIENT_SECRET;
         callbackUrl = process.env.GITHUB_OAUTH_REDIRECT_URI || 
-            (process.env.BACKEND_URL ? `${process.env.BACKEND_URL.replace(/\/$/, "")}/api/github-oauth/callback` : "https://careerprep-sbm1.onrender.com/api/github-oauth/callback");
+            (process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL.replace(/\/$/, "")}/api/github-oauth/callback` : "https://careerprep-platform.vercel.app/api/github-oauth/callback");
         frontendRedirect = process.env.FRONTEND_GITHUB_REDIRECT || 
             (process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL.replace(/\/$/, "")}/github-defense` : "https://careerprep-platform.vercel.app/github-defense");
     } else {

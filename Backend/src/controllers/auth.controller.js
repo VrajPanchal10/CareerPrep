@@ -116,21 +116,21 @@ async function registerUserController(req, res) {
     const token = jwt.sign(
         { id: user._id, username: user.username, sessionId, rememberMe: false },
         process.env.JWT_SECRET,
-        { expiresIn: "1d" }
+        { expiresIn: "7d" }
     )
 
     res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
     const csrfToken = crypto.randomBytes(32).toString("hex");
     res.cookie("csrfToken", csrfToken, {
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
     logger.info("New user registered", { userId: user._id, username: user.username });
@@ -228,14 +228,14 @@ async function loginUserController(req, res) {
     const token = jwt.sign(
         { id: user._id, username: user.username, sessionId, rememberMe: !!rememberMe },
         process.env.JWT_SECRET,
-        { expiresIn: rememberMe ? "7d" : "1d" }
+        { expiresIn: rememberMe ? "30d" : "7d" }
     )
 
     const cookieOpts = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
+        maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000
     }
     res.cookie("token", token, cookieOpts)
 
@@ -245,9 +245,9 @@ async function loginUserController(req, res) {
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
     }
     if (rememberMe) {
-        csrfCookieOpts.maxAge = 7 * 24 * 60 * 60 * 1000;
+        csrfCookieOpts.maxAge = 30 * 24 * 60 * 60 * 1000;
     } else {
-        csrfCookieOpts.maxAge = 24 * 60 * 60 * 1000; // 1 day
+        csrfCookieOpts.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
     }
     res.cookie("csrfToken", csrfToken, csrfCookieOpts)
     
@@ -409,14 +409,14 @@ async function refreshTokenController(req, res) {
         const newToken = jwt.sign(
             { id: user._id, username: user.username, sessionId: decoded.sessionId, rememberMe },
             process.env.JWT_SECRET,
-            { expiresIn: rememberMe ? "7d" : "1d" }
+            { expiresIn: rememberMe ? "30d" : "7d" }
         )
 
         const refreshCookieOpts = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
+            maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000
         }
         res.cookie("token", newToken, refreshCookieOpts)
 
@@ -424,7 +424,7 @@ async function refreshTokenController(req, res) {
         const csrfCookieOpts = {
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
+            maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000
         }
         res.cookie("csrfToken", csrfToken, csrfCookieOpts)
 
@@ -804,14 +804,14 @@ async function verifyMfaController(req, res) {
         const token = jwt.sign(
             { id: user._id, username: user.username, sessionId, rememberMe },
             process.env.JWT_SECRET,
-            { expiresIn: rememberMe ? "7d" : "1d" }
+            { expiresIn: rememberMe ? "30d" : "7d" }
         );
 
         const cookieOpts = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
+            maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000
         };
         res.cookie("token", token, cookieOpts);
 
@@ -821,9 +821,9 @@ async function verifyMfaController(req, res) {
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
         };
         if (rememberMe) {
-            csrfCookieOpts.maxAge = 7 * 24 * 60 * 60 * 1000;
+            csrfCookieOpts.maxAge = 30 * 24 * 60 * 60 * 1000;
         } else {
-            csrfCookieOpts.maxAge = 24 * 60 * 60 * 1000;
+            csrfCookieOpts.maxAge = 7 * 24 * 60 * 60 * 1000;
         }
         res.cookie("csrfToken", csrfToken, csrfCookieOpts);
 

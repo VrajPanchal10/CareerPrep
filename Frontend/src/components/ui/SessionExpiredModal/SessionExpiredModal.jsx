@@ -24,10 +24,10 @@ const SessionExpiredModal = () => {
 
         if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
 
-        // Set idle warning threshold to 28 minutes (1680000 ms)
+        // Set idle warning threshold to 118 minutes (7080000 ms)
         idleTimerRef.current = setTimeout(() => {
             triggerWarning();
-        }, 28 * 60 * 1000); 
+        }, 118 * 60 * 1000); 
     };
 
     const triggerWarning = () => {
